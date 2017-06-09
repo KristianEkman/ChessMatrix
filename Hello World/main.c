@@ -10,6 +10,9 @@ Move moves[50];
 int movesCount = 0;
 enum Color side = White;
 
+Piece NullPiece;
+
+int perftCount;
 
 void SetPiece(int file, int rank, enum PieceType type, enum Color color) {
 	game.Squares[rank * 8 + file].Piece.Type = type;
@@ -19,8 +22,7 @@ void SetPiece(int file, int rank, enum PieceType type, enum Color color) {
 void InitGame() {
 	for (int i = 0; i < 64; i++)
 	{
-		game.Squares[i].Piece.Type = NoPiece;
-		game.Squares[i].Piece.Color = NoColor;
+		game.Squares[i].Piece = NullPiece;
 	}
 
 	SetPiece(0, 0, Rook, White);
@@ -83,30 +85,113 @@ void PrintGame() {
 	}
 }
 
-int length(int items[]) {
-	return sizeof(items) / sizeof(items[0]);
+void MakeMove(Move * move) {
+	move->Capture = move->To->Piece;
+	move->To->Piece = move->From->Piece;
+	move->From->Piece = NullPiece;
+	//castling, short long
+	//en passant
+	//promotion
 }
 
+void UnMakeMove(Move * move) {
+	move->From->Piece = move->To->Piece;
+	move->To->Piece = move->Capture;
+}
 
-void GetMoves() {
+void InitBoard() {
 	for (int i = 0; i < 64; i++)
 	{
-		Piece * piece = &game.Squares[i].Piece;
-		if (piece->Color == side) {
-			//int l = length(pattern[piece->Type]);
-			/*for (int j = 0; j < l; j++)
-			{
+		Square *sqr = &game.Squares[i];
+		sqr->BishopRays[0] = &(northEastRayPatterns[i]);
+		sqr->BishopRays[1] = &southEastRayPatterns[i];
+		sqr->BishopRays[2] = &northWestPatterns[i];
+		sqr->BishopRays[3] = &southWestPatterns[i];
+		sqr->BlackPawnCaptures = &blackPawnCapturePatterns[i];
+		sqr->BlackPawnPattern = &blackPawnPatterns[i];
+		sqr->KingsPattern = &kingPatterns[i];
+		sqr->KnightsPattern = &knightPatterns[i];
+		sqr->WhitePawnCaptures = &whitePawnCapturePatterns[i];
+		sqr->WhitePawnPattern = &whitePawnPatterns[i];
+		sqr->QueenRays[0] = &northEastRayPatterns[i];
+		sqr->QueenRays[1] = &southEastRayPatterns[i];
+		sqr->QueenRays[2] = &northWestPatterns[i];
+		sqr->QueenRays[3] = &southWestPatterns[i];
+		sqr->QueenRays[4] = &northRayPatterns[i];
+		sqr->QueenRays[5] = &eastRayPatterns[i];
+		sqr->QueenRays[6] = &westPatterns[i];
+		sqr->QueenRays[7] = &southRayPatterns[i];
+		sqr->RookRays[0] = &northRayPatterns[i];
+		sqr->RookRays[1] = &eastRayPatterns[i];
+		sqr->RookRays[2] = &westPatterns[i];
+		sqr->RookRays[3] = &southRayPatterns[i];
+		
+	}
+}
 
-			}*/
+int * GetPatterns(Square * square, Piece * piece) {
+	switch (piece->Type)
+	{
+	case Pawn:
+		//todo: non-capures
+		return piece->Color == White ? square->WhitePawnCaptures : square->BlackPawnCaptures;
+	case Knight:
+		return square->KnightsPattern;
+	case King:
+		return square->KingsPattern;
+	default:
+		return &emptyPattern;
+	}
+}
+
+bool KingAttacked() {
+
+}
+
+void Perft(int depth) {
+	if (depth < 0)
+		return;
+	perftCount++;
+	for (int s = 0; s < 64; s++)
+	{
+		Square * fromSquare = &game.Squares[s];
+		Piece * piece = &fromSquare->Piece;
+		if (piece->Color == side) {
+			int * pattern = GetPatterns(fromSquare, piece);
+			int length = pattern[0];
+			for (int p = 1; p < length; p++)
+			{
+				Square * toSquare = &game.Squares[pattern[p]];
+				if (toSquare->Piece.Type == NoPiece || toSquare->Piece.Color != side) {
+					Move move;
+					move.From = fromSquare;
+					move.To = toSquare;
+					MakeMove(&move);
+					move.Legal = KingAttacked();
+					side = !side;
+					if (move.Legal)
+						Perft(depth - 1);
+					UnMakeMove(&move);
+					side = !side;
+				}
+			}
+			//todo:rays
 		}
 	}
 }
 
+
 int main() {
+	InitBoard();
 	InitGame();
-	InitPatterns();
+	Perft(7);
+	printf("%d\n", perftCount);
 	PrintGame();
-	GetMoves();
+	//GetMoves();
+
+	char str1[20];
+	scanf("%s", str1);
+
 	return 0;
 }
 
