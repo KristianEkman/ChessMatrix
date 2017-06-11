@@ -937,4 +937,5 @@ int westPatterns[64][8] = {
 };
 
 int emptyPattern[1] = { 0 };
+int emptyRayPattern[1][1] = {{0}};
 

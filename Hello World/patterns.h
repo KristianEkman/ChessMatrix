@@ -14,3 +14,4 @@ extern const int southWestPatterns[64][8];
 extern const int southEastRayPatterns[64][8];
 extern const int westPatterns[64][8];
 extern const int emptyPattern[1];
+extern const int emptyRayPattern[1][1];
