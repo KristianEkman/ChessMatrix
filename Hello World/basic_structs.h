@@ -22,23 +22,23 @@ typedef struct  {
 
 typedef struct {
 	Piece Piece;
-	int * RookRays[5];
-	int * BishopRays[5];
-	int * QueenRays[9];
-	int * EmptyRayPattern[1];
-	int * KnightsPattern;
-	int * KingsPattern;
-	int * WhitePawnCaptures;
-	int * WhitePawnPattern;
-	int * BlackPawnCaptures;
-	int * BlackPawnPattern;
-	int Index;
+	char * RookRays[5];
+	char * BishopRays[5];
+	char * QueenRays[9];
+	char * EmptyRayPattern[1];
+	char * KnightsPattern;
+	char * KingsPattern;
+	char * WhitePawnCaptures;
+	char * WhitePawnPattern;
+	char * BlackPawnCaptures;
+	char * BlackPawnPattern;
+	char Index;
 } Square;
 
-int * bishopRayCount = { 4 };
-int * rookRayCount = { 4 };
-int * queenRayCount = { 8 };
-int * noRaysCount = { 0 };
+char * bishopRayCount = { 4 };
+char * rookRayCount = { 4 };
+char * queenRayCount = { 8 };
+char * noRaysCount = { 0 };
 
 typedef struct {
 	Square Squares[64];
