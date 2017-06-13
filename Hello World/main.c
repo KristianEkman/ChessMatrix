@@ -14,10 +14,10 @@ enum Color side = White;
 Piece NullPiece;
 
 int perftCount;
-void Perft(char depth);
+void Perft(int depth);
 Square * KingSquares[2];
 
-void InitPiece(char file, char rank, enum PieceType type, enum Color color) {
+void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	game.Squares[rank * 8 + file].Piece.Type = type;
 	game.Squares[rank * 8 + file].Piece.Color = color;
 	if (type == King) {
@@ -26,7 +26,7 @@ void InitPiece(char file, char rank, enum PieceType type, enum Color color) {
 }
 
 void InitGame() {
-	for (char i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 	{
 		game.Squares[i].Piece = NullPiece;
 	}
@@ -40,7 +40,7 @@ void InitGame() {
 	InitPiece(6, 0, Knight, White);
 	InitPiece(7, 0, Rook, White);
 
-	for (char i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 		InitPiece(i, 1, Pawn, White);
 
 	InitPiece(0, 7, Rook, Black);
@@ -52,7 +52,7 @@ void InitGame() {
 	InitPiece(6, 7, Knight, Black);
 	InitPiece(7, 7, Rook, Black);
 
-	for (char i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 		InitPiece(i, 6, Pawn, Black);
 	side = White;
 }
@@ -80,9 +80,9 @@ char PieceChar(Piece piece) {
 void PrintGame() {
 	printf("---------------------------------\n");
 
-	for (char r = 8 - 1; r >= 0; r--)
+	for (int r = 8 - 1; r >= 0; r--)
 	{
-		for (char f = 0; f < 8; f++)
+		for (int f = 0; f < 8; f++)
 		{
 			Piece piece = game.Squares[r * 8 + f].Piece;
 			char c = PieceChar(piece);
@@ -98,7 +98,8 @@ void MakeMove(Move * move) {
 	move->From->Piece = NullPiece;
 	if (move->To->Piece.Type == King)
 		KingSquares[side] = move->To;
-
+	if (move->Promotion)
+		PrintGame();
 	//PrintGame();
 	////GetMoves();
 
@@ -107,7 +108,6 @@ void MakeMove(Move * move) {
 
 	//castling, short long
 	//en passant
-	//promotion
 }
 
 void UnMakeMove(Move * move) {
@@ -116,11 +116,12 @@ void UnMakeMove(Move * move) {
 		KingSquares[side] = move->From;
 	move->From->Piece = move->To->Piece;
 	move->To->Piece = move->Capture;
-
+	if (move->Promotion)
+		move->From->Piece.Type = Pawn;
 }
 
 void InitBoard() {
-	for (char i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 	{
 		Square *sqr = &game.Squares[i];
 		sqr->Index = i;
@@ -154,7 +155,7 @@ void InitBoard() {
 	}
 }
 
-char * GetPatterns(Square * square, Piece piece) {
+int * GetPatterns(Square * square, Piece piece) {
 	switch (piece.Type)
 	{	
 	case Knight:
@@ -166,7 +167,7 @@ char * GetPatterns(Square * square, Piece piece) {
 	}
 }
 
-char ** GetRayPatterns(Square * square, enum PieceType pieceType) {
+int ** GetRayPatterns(Square * square, enum PieceType pieceType) {
 	switch (pieceType)
 	{
 	case Rook:
@@ -181,7 +182,7 @@ char ** GetRayPatterns(Square * square, enum PieceType pieceType) {
 	}
 }
 
-char * GetPawnPatterns(Square * square, enum Color color) {
+int * GetPawnPatterns(Square * square, enum Color color) {
 	
 	if (color == White)
 		return square->WhitePawnPattern;
@@ -189,7 +190,7 @@ char * GetPawnPatterns(Square * square, enum Color color) {
 		return square->BlackPawnPattern;
 }
 
-char * GetPawnCapturePatterns(Square * square, enum Color color) {
+int * GetPawnCapturePatterns(Square * square, enum Color color) {
 	if (color == White)
 		return square->WhitePawnCaptures;
 	else
@@ -203,9 +204,9 @@ bool KingAttacked() {
 		Piece piece = fromSquare->Piece;
 		if (piece.Type != NoPiece && piece.Color != side) {
 			if (piece.Type == Pawn) {
-				char * pawnCapts = GetPawnCapturePatterns(fromSquare, piece.Color);
-				char length = pawnCapts[0];
-				for (char i = 0; i < length; i++)
+				int * pawnCapts = GetPawnCapturePatterns(fromSquare, piece.Color);
+				int length = pawnCapts[0];
+				for (int i = 1; i <= length; i++)
 				{
 					if (pawnCapts[i] == kingSquare->Index) {
 						return true;
@@ -213,22 +214,21 @@ bool KingAttacked() {
 				}
 			}
 
-			char * pattern = GetPatterns(fromSquare, piece);
-			char length = pattern[0];
-			for (char p = 1; p <= length; p++)
+			int * pattern = GetPatterns(fromSquare, piece);
+			int length = pattern[0];
+			for (int p = 1; p <= length; p++)
 			{
-				Square * toSquare = &game.Squares[pattern[p]];
 				if (pattern[p] == kingSquare->Index) {
 					return true;
 				}
 			}
 
-			char ** rayPattens = GetRayPatterns(fromSquare, piece.Type);
-			char raysCount = rayPattens[0][0];
-			for (char r = 1; r <= raysCount; r++)
+			int ** rayPattens = GetRayPatterns(fromSquare, piece.Type);
+			int raysCount = rayPattens[0][0];
+			for (int r = 1; r <= raysCount; r++)
 			{
-				char rayLength = rayPattens[r][0];
-				for (char i = 1; i <= rayLength; i++)
+				int rayLength = rayPattens[r][0];
+				for (int i = 1; i <= rayLength; i++)
 				{
 					Square * toSquare = &game.Squares[rayPattens[r][i]];
 					Piece * toPiece = &toSquare->Piece;
@@ -246,21 +246,23 @@ bool KingAttacked() {
 	return true;
 }
 
-void PerftMove(Square * fromSquare, Square * toSquare, char depth) {
+void PerftMove(Square * fromSquare, Square * toSquare, int depth, bool promo) {
 	Move move;
 	move.From = fromSquare;
 	move.To = toSquare;
+	move.Promotion = promo;
+
 	MakeMove(&move);
-	move.Legal = !KingAttacked();
+	//move.Legal = true; !KingAttacked();
 	side = !side;
-	if (move.Legal)
+	//if (move.Legal)
 		Perft(depth - 1);
 	UnMakeMove(&move);
 	side = !side;
 	
 }
 
-void Perft(char depth) {
+void Perft(int depth) {
 	if (depth < 0)
 		return;
 	perftCount++;
@@ -270,65 +272,70 @@ void Perft(char depth) {
 		Piece piece = fromSquare->Piece;
 		if (piece.Type != NoPiece && piece.Color == side) {
 			if (piece.Type == Pawn) {
-				char * pawnPattern = GetPawnPatterns(fromSquare, piece.Color);
-				char pawnPatLength = pawnPattern[0];
-				for (char pp = 1; pp <= pawnPatLength; pp++)
+				int * pawnPattern = GetPawnPatterns(fromSquare, piece.Color);
+				int pawnPatLength = pawnPattern[0];
+				for (int pp = 1; pp <= pawnPatLength; pp++)
 				{
 					Square * toSquare = &game.Squares[pawnPattern[pp]];
+					bool promo = false;
 					//tillåt inte två drag när en pjäs står ivägen
 					if (pp == 2) {
 						Square * overSqr = &game.Squares[pawnPattern[1]];
 						if (overSqr->Piece.Type != NoPiece)
 							break;
+						//en passant here
+					}
+					else if (toSquare->Index < 8 || toSquare->Index > 55) {
+						fromSquare->Piece.Type = Queen;
+						promo = true;
 					}
 					if (toSquare->Piece.Type == NoPiece) {
-						PerftMove(fromSquare, toSquare, depth);
+						PerftMove(fromSquare, toSquare, depth, promo);
 					}
 				}
 
-				char * pawnCaptPattern = GetPawnCapturePatterns(fromSquare, piece.Color);
-				char pawnCapPatLength = pawnCaptPattern[0];
-				for (char pc = 1; pc <= pawnPatLength; pc++)
+				int * pawnCaptPattern = GetPawnCapturePatterns(fromSquare, piece.Color);
+				int pawnCapPatLength = pawnCaptPattern[0];
+				for (int pc = 1; pc <= pawnPatLength; pc++)
 				{
 					Square * toSquare = &game.Squares[pawnPattern[pc]];
 					if (toSquare->Piece.Type != NoPiece && toSquare->Piece.Color != side) {
-						PerftMove(fromSquare, toSquare, depth);
+						PerftMove(fromSquare, toSquare, depth, false);
 					}
 				}
 			}
 
-			char * pattern = GetPatterns(fromSquare, piece);
-			char length = pattern[0];
-			for (char p = 1; p <= length; p++)
+			int * pattern = GetPatterns(fromSquare, piece);
+			int length = pattern[0];
+			for (int p = 1; p <= length; p++)
 			{
 				Square * toSquare = &game.Squares[pattern[p]];
 				if (toSquare->Piece.Type == NoPiece || toSquare->Piece.Color != side) {
-					PerftMove(fromSquare, toSquare, depth);
+					PerftMove(fromSquare, toSquare, depth, false);
 				}
 			}
 
-			char ** rayPattens = GetRayPatterns(fromSquare, piece.Type);
-			char raysCount = rayPattens[0][0];
-			for (char r = 1; r <= raysCount; r++)
+			int ** rayPattens = GetRayPatterns(fromSquare, piece.Type);
+			int raysCount = rayPattens[0][0];
+			for (int r = 1; r <= raysCount; r++)
 			{
-				char rayLength = rayPattens[r][0];
-				for (char i = 1; i <= rayLength; i++)
+				int rayLength = rayPattens[r][0];
+				for (int i = 1; i <= rayLength; i++)
 				{
 					Square * toSquare = &game.Squares[rayPattens[r][i]];
 					Piece * toPiece = &toSquare->Piece;
 					if (toPiece->Type != NoPiece) {
 						if (toPiece->Color != side) {
-							PerftMove(fromSquare, toSquare, depth);
+							PerftMove(fromSquare, toSquare, depth, false);
 						}
 						break;
 					} else {
-						PerftMove(fromSquare, toSquare, depth);
+						PerftMove(fromSquare, toSquare, depth, false);
 					}
 				}
 			}
 			//en passant
 			//castling
-			//promotion
 		}
 	}
 }
@@ -337,14 +344,19 @@ void Perft(char depth) {
 int main() {
 	InitBoard();
 	InitGame();
-	clock_t start = clock();
-	Perft(5);
-	clock_t stop = clock();
-	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("%f\n", secs);
+	for (size_t i = 0; i < 2; i++)
+	{
+		perftCount = 0;
+		clock_t start = clock();
+		Perft(5);
+		clock_t stop = clock();
+		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
+		printf("%f\n", secs);
+		printf("%d\n", perftCount);
+		PrintGame();
 
-	printf("%d\n", perftCount);
-	PrintGame();
+	}
+
 	//GetMoves();
 
 	char str1[20];

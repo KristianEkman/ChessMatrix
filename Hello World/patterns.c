@@ -1,4 +1,4 @@
-char knightPatterns[64][9] = {
+int knightPatterns[64][9] = {
 	{ 2,17,10 },
 	{ 3,16,18,11 },
 	{ 4,17,19,8,12 },
@@ -65,7 +65,7 @@ char knightPatterns[64][9] = {
 	{ 2,46,53 }
 };
 
-char kingPatterns[64][9] = {
+int kingPatterns[64][9] = {
 	{ 3,8,1,9 },
 	{ 5,0,8,9,2,10 },
 	{ 5,1,9,10,3,11 },
@@ -132,7 +132,7 @@ char kingPatterns[64][9] = {
 	{ 3,54,62,55 }
 };
 
-char blackPawnCapturePatterns[64][3] = {
+int blackPawnCapturePatterns[64][3] = {
 	{ 0 },
 	{ 0 },
 	{ 0 },
@@ -199,7 +199,7 @@ char blackPawnCapturePatterns[64][3] = {
 	{ 1,54 }
 };
 
-char blackPawnPatterns[64][3] = {
+int blackPawnPatterns[64][3] = {
 	{ 0 },
 	{ 0 },
 	{ 0 },
@@ -266,7 +266,7 @@ char blackPawnPatterns[64][3] = {
 	{ 1,55 }
 };
 
-char whitePawnCapturePatterns[64][3] = {
+int whitePawnCapturePatterns[64][3] = {
 	{ 1,9 },
 	{ 2,8,10 },
 	{ 2,9,11 },
@@ -333,7 +333,7 @@ char whitePawnCapturePatterns[64][3] = {
 	{ 0 }
 };
 
-char whitePawnPatterns[64][3] = {
+int whitePawnPatterns[64][3] = {
 	{ 1,8 },
 	{ 1,9 },
 	{ 1,10 },
@@ -400,7 +400,7 @@ char whitePawnPatterns[64][3] = {
 	{ 0 }
 };
 
-char eastRayPatterns[64][8] = {
+int eastRayPatterns[64][8] = {
 	{ 7,1,2,3,4,5,6,7 },
 	{ 6,2,3,4,5,6,7 },
 	{ 5,3,4,5,6,7 },
@@ -467,7 +467,7 @@ char eastRayPatterns[64][8] = {
 	{ 0 }
 };
 
-char northEastRayPatterns[64][8] = {
+int northEastRayPatterns[64][8] = {
 	{ 7,9,18,27,36,45,54,63 },
 	{ 6,10,19,28,37,46,55 },
 	{ 5,11,20,29,38,47 },
@@ -534,7 +534,7 @@ char northEastRayPatterns[64][8] = {
 	{ 0 }
 };
 
-char northRayPatterns[64][8] = {
+int northRayPatterns[64][8] = {
 	{ 7,8,16,24,32,40,48,56 },
 	{ 7,9,17,25,33,41,49,57 },
 	{ 7,10,18,26,34,42,50,58 },
@@ -601,7 +601,7 @@ char northRayPatterns[64][8] = {
 	{ 0 }
 };
 
-char northWestPatterns[64][8] = {
+int northWestPatterns[64][8] = {
 	{ 0 },
 	{ 1,8 },
 	{ 2,9,16 },
@@ -668,7 +668,7 @@ char northWestPatterns[64][8] = {
 	{ 0 }
 };
 
-char southEastRayPatterns[64][8] = {
+int southEastRayPatterns[64][8] = {
 	{ 0 },
 	{ 0 },
 	{ 0 },
@@ -735,7 +735,7 @@ char southEastRayPatterns[64][8] = {
 	{ 0 }
 };
 
-char southRayPatterns[64][8] = {
+int southRayPatterns[64][8] = {
 	{ 0 },
 	{ 0 },
 	{ 0 },
@@ -802,7 +802,7 @@ char southRayPatterns[64][8] = {
 	{ 7,55,47,39,31,23,15,7 }
 };
 
-char southWestPatterns[64][8] = {
+int southWestPatterns[64][8] = {
 	{ 0 },
 	{ 0 },
 	{ 0 },
@@ -869,7 +869,7 @@ char southWestPatterns[64][8] = {
 	{ 7,54,45,36,27,18,9,0 }
 };
 
-char westPatterns[64][8] = {
+int westPatterns[64][8] = {
 	{ 0 },
 	{ 1,0 },
 	{ 2,1,0 },
@@ -936,6 +936,6 @@ char westPatterns[64][8] = {
 	{ 7,62,61,60,59,58,57,56 }
 };
 
-char emptyPattern[1] = { 0 };
-char emptyRayPattern[1][1] = {{0}};
+int emptyPattern[1] = { 0 };
+int emptyRayPattern[1][1] = {{0}};
 
