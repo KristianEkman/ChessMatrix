@@ -146,6 +146,7 @@
     <ClCompile Include="patterns.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />
   </ItemGroup>

@@ -1,1 +1,7 @@
 FEN supprt for tests.
+ Test castling
+
+En passant
+
+Generate Moves
+
