@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "basic_structs.h"
 #include "patterns.h"
@@ -257,11 +258,8 @@ void PerftMove(int fromSquare, int toSquare, int depth, MoveInfo moveInfo) {
 	move.From = fromSquare;
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
-	//dump();
 	MakeMove(move);
-	//	dump();
-	//	printf("%s", "-----\n");
-
+	
 	int  kingSquare = KingSquares[side >> 4];
 	move.Legal = !SquareAttacked(kingSquare);
 	side ^= 24;
@@ -342,11 +340,11 @@ void Perft(int depth) {
 				}
 
 				int castleBlackOffset = side == White ? 0 : 56;
-				if (KingSquares[side >> 4] == castleBlackOffset + 4) {
+				if (i == castleBlackOffset + 4) { //King on origin pos
 					if (CastleKingSideEnabled[side >> 4]) {
-						if (i == 4 + castleBlackOffset &&
-							Squares[5 + castleBlackOffset] == NoPiece &&
-							Squares[6 + castleBlackOffset] == NoPiece)
+						if ((Squares[castleBlackOffset + 4] & 7) == Rook &&
+							Squares[castleBlackOffset + 5] == NoPiece &&
+							Squares[castleBlackOffset + 6] == NoPiece)
 						{
 							if (!SquareAttacked(5 + castleBlackOffset) && !SquareAttacked(6 + castleBlackOffset))
 								PerftMove(i, 6 + castleBlackOffset, depth, CastleShort);
@@ -357,9 +355,10 @@ void Perft(int depth) {
 						//Not Squares attacked file 4, 5 or 6
 					}
 					if (CastleQueenSideEnabled[side >> 4]) {
-						if (i == 4 + castleBlackOffset &&
-							Squares[2 + castleBlackOffset] == NoPiece &&
-							Squares[3 + castleBlackOffset] == NoPiece)
+						if ((Squares[castleBlackOffset - 5] & 7) == Rook &&
+							Squares[castleBlackOffset + 1] == NoPiece &&
+							Squares[castleBlackOffset + 2] == NoPiece &&
+							Squares[castleBlackOffset + 3] == NoPiece)
 						{
 							if (!SquareAttacked(2 + castleBlackOffset) && !SquareAttacked(3 + castleBlackOffset))
 								PerftMove(i, 2 + castleBlackOffset, depth, CastleLong);
