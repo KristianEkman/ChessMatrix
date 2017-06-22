@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
+
 #include "basic_structs.h"
 #include "patterns.h"
 #include "main.h"
+#include "utils.h"
+#include "tests.h"
 
 //Game game;
 enum Color side = White;
@@ -87,25 +92,28 @@ char PieceChar(PieceType pieceType) {
 }
 
 void PrintGame() {
-	printf("---------------------------------\n");
+	printf("  ---------------------------------\n");
 
 	for (int r = 8 - 1; r >= 0; r--)
 	{
+		printf("%d ", r + 1);
 		for (int f = 0; f < 8; f++)
 		{
 			PieceType piece = Squares[r * 8 + f];
 			char c = PieceChar(piece);
 			printf("| %c ", c);
 		}
-		printf("|\n---------------------------------\n");
+		printf("|\n  ---------------------------------\n");
 	}
+	printf("    a   b   c   d   e   f   g   h  \n");
 }
 
 void MakeMove(Move move) {
 
 	Squares[move.To] = Squares[move.From];
 	Squares[move.From] = NoPiece;
-	
+	int castleBlackOffset = side == White ? 0 : 56;
+
 	switch (move.MoveInfo)
 	{
 	case Promotion:
@@ -116,12 +124,15 @@ void MakeMove(Move move) {
 		break;
 	case CastleShort:
 		KingSquares[side >> 4] = move.To;
-		//todo
-
+		Squares[7 + castleBlackOffset] = NoPiece;
+		Squares[5 + castleBlackOffset] = Rook | side;
+		//todo: test
 		break;
-	CastleLong:
+	case CastleLong:
 		KingSquares[side >> 4] = move.To;
-		//todo
+		Squares[0 + castleBlackOffset] = NoPiece;
+		Squares[3 + castleBlackOffset] = Rook | side;
+		//todo: test
 		break;
 	default:
 		break;
@@ -135,39 +146,48 @@ void UnMakeMove(Move move, PieceType capture) {
 
 	Squares[move.From] = Squares[move.To];
 	Squares[move.To] = capture;
-
+	int otherSide = side ^ 24;
+	int castleBlackOffset = otherSide == White ? 0 : 56;
 	switch (move.MoveInfo)
 	{
 	case Promotion:
-		Squares[move.From] = Pawn | (side ^ 24);
+		Squares[move.From] = Pawn | otherSide;
 		break;
 	case KingMove:
-		KingSquares[side >> 4] = move.From;
+		KingSquares[otherSide >> 4] = move.From;
 		break;
 	case CastleShort:
-		KingSquares[side >> 4] = move.From;
-		//todo
+		KingSquares[otherSide >> 4] = move.From;
+		Squares[5 + castleBlackOffset] = NoPiece;
+		Squares[7 + castleBlackOffset] = Rook | otherSide;
+		//todo: test
 		break;
-	CastleLong:
-		KingSquares[side >> 4] = move.From;
-		//todo
+	case CastleLong:
+		KingSquares[otherSide >> 4] = move.From;
+		Squares[3 + castleBlackOffset] = NoPiece;
+		Squares[0 + castleBlackOffset] = Rook | otherSide;
+		//todo: test
 		break;
 	default:
 		break;
 	}
 
 	/*if (move->From->Piece.Type == King)
-		KingSquares[side] = move->From;
+	KingSquares[side] = move->From;
 	move->From->Piece = move->To->Piece;
 	move->To->Piece = move->Capture;
 	if (move->Promotion)
-		move->From->Piece.Type = Pawn;*/
+	move->From->Piece.Type = Pawn;*/
 }
 
 bool SquareAttacked(int square) {
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = Squares[i];
+		PieceType color = pieceType & (Black | White) ^ 24;
+
+		if (color != side)
+			continue;
 		PieceType pt = pieceType & 7;
 		switch (pt)
 		{
@@ -214,7 +234,7 @@ bool SquareAttacked(int square) {
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
 				for (int s = 1; s <= rayLength; s++)
 				{
-					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];					
+					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];
 					if (toSquare == square)
 						return true;
 					if (Squares[toSquare] > NoPiece)
@@ -222,9 +242,11 @@ bool SquareAttacked(int square) {
 				}
 			}
 			break;
-		}}
-		return false;
+		}
+		}
+
 	}
+	return false;
 }
 
 void PerftMove(int fromSquare, int toSquare, int depth, MoveInfo moveInfo) {
@@ -237,10 +259,10 @@ void PerftMove(int fromSquare, int toSquare, int depth, MoveInfo moveInfo) {
 	move.MoveInfo = moveInfo;
 	//dump();
 	MakeMove(move);
-//	dump();
-//	printf("%s", "-----\n");
+	//	dump();
+	//	printf("%s", "-----\n");
 
-	int  kingSquare = KingSquares[side];
+	int  kingSquare = KingSquares[side >> 4];
 	move.Legal = !SquareAttacked(kingSquare);
 	side ^= 24;
 	if (move.Legal)
@@ -319,7 +341,7 @@ void Perft(int depth) {
 					}
 				}
 
-				int castleBlackOffset = side == White ? 0 :56;
+				int castleBlackOffset = side == White ? 0 : 56;
 				if (KingSquares[side >> 4] == castleBlackOffset + 4) {
 					if (CastleKingSideEnabled[side >> 4]) {
 						if (i == 4 + castleBlackOffset &&
@@ -327,7 +349,7 @@ void Perft(int depth) {
 							Squares[6 + castleBlackOffset] == NoPiece)
 						{
 							if (!SquareAttacked(5 + castleBlackOffset) && !SquareAttacked(6 + castleBlackOffset))
-								PerftMove(i, 6 + castleBlackOffset, depth, KingMove | CastleShort);
+								PerftMove(i, 6 + castleBlackOffset, depth, CastleShort);
 						}
 						//King on e file (4) ?
 						//Rook on h file (7)
@@ -340,7 +362,7 @@ void Perft(int depth) {
 							Squares[3 + castleBlackOffset] == NoPiece)
 						{
 							if (!SquareAttacked(2 + castleBlackOffset) && !SquareAttacked(3 + castleBlackOffset))
-								PerftMove(i, 2 + castleBlackOffset, depth, KingMove | CastleLong);
+								PerftMove(i, 2 + castleBlackOffset, depth, CastleLong);
 						}
 						//King on e file (4) ?
 						//Rook on a file (0)
@@ -382,26 +404,161 @@ void Perft(int depth) {
 	}
 }
 
+PieceType parsePieceType(char c) {
+	switch (c)
+	{
+	case 'p': return Pawn | Black;
+	case 'r': return Rook | Black;
+	case 'b': return Bishop | Black;
+	case 'n': return Knight | Black;
+	case 'q': return Queen | Black;
+	case 'k': return King | Black;
+	case 'P': return Pawn | White;
+	case 'R': return Rook | White;
+	case 'B': return Bishop | White;
+	case 'N': return Knight | White;
+	case 'Q': return Queen | White;
+	case 'K': return King | White;
+		
+	default:
+		return NoPiece;
+	}
+}
+
+PieceType parseSide(char c) {
+	switch (c)
+	{
+	case 'w': return White;
+	case 'b': return Black;
+	default:
+		return NoPiece;
+	}
+}
+
+void ReadFen(char * fen) {
+	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+	for (size_t i = 0; i < 64; i++)
+		Squares[i] = NoPiece;
+	int index = 0;
+	int file = 0;
+	int rank = 7;
+	while (fen[index] != ' ' && fen[index])
+	{
+		char c = fen[index];
+		index++;
+		if (isdigit(c)) {
+			int dig = parseChar(c);
+			file += dig;
+		}
+		else if (c == '/') {
+			rank--;
+			file = 0;
+		}
+		else {
+			Squares[rank * 8 + file] = parsePieceType(c);
+			file++;
+		}
+	}
+
+	index++;
+	side = parseSide(fen[index]);
+	index++;
+	index++;
+
+	CastleKingSideEnabled[0] = false;
+	CastleQueenSideEnabled[0] = false;
+	CastleKingSideEnabled[1] = false;
+	CastleQueenSideEnabled[1] = false;
+	while (fen[index] != ' ')
+	{
+		switch (fen[index])
+		{
+		case 'K': CastleKingSideEnabled[0] = true;
+			break;
+		case 'Q': CastleQueenSideEnabled[0] = true;
+			break;
+		case 'k': CastleKingSideEnabled[1] = true;
+			break;
+		case 'q': CastleQueenSideEnabled[1] = true;
+			break;
+		default:
+			break;
+		}
+		index++;
+	}
+
+	//todo enpassant file
+	//todo counters
+}
+
+void WriteFen(char * fenBuffer) {
+	int index = 0;
+	for (int rank = 8 - 1; rank >= 0; rank--)
+	{
+		for (int file = 0; file < 8; file++)
+		{
+			int emptyCount = 0;
+			while (Squares[rank * 8 + file] == NoPiece && file < 8)
+			{
+				emptyCount++;
+				file++;
+			}
+
+			if (emptyCount > 0) {
+				{fenBuffer[index++] = '0' + emptyCount;
+				file--;
+				}
+			}
+			else {
+				fenBuffer[index++] = PieceChar(Squares[rank * 8 + file]);
+			}
+		}
+		if (rank > 0)
+			fenBuffer[index++] = '/';
+	}
+	fenBuffer[index++] = ' ';
+	fenBuffer[index++] = side == White ? 'w' : 'b';
+	fenBuffer[index++] = ' ';
+	if (CastleKingSideEnabled[0]) fenBuffer[index++] = 'K';
+	if (CastleQueenSideEnabled[0]) fenBuffer[index++] = 'Q';
+	if (CastleKingSideEnabled[1]) fenBuffer[index++] = 'k';
+	if (CastleQueenSideEnabled[1]) fenBuffer[index++] = 'q';
+	fenBuffer[index] = '\0';
+}
+
 int main() {
 
 	InitGame();
-	PrintGame();
-
-	for (size_t i = 0; i < 2; i++)
+	char s = 0;
+	while (s != 'q')
 	{
-		perftCount = 0;
-		clock_t start = clock();
-		Perft(5);
-		clock_t stop = clock();
-		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-		printf("%.2fs\n", secs);
-		printf("%dk moves\n", perftCount / 1000);
-		printf("%.2fk moves/s\n", perftCount / (1000 * secs));
-
 		PrintGame();
+		printf("m: make move\n");
+		printf("c: cpu move\n");
+		printf("t: run tests\n");
+		printf("p: perft 5\n");
+		printf("q: quit\n");
+		scanf_s(" %c", &s);
+		system("@cls||clear");
+		switch (s)
+		{
+		case 'm':
+			break;
+		case 'c':
+			break;
+		case 't':
+			runTests();
+			break;
+		case 'p':
+			break;
+		case 'q':
+			break;
+		default:
+			break;
+		}
 	}
-
-
+	//ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		
 	return 0;
 }
 

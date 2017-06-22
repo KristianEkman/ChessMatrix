@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{F770617A-BE98-4BFE-96CF-2FB1FDC1E047}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>HelloWorld</RootNamespace>
+    <RootNamespace>Chess</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>CChess</ProjectName>
   </PropertyGroup>
@@ -144,11 +144,15 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="patterns.c" />
+    <ClCompile Include="tests.c" />
+    <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />
+    <ClInclude Include="tests.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />
