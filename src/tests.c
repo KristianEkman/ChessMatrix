@@ -59,7 +59,7 @@ void PerftTest() {
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 		printf("%.2fs\n", secs);
-		printf("%dk moves\n", perftCount);
+		printf("%d moves\n", perftCount);
 		printf("%.2fk moves/s\n", perftCount / (1000 * secs));
 
 		PrintGame();

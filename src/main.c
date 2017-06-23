@@ -24,8 +24,10 @@ int _movesBufferLength = 0;
 //Assuming a position can never generate more than 100 moves.
 Move _movesBuffer[100];
 
-//For faster undo
 GameState _gameState;
+
+//one square behind another square, subtract by 8 for white(0) and add 8 for black(1).
+int _behind[] = { -8, 8 };
 
 void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	_squares[rank * 8 + file] = type | color;
@@ -110,6 +112,9 @@ void MakeMove(Move move) {
 	_squares[move.From] = NoPiece;
 	int castleBlackOffset = _side == White ? 0 : 56;
 
+	//resetting en passant every move
+	_gameState &= ~15;
+	
 	switch (move.MoveInfo)
 	{
 	case Promotion:
@@ -147,6 +152,12 @@ void MakeMove(Move move) {
 		_squares[0 + castleBlackOffset] = NoPiece;
 		_squares[3 + castleBlackOffset] = Rook | _side;
 		break;
+	case EnPassant:
+		_gameState |= ((move.From & 7) + 1); //Sets the file. a to h file is 1 to 8.
+		break;
+	case EnPassantCapture:
+		_squares[move.To + _behind[_side >> 4]] = NoPiece;
+		break;
 	default:
 		break;
 	}
@@ -176,12 +187,13 @@ void UnMakeMove(Move move, PieceType capture, GameState _prevGameState) {
 		_squares[3 + castleBlackOffset] = NoPiece;
 		_squares[0 + castleBlackOffset] = Rook | otherSide;
 		break;
+	case EnPassantCapture:
+		_squares[move.To + _behind[otherSide >> 4]] = Pawn | _side;
+		break;
 	default:
 		break;
 	}
 	_gameState = _prevGameState;
-	//en passant
-
 }
 
 bool SquareAttacked(int square) {
@@ -291,13 +303,15 @@ void CreateMoves() {
 				{
 					int toSquare = PieceTypeSquarePatterns[pat][i][pp];
 					//tillåt inte två drag när en pjäs står ivägen
+					MoveInfo enp = 0;
 					if (pp == 2) {
 						int overSqr = PieceTypeSquarePatterns[pat][i][1];
 						if (_squares[overSqr] != NoPiece)
 							break;
-						//en passant här
+						enp |= EnPassant;
 					}
 					MoveInfo info = (toSquare < 8 || toSquare > 55) ? Promotion : 0;
+					info |= enp;
 					if (_squares[toSquare] == NoPiece) {
 						CreateMove(i, toSquare, info);
 					}
@@ -312,6 +326,16 @@ void CreateMoves() {
 					//must be a piece of opposite color.
 					if (_squares[toSquare] & (_side ^ 24)) {
 						CreateMove(i, toSquare, info);
+					}
+
+					int enpFile = (_gameState & 15) - 1;
+					if ((_gameState & 15) > -1) {
+						int toFile = toSquare & 7;
+						int toRank = toSquare >> 3;
+						if (toFile == enpFile && toRank == (_side & White ? 5 : 2)) {
+							info |= EnPassantCapture;
+							CreateMove(i, toSquare, info);
+						}
 					}
 				}
 				break;
