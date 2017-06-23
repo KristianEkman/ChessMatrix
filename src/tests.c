@@ -5,7 +5,8 @@
 
 #include "main.h"
 
-void printRed(char * msg) {
+
+void printColor(char * msg, int color) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
 	WORD saved_attributes;
@@ -14,19 +15,35 @@ void printRed(char * msg) {
 	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
 	saved_attributes = consoleInfo.wAttributes;
 
-	SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_INTENSITY);
+	SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
 	printf(msg);
 
 	/* Restore original attributes */
 	SetConsoleTextAttribute(hConsole, saved_attributes);
 }
 
-AssertAreEqual(char * s1, char * s2, char * msg) {
+
+void printRed(char * msg) {
+	printColor(msg, FOREGROUND_RED);
+}
+
+void printGreen(char * msg) {
+	printColor(msg, FOREGROUND_GREEN);
+}
+
+void AssertAreEqual(char * s1, char * s2, char * name, char * msg) {
 	if (strcmp(s1, s2))
 	{
+		printRed(name);
+		printRed(": ");
 		printRed(msg);
 		printf("\n");
+		printRed(s1);
+		printf("\n");
+		printRed(s2);
 	}
+	printGreen(name);
+	printGreen(" succeded\n");
 }
 
 void PerftTest() {
@@ -37,9 +54,8 @@ void PerftTest() {
 
 	for (size_t i = 0; i < 2; i++)
 	{
-		perftCount = 0;
 		clock_t start = clock();
-		Perft(4);
+		int perftCount = Perft(4);
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 		printf("%.2fs\n", secs);
@@ -50,7 +66,7 @@ void PerftTest() {
 	}
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen1, outFen, "Failed PerftTest");
+	AssertAreEqual(fen1, outFen, "Perft", "Start and end fen differ");
 }
 
 void FenTest() {
@@ -58,7 +74,7 @@ void FenTest() {
 	ReadFen(fen1);
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen1, outFen, "Failed FenTest");
+	AssertAreEqual(fen1, outFen, "Fen test", "Start and end fen differ");
 }
 
 void runTests() {

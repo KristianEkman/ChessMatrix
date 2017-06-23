@@ -1,7 +1,7 @@
 #pragma once
 
-void Perft(int depth);
+int Perft(int depth);
 void PrintGame();
-int perftCount;
 void ReadFen(char * fen);
 void WriteFen(char * fen);
+

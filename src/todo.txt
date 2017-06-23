@@ -1,7 +1,24 @@
-FEN supprt for tests.
- Test castling
-
 En passant
 
+multipla promotions
+
+Testfall för antal moves enpassants, castlings och promotions
+
+
+
 Generate Moves
+	för varje ruta men pjäs side
+		för varje mönster skapa move
+			Är det lagligt?
+			Finns poängen i databasen?
+			Om inte räkna ut poängen och spara.
+			
+Sökning Engine
+	drjup d
+		
+
+
+Poäng från position.
+	Ju högre djup som det beräknats från desto bättre. Mer job att se i framtiden.
+	Ju 
 
