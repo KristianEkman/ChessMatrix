@@ -1,9 +1,7 @@
-En passant
 
 multipla promotions
 
 Testfall för antal moves enpassants, castlings och promotions
-
 
 
 Generate Moves

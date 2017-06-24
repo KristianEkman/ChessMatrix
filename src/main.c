@@ -10,11 +10,12 @@
 #include "utils.h"
 #include "tests.h"
 
-//Game game;
-enum Color _side = White;
-int perftCount;
+int _perftCount;
 
-//Keeps track of kings. Since kings square is checked against attack in legal evaluation so often.
+//Game game;
+char _side = WHITE;
+
+//Keeps track of kings. Since kings square is checked against attack in legal evaluation so often this helps performance.
 int _kingSquares[2];
 
 PieceType _squares[64];
@@ -26,6 +27,7 @@ Move _movesBuffer[100];
 
 GameState _gameState;
 
+
 //one square behind another square, subtract by 8 for white(0) and add 8 for black(1).
 int _behind[] = { -8, 8 };
 
@@ -35,55 +37,55 @@ void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 
 void InitGame() {
 	for (int i = 0; i < 64; i++)
-		_squares[i] = NoPiece;
+		_squares[i] = NOPIECE;
 
-	InitPiece(0, 0, Rook, White);
-	InitPiece(1, 0, Knight, White);
-	InitPiece(2, 0, Bishop, White);
-	InitPiece(3, 0, Queen, White);
-	InitPiece(4, 0, King, White);
+	InitPiece(0, 0, ROOK, WHITE);
+	InitPiece(1, 0, KNIGHT, WHITE);
+	InitPiece(2, 0, BISHOP, WHITE);
+	InitPiece(3, 0, QUEEN, WHITE);
+	InitPiece(4, 0, KING, WHITE);
 	_kingSquares[0] = 4;
-	InitPiece(5, 0, Bishop, White);
-	InitPiece(6, 0, Knight, White);
-	InitPiece(7, 0, Rook, White);
+	InitPiece(5, 0, BISHOP, WHITE);
+	InitPiece(6, 0, KNIGHT, WHITE);
+	InitPiece(7, 0, ROOK, WHITE);
 
 	for (int i = 0; i < 8; i++)
-		InitPiece(i, 1, Pawn, White);
+		InitPiece(i, 1, PAWN, WHITE);
 
-	InitPiece(0, 7, Rook, Black);
-	InitPiece(1, 7, Knight, Black);
-	InitPiece(2, 7, Bishop, Black);
-	InitPiece(3, 7, Queen, Black);
-	InitPiece(4, 7, King, Black);
+	InitPiece(0, 7, ROOK, BLACK);
+	InitPiece(1, 7, KNIGHT, BLACK);
+	InitPiece(2, 7, BISHOP, BLACK);
+	InitPiece(3, 7, QUEEN, BLACK);
+	InitPiece(4, 7, KING, BLACK);
 	_kingSquares[1] = 60;
-	InitPiece(5, 7, Bishop, Black);
-	InitPiece(6, 7, Knight, Black);
-	InitPiece(7, 7, Rook, Black);
+	InitPiece(5, 7, BISHOP, BLACK);
+	InitPiece(6, 7, KNIGHT, BLACK);
+	InitPiece(7, 7, ROOK, BLACK);
 
 	for (int i = 0; i < 8; i++)
-		InitPiece(i, 6, Pawn, Black);
-	_side = White;
+		InitPiece(i, 6, PAWN, BLACK);
+	_side = WHITE;
 
 	_gameState = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
 }
 
 char PieceChar(PieceType pieceType) {
-	PieceType color = pieceType & (Black | White);
+	PieceType color = pieceType & (BLACK | WHITE);
 	PieceType pt = pieceType & 7;
 	switch (pt)
 	{
-	case Pawn:
-		return color == White ? 'P' : 'p';
-	case Rook:
-		return color == White ? 'R' : 'r';
-	case Knight:
-		return color == White ? 'N' : 'n';
-	case Bishop:
-		return color == White ? 'B' : 'b';
-	case Queen:
-		return color == White ? 'Q' : 'q';
-	case King:
-		return color == White ? 'K' : 'k';
+	case PAWN:
+		return color == WHITE ? 'P' : 'p';
+	case ROOK:
+		return color == WHITE ? 'R' : 'r';
+	case KNIGHT:
+		return color == WHITE ? 'N' : 'n';
+	case BISHOP:
+		return color == WHITE ? 'B' : 'b';
+	case QUEEN:
+		return color == WHITE ? 'Q' : 'q';
+	case KING:
+		return color == WHITE ? 'K' : 'k';
 	default:
 		return ' ';
 	}
@@ -109,8 +111,8 @@ void PrintGame() {
 void MakeMove(Move move) {
 
 	_squares[move.To] = _squares[move.From];
-	_squares[move.From] = NoPiece;
-	int castleBlackOffset = _side == White ? 0 : 56;
+	_squares[move.From] = NOPIECE;
+	int castleBlackOffset = _side == WHITE ? 0 : 56;
 
 	//resetting en passant every move
 	_gameState &= ~15;
@@ -118,7 +120,7 @@ void MakeMove(Move move) {
 	switch (move.MoveInfo)
 	{
 	case Promotion:
-		_squares[move.To] = Queen | _side;
+		_squares[move.To] = QUEEN | _side;
 		break;
 	case KingMove:
 		_kingSquares[_side >> 4] = move.To;
@@ -144,19 +146,19 @@ void MakeMove(Move move) {
 		break;
 	case CastleShort:
 		_kingSquares[_side >> 4] = move.To;
-		_squares[7 + castleBlackOffset] = NoPiece;
-		_squares[5 + castleBlackOffset] = Rook | _side;
+		_squares[7 + castleBlackOffset] = NOPIECE;
+		_squares[5 + castleBlackOffset] = ROOK | _side;
 		break;
 	case CastleLong:
 		_kingSquares[_side >> 4] = move.To;
-		_squares[0 + castleBlackOffset] = NoPiece;
-		_squares[3 + castleBlackOffset] = Rook | _side;
+		_squares[0 + castleBlackOffset] = NOPIECE;
+		_squares[3 + castleBlackOffset] = ROOK | _side;
 		break;
 	case EnPassant:
 		_gameState |= ((move.From & 7) + 1); //Sets the file. a to h file is 1 to 8.
 		break;
 	case EnPassantCapture:
-		_squares[move.To + _behind[_side >> 4]] = NoPiece;
+		_squares[move.To + _behind[_side >> 4]] = NOPIECE;
 		break;
 	default:
 		break;
@@ -168,27 +170,27 @@ void UnMakeMove(Move move, PieceType capture, GameState _prevGameState) {
 	_squares[move.From] = _squares[move.To];
 	_squares[move.To] = capture;
 	int otherSide = _side ^ 24;
-	int castleBlackOffset = otherSide == White ? 0 : 56;
+	int castleBlackOffset = otherSide == WHITE ? 0 : 56;
 	switch (move.MoveInfo)
 	{
 	case Promotion:
-		_squares[move.From] = Pawn | otherSide;
+		_squares[move.From] = PAWN | otherSide;
 		break;
 	case KingMove:
 		_kingSquares[otherSide >> 4] = move.From;
 		break;
 	case CastleShort:
 		_kingSquares[otherSide >> 4] = move.From;
-		_squares[5 + castleBlackOffset] = NoPiece;
-		_squares[7 + castleBlackOffset] = Rook | otherSide;
+		_squares[5 + castleBlackOffset] = NOPIECE;
+		_squares[7 + castleBlackOffset] = ROOK | otherSide;
 		break;
 	case CastleLong:
 		_kingSquares[otherSide >> 4] = move.From;
-		_squares[3 + castleBlackOffset] = NoPiece;
-		_squares[0 + castleBlackOffset] = Rook | otherSide;
+		_squares[3 + castleBlackOffset] = NOPIECE;
+		_squares[0 + castleBlackOffset] = ROOK | otherSide;
 		break;
 	case EnPassantCapture:
-		_squares[move.To + _behind[otherSide >> 4]] = Pawn | _side;
+		_squares[move.To + _behind[otherSide >> 4]] = PAWN | _side;
 		break;
 	default:
 		break;
@@ -200,16 +202,16 @@ bool SquareAttacked(int square) {
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = _squares[i];
-		PieceType color = pieceType & (Black | White) ^ 24;
+		PieceType color = pieceType & (BLACK | WHITE) ^ 24;
 
 		if (color != _side)
 			continue;
 		PieceType pt = pieceType & 7;
 		switch (pt)
 		{
-		case Pawn:
+		case PAWN:
 		{
-			int captPat = _side & White ? 5 : 3;
+			int captPat = _side & WHITE ? 5 : 3;
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
@@ -219,7 +221,7 @@ bool SquareAttacked(int square) {
 			}
 			break;
 		}
-		case Knight:
+		case KNIGHT:
 		{
 			int length = PieceTypeSquarePatterns[0][i][0];
 			for (int p = 1; p <= length; p++)
@@ -230,7 +232,7 @@ bool SquareAttacked(int square) {
 			}
 			break;
 		}
-		case King:
+		case KING:
 		{
 			int length = PieceTypeSquarePatterns[1][i][0];
 			for (int p = 1; p <= length; p++)
@@ -244,7 +246,7 @@ bool SquareAttacked(int square) {
 		default:
 		{
 			int pat = pt - 1;
-			int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
+			char raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
 			for (int r = 1; r <= raysCount; r++)
 			{
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
@@ -253,7 +255,7 @@ bool SquareAttacked(int square) {
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];
 					if (toSquare == square)
 						return true;
-					if (_squares[toSquare] > NoPiece)
+					if (_squares[toSquare] > NOPIECE)
 						break;
 				}
 			}
@@ -268,7 +270,7 @@ bool SquareAttacked(int square) {
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	PieceType capture = _squares[toSquare];
 	GameState prevGameState = _gameState;
-	if ((capture & 7) == King)
+	if ((capture & 7) == KING)
 		return;
 	Move move;
 	move.From = fromSquare;
@@ -291,13 +293,13 @@ void CreateMoves() {
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = _squares[i];
-		if (pieceType != NoPiece && (pieceType & _side)) {
+		if (pieceType != NOPIECE && (pieceType & _side)) {
 			PieceType pt = pieceType & 7;
 			switch (pt)
 			{
-			case Pawn:
+			case PAWN:
 			{
-				int pat = _side & White ? 2 : 4;
+				int pat = _side & WHITE ? 2 : 4; //todo: optimize
 				int pawnPatLength = PieceTypeSquarePatterns[pat][i][0];
 				for (int pp = 1; pp <= pawnPatLength; pp++)
 				{
@@ -306,18 +308,18 @@ void CreateMoves() {
 					MoveInfo enp = 0;
 					if (pp == 2) {
 						int overSqr = PieceTypeSquarePatterns[pat][i][1];
-						if (_squares[overSqr] != NoPiece)
+						if (_squares[overSqr] != NOPIECE)
 							break;
 						enp |= EnPassant;
 					}
 					MoveInfo info = (toSquare < 8 || toSquare > 55) ? Promotion : 0;
 					info |= enp;
-					if (_squares[toSquare] == NoPiece) {
+					if (_squares[toSquare] == NOPIECE) {
 						CreateMove(i, toSquare, info);
 					}
 				}
 
-				int captPat = _side & White ? 3 : 5;
+				int captPat = _side & WHITE ? 3 : 5; //todo: optimize
 				int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 				for (int pc = 1; pc <= pawnCapPatLength; pc++)
 				{
@@ -332,7 +334,7 @@ void CreateMoves() {
 					if ((_gameState & 15) > -1) {
 						int toFile = toSquare & 7;
 						int toRank = toSquare >> 3;
-						if (toFile == enpFile && toRank == (_side & White ? 5 : 2)) {
+						if (toFile == enpFile && toRank == (_side & WHITE ? 5 : 2)) { //todo: optimize
 							info |= EnPassantCapture;
 							CreateMove(i, toSquare, info);
 						}
@@ -340,7 +342,7 @@ void CreateMoves() {
 				}
 				break;
 			}
-			case Knight:
+			case KNIGHT:
 			{
 				int length = PieceTypeSquarePatterns[0][i][0];
 				for (int p = 1; p <= length; p++)
@@ -352,7 +354,7 @@ void CreateMoves() {
 				}
 				break;
 			}
-			case King:
+			case KING:
 			{
 				int length = PieceTypeSquarePatterns[1][i][0];
 				for (int p = 1; p <= length; p++)
@@ -363,22 +365,22 @@ void CreateMoves() {
 					}
 				}
 
-				int castleBlackOffset = _side == White ? 0 : 56;
+				int castleBlackOffset = _side == WHITE ? 0 : 56;
 				if (i == castleBlackOffset + 4) { //King on origin pos
-					if ((_side & White && _gameState & WhiteCanCastleShort) || (_side & Black && _gameState & BlackCanCastleShort)) {
-						if ((_squares[castleBlackOffset + 4] & 7) == Rook &&
-							_squares[castleBlackOffset + 5] == NoPiece &&
-							_squares[castleBlackOffset + 6] == NoPiece)
+					if ((_side & WHITE && _gameState & WhiteCanCastleShort) || (_side & BLACK && _gameState & BlackCanCastleShort)) {
+						if ((_squares[castleBlackOffset + 4] & 7) == ROOK &&
+							_squares[castleBlackOffset + 5] == NOPIECE &&
+							_squares[castleBlackOffset + 6] == NOPIECE)
 						{
 							if (!SquareAttacked(5 + castleBlackOffset) && !SquareAttacked(6 + castleBlackOffset))
 								CreateMove(i, 6 + castleBlackOffset, CastleShort);
 						}
 					}
-					if ((_side & White && _gameState & WhiteCanCastleLong) || (_side & Black && _gameState & BlackCanCastleLong)) {
-						if ((_squares[castleBlackOffset - 5] & 7) == Rook &&
-							_squares[castleBlackOffset + 1] == NoPiece &&
-							_squares[castleBlackOffset + 2] == NoPiece &&
-							_squares[castleBlackOffset + 3] == NoPiece)
+					if ((_side & WHITE && _gameState & WhiteCanCastleLong) || (_side & BLACK && _gameState & BlackCanCastleLong)) {
+						if ((_squares[castleBlackOffset - 5] & 7) == ROOK &&
+							_squares[castleBlackOffset + 1] == NOPIECE &&
+							_squares[castleBlackOffset + 2] == NOPIECE &&
+							_squares[castleBlackOffset + 3] == NOPIECE)
 						{
 							if (!SquareAttacked(2 + castleBlackOffset) && !SquareAttacked(3 + castleBlackOffset))
 								CreateMove(i, 2 + castleBlackOffset, CastleLong);
@@ -398,9 +400,9 @@ void CreateMoves() {
 					{
 						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];
 						PieceType toPiece = _squares[toSquare];
-						MoveInfo moveInfo = pt == Rook ? RookMove : PlainMove;
+						MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 
-						if (toPiece != NoPiece) {
+						if (toPiece != NOPIECE) {
 							if (!(toPiece & _side)) {
 								CreateMove(i, toSquare, moveInfo);
 							}
@@ -423,9 +425,13 @@ void CreateMoves() {
 
 int Perft(depth) {
 	if (depth == 0)
+	{
 		return 1;
+	}
 	int nodeCount = 0;
 	CreateMoves();
+	if (_movesBufferLength == 0)
+		return nodeCount;
 	//unsigned int size = sizeof(Move);
 	Move * localMoves = malloc(_movesBufferLength * 8);
 	memcpy(localMoves, _movesBuffer, _movesBufferLength * 8);
@@ -435,7 +441,7 @@ int Perft(depth) {
 		Move move = localMoves[i];
 		PieceType capture = _squares[move.To];
 		GameState prevGameState = _gameState;
-		MakeMove(localMoves[i]);
+		MakeMove(move);
 		_side ^= 24;
 		nodeCount += Perft(depth - 1);
 		UnMakeMove(move, capture, prevGameState);
@@ -448,38 +454,38 @@ int Perft(depth) {
 PieceType parsePieceType(char c) {
 	switch (c)
 	{
-	case 'p': return Pawn | Black;
-	case 'r': return Rook | Black;
-	case 'b': return Bishop | Black;
-	case 'n': return Knight | Black;
-	case 'q': return Queen | Black;
-	case 'k': return King | Black;
-	case 'P': return Pawn | White;
-	case 'R': return Rook | White;
-	case 'B': return Bishop | White;
-	case 'N': return Knight | White;
-	case 'Q': return Queen | White;
-	case 'K': return King | White;
+	case 'p': return PAWN | BLACK;
+	case 'r': return ROOK | BLACK;
+	case 'b': return BISHOP | BLACK;
+	case 'n': return KNIGHT | BLACK;
+	case 'q': return QUEEN | BLACK;
+	case 'k': return KING | BLACK;
+	case 'P': return PAWN | WHITE;
+	case 'R': return ROOK | WHITE;
+	case 'B': return BISHOP | WHITE;
+	case 'N': return KNIGHT | WHITE;
+	case 'Q': return QUEEN | WHITE;
+	case 'K': return KING | WHITE;
 		
 	default:
-		return NoPiece;
+		return NOPIECE;
 	}
 }
 
 PieceType parseSide(char c) {
 	switch (c)
 	{
-	case 'w': return White;
-	case 'b': return Black;
+	case 'w': return WHITE;
+	case 'b': return BLACK;
 	default:
-		return NoPiece;
+		return NOPIECE;
 	}
 }
 
 void ReadFen(char * fen) {
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
-		_squares[i] = NoPiece;
+		_squares[i] = NOPIECE;
 	int index = 0;
 	int file = 0;
 	int rank = 7;
@@ -535,7 +541,7 @@ void WriteFen(char * fenBuffer) {
 		for (int file = 0; file < 8; file++)
 		{
 			int emptyCount = 0;
-			while (_squares[rank * 8 + file] == NoPiece && file < 8)
+			while (_squares[rank * 8 + file] == NOPIECE && file < 8)
 			{
 				emptyCount++;
 				file++;
@@ -554,12 +560,17 @@ void WriteFen(char * fenBuffer) {
 			fenBuffer[index++] = '/';
 	}
 	fenBuffer[index++] = ' ';
-	fenBuffer[index++] = _side == White ? 'w' : 'b';
+	fenBuffer[index++] = _side == WHITE ? 'w' : 'b';
 	fenBuffer[index++] = ' ';
 	if (_gameState & WhiteCanCastleShort) fenBuffer[index++] = 'K';
 	if (_gameState & WhiteCanCastleLong) fenBuffer[index++] = 'Q';
 	if (_gameState & BlackCanCastleShort) fenBuffer[index++] = 'k';
 	if (_gameState & BlackCanCastleLong) fenBuffer[index++] = 'q';
+	fenBuffer[index++] = ' ';
+	char enPassantFile = (_gameState & 15) + '0';
+	if (enPassantFile == '0')
+		enPassantFile = '-';
+	fenBuffer[index++] = enPassantFile;
 	fenBuffer[index] = '\0';
 }
 
@@ -593,7 +604,6 @@ int main() {
 			break;
 		}
 	}
-	//ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 		
 	return 0;
 }

@@ -1,15 +1,15 @@
 #pragma once
 
 typedef enum  {
-	NoPiece,
-	Bishop,
-	Rook,
-	Queen,
-	Pawn,
-	Knight,
-	King,
-	White = 8, //01000 >> 4 ger 0
-	Black = 16 //10000 >> 4 ger 1
+	NOPIECE,
+	BISHOP,
+	ROOK,
+	QUEEN,
+	PAWN,
+	KNIGHT,
+	KING,
+	WHITE = 8, //01000 >> 4 ger 0
+	BLACK = 16 //10000 >> 4 ger 1
 } PieceType;
 
 
@@ -41,10 +41,10 @@ typedef struct {
 } Move;
 
 typedef enum  {
-	EnPassantfile, //mask 1111
+	EnPassantfile, //mask 1111 (15)
 	WhiteCanCastleShort = 16,
 	WhiteCanCastleLong = 32,
 	BlackCanCastleShort = 64,
 	BlackCanCastleLong = 128,
-	//sum 8 bits
+	//sum 8 bits (nice)
 } GameState;
