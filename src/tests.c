@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 #include "main.h"
+#include "basic_structs.h"
 
 
 void printColor(char * msg, int color) {
@@ -31,9 +32,26 @@ void printGreen(char * msg) {
 	printColor(msg, FOREGROUND_GREEN);
 }
 
+
+void Assert(int goodResult, char * name, char * msg) {
+	if (goodResult == 0)
+	{
+		printRed(name);
+		printRed(": ");
+		printRed(msg);
+		printf("\n");
+	}
+	else {
+		printf("\n");
+		printGreen(name);
+		printGreen(" succeded\n");
+	}
+}
+
 void AssertAreEqual(char * s1, char * s2, char * name, char * msg) {
 	if (strcmp(s1, s2))
 	{
+		printf("\n");
 		printRed(name);
 		printRed(": ");
 		printRed(msg);
@@ -115,11 +133,51 @@ void PerftTestStart() {
 
 }
 
+void printMoves(int count, Move * moves) {
+	for (int i = 0; i < count; i++)
+	{
+		char sMove[6];
+		sMove[0] = (moves[i].From & 7) + 'a';
+		sMove[1] = (moves[i].From >> 3) + '1';
+		sMove[2] = '-';
+		sMove[3] = (moves[i].To & 7) + 'a';
+		sMove[4] = (moves[i].To >> 3) + '1';
+		sMove[5] = '\0';
+
+		printf("%s, ", sMove);
+	}
+}
+
+bool ArrayContains(Move * moves, int count, Move move) {
+	for (int i = 0; i < count; i++)
+	{
+		if (moves[i].From == move.From && moves[i].To == move.To && moves[i].MoveInfo == move.MoveInfo) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void ValidMovesPromotionCaptureAndCastling() {
+	char * fen = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+	Move moves[100];
+	ReadFen(fen);
+	int count = ValidMoves(moves);
+	printMoves(count, moves);
+	AssertAreEqualInts(41, count, __func__, "Moves count missmatch");
+	Move expectedMove;
+	expectedMove.From = 4;
+	expectedMove.To = 6;
+	expectedMove.MoveInfo = CastleShort;
+	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+}
+
 void runTests() {
 	PerfTestComplexPosition();
 	PerftTestStart();
 	FenTest();
-	printf("Press enter to continue.");
+	ValidMovesPromotionCaptureAndCastling();
+	printf("\nPress enter to continue.");
 	getch();
 	system("@cls||clear");
 }

@@ -1,4 +1,4 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
@@ -9,6 +9,8 @@
 #include "main.h"
 #include "utils.h"
 #include "tests.h"
+
+const int MOVESIZE = sizeof(Move);
 
 int _perftCount;
 
@@ -304,7 +306,7 @@ void CreateMoves() {
 				for (int pp = 1; pp <= pawnPatLength; pp++)
 				{
 					int toSquare = PieceTypeSquarePatterns[pat][i][pp];
-					//tillåt inte två drag när en pjäs står ivägen
+					//tillÃ¥t inte tvÃ¥ drag nÃ¤r en pjÃ¤s stÃ¥r ivÃ¤gen
 					MoveInfo enp = 0;
 					if (pp == 2) {
 						int overSqr = PieceTypeSquarePatterns[pat][i][1];
@@ -368,7 +370,7 @@ void CreateMoves() {
 				int castleBlackOffset = _side == WHITE ? 0 : 56;
 				if (i == castleBlackOffset + 4) { //King on origin pos
 					if ((_side & WHITE && _gameState & WhiteCanCastleShort) || (_side & BLACK && _gameState & BlackCanCastleShort)) {
-						if ((_squares[castleBlackOffset + 4] & 7) == ROOK &&
+						if ((_squares[castleBlackOffset + 7] & 7) == ROOK &&
 							_squares[castleBlackOffset + 5] == NOPIECE &&
 							_squares[castleBlackOffset + 6] == NOPIECE)
 						{
@@ -433,8 +435,8 @@ int Perft(depth) {
 	if (_movesBufferLength == 0)
 		return nodeCount;
 	//unsigned int size = sizeof(Move);
-	Move * localMoves = malloc(_movesBufferLength * 8);
-	memcpy(localMoves, _movesBuffer, _movesBufferLength * 8);
+	Move * localMoves = malloc(_movesBufferLength * MOVESIZE);
+	memcpy(localMoves, _movesBuffer, _movesBufferLength * MOVESIZE);
 	int count = _movesBufferLength;
 	for (int i = 0; i < count; i++)
 	{
@@ -574,8 +576,16 @@ void WriteFen(char * fenBuffer) {
 	fenBuffer[index] = '\0';
 }
 
-int main() {
+int ValidMoves(Move * moves) {
+	CreateMoves();
+	if (_movesBufferLength == 0)
+		return 0;
 
+	memcpy(moves, _movesBuffer, _movesBufferLength * MOVESIZE);
+	return _movesBufferLength;
+}
+
+int main() {
 	InitGame();
 	char s = 0;
 	while (s != 'q')
