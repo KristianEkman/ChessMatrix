@@ -24,20 +24,23 @@ typedef enum {
 
 typedef enum {
 	PlainMove = 0,
-	Promotion = 1,
-	KingMove = 2,
-	RookMove = 4,
-	CastleShort = 8,
-	CastleLong = 16,
-	EnPassant = 32,
-	EnPassantCapture = 64
+	PromotionQueen = 1,
+	PromotionRook = 2,
+	PromotionBishop = 3,
+	PromotionKnight = 4,
+	KingMove = 5,
+	RookMove = 6,
+	CastleShort = 7,
+	CastleLong = 8,
+	EnPassant = 9,
+	EnPassantCapture = 10
 }MoveInfo;
 
 typedef struct {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
-	MoveInfo MoveInfo; //5bit, mask 
-	//could shrink to 17bits, move could easily fit into 4byte int
+	MoveInfo MoveInfo; //4 bits, 13-16
+	//could shrink to short 16bits, move could easily fit into 4byte int
 } Move;
 
 typedef enum  {
@@ -48,3 +51,12 @@ typedef enum  {
 	BlackCanCastleLong = 128,
 	//sum 8 bits (nice)
 } GameState;
+
+typedef struct {
+	int Captures;
+	int Enpassants;
+	int Castles;
+	int Promotions;
+	int Checks;
+	int CheckMates;
+} PerftResult;

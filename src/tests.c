@@ -2,6 +2,8 @@
 #include <time.h>
 #include <string.h>
 #include <Windows.h>
+#include <conio.h>
+
 
 #include "main.h"
 #include "basic_structs.h"
@@ -30,6 +32,18 @@ void printRed(char * msg) {
 
 void printGreen(char * msg) {
 	printColor(msg, FOREGROUND_GREEN);
+}
+
+Move parseMove(char * sMove, MoveInfo info) {
+	int fromFile = sMove[0] - 'a';
+	int fromRank = sMove[1] - '1';
+	int toFile = sMove[3] - 'a';
+	int toRank = sMove[4] - '1';
+	Move move;
+	move.From = fromRank * 8 + fromFile;
+	move.To = toRank * 8 + toFile;
+	move.MoveInfo = info;
+	return move;
 }
 
 
@@ -89,7 +103,13 @@ void AssertAreEqualInts(int expected, int actual, char * name, char * msg) {
 	}
 }
 
-int PerftTest(char * fen1, int depth) {
+void printPerftResults() {
+	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n", 
+    _perftResult.Captures, _perftResult.Castles, _perftResult.CheckMates, _perftResult.Checks, 
+		_perftResult.Enpassants, _perftResult.Promotions);
+}
+
+int PerftTest(char * fen1, int depth, char * name) {
 
 	ReadFen(fen1);
 	//PrintGame();
@@ -97,7 +117,14 @@ int PerftTest(char * fen1, int depth) {
 	for (size_t i = 0; i < 2; i++)
 	{
 		clock_t start = clock();
+		_perftResult.Captures = 0;
+		_perftResult.Castles = 0;
+		_perftResult.CheckMates = 0;
+		_perftResult.Checks = 0;
+		_perftResult.Enpassants = 0;
+		_perftResult.Promotions = 0;
 		perftCount = Perft(depth);
+		printPerftResults();
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 		printf("%.2fs\n", secs);
@@ -108,7 +135,7 @@ int PerftTest(char * fen1, int depth) {
 	}
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen1, outFen, "Perft", "Start and end fen differ");
+	AssertAreEqual(fen1, outFen, name, "Start and end FEN differ");
 	return perftCount;
 }
 
@@ -120,15 +147,14 @@ void FenTest() {
 	AssertAreEqual(fen1, outFen, "Fen test", "Start and end fen differ");
 }
 
-
 void PerfTestComplexPosition() {
 	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
-	PerftTest(fen1, 4);
+	PerftTest(fen1, 4, __func__);
 }
 
 void PerftTestStart() {
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	int count = PerftTest(startFen, 5);
+	int count = PerftTest(startFen, 5, __func__);
 	AssertAreEqualInts(4865609, count, "PerftTestStart", "Perft Count missmatch");
 
 }
@@ -164,11 +190,46 @@ void ValidMovesPromotionCaptureAndCastling() {
 	ReadFen(fen);
 	int count = ValidMoves(moves);
 	printMoves(count, moves);
-	AssertAreEqualInts(41, count, __func__, "Moves count missmatch");
+	AssertAreEqualInts(44, count, __func__, "Moves count missmatch");
 	Move expectedMove;
 	expectedMove.From = 4;
 	expectedMove.To = 6;
 	expectedMove.MoveInfo = CastleShort;
+	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+}
+
+void LongCastling() {
+	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+	Move moves[100];
+	ReadFen(fen);
+	int count = ValidMoves(moves);
+	AssertAreEqualInts(48, count, __func__, "Moves count missmatch");
+	Move expectedMove;
+	expectedMove.From = 4;
+	expectedMove.To = 2;
+	expectedMove.MoveInfo = CastleLong;
+	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+}
+
+void EnPassantFromFenTest() {
+	char * fen = "8/5k2/8/3Pp3/8/8/8/4K3 w - e6 0 3";
+	ReadFen(fen);
+	Move moves[100];
+	int count = ValidMoves(moves);
+	//todo check that the move exists
+	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
+	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+}
+
+void EnPassantAfterMove() {
+	char * fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
+	ReadFen(fen);
+	Move move = parseMove("e7-e5", PlainMove);
+	Assert(MakePlayerMove(move), __func__, "Move was not valid");
+
+	Move moves[100];
+	int count = ValidMoves(moves);
+	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
 	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
 }
 
@@ -177,8 +238,12 @@ void runTests() {
 	PerftTestStart();
 	FenTest();
 	ValidMovesPromotionCaptureAndCastling();
-	printf("\nPress enter to continue.");
-	getch();
+	LongCastling();
+	EnPassantFromFenTest();
+	EnPassantAfterMove();
+
+	printf("\nPress any key to continue.");
+	_getch();
 	system("@cls||clear");
 }
 

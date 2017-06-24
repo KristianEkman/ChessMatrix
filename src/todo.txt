@@ -1,18 +1,20 @@
+Teststa och hitta buggar så att fler counts funkar.
+	Position 2, depth 1 osv.
 
-multipla promotions
+Prestanda
+	Move : short
 
-Testfall för antal moves enpassants, castlings och promotions
+Eval: 
+	Material,
+	Pawn position
+	Knight, Kings position, Generera med chess ai.
+	Opening Score
 
 
-Generate Moves
-	för varje ruta men pjäs side
-		för varje mönster skapa move
-			Är det lagligt?
-			Finns poängen i databasen?
-			Om inte räkna ut poängen och spara.
-			
 Sökning Engine
 	drjup d
+
+Transposition table.
 		
 
 
