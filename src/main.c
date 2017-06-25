@@ -118,7 +118,6 @@ void MakeMove(Move move) {
 
 	_squares[move.To] = _squares[move.From];
 	_squares[move.From] = NOPIECE;
-	int castleBlackOffset = _side == WHITE ? 0 : 56;
 
 	//resetting en passant every move
 	_gameState &= ~15;
@@ -165,13 +164,13 @@ void MakeMove(Move move) {
 		break;
 	case CastleShort:
 		_kingSquares[_side >> 4] = move.To;
-		_squares[7 + castleBlackOffset] = NOPIECE;
-		_squares[5 + castleBlackOffset] = ROOK | _side;
+		_squares[7 + CastlesOffset[_side >> 4]] = NOPIECE;
+		_squares[5 + CastlesOffset[_side >> 4]] = ROOK | _side;
 		break;
 	case CastleLong:
 		_kingSquares[_side >> 4] = move.To;
-		_squares[0 + castleBlackOffset] = NOPIECE;
-		_squares[3 + castleBlackOffset] = ROOK | _side;
+		_squares[0 + CastlesOffset[_side >> 4]] = NOPIECE;
+		_squares[3 + CastlesOffset[_side >> 4]] = ROOK | _side;
 		break;
 	case EnPassant:
 		_gameState |= ((move.From & 7) + 1); //Sets the file. a to h file is 1 to 8.
@@ -193,7 +192,6 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
 	_squares[move.From] = _squares[move.To];
 	_squares[move.To] = capture;
 	int otherSide = _side ^ 24;
-	int castleBlackOffset = otherSide == WHITE ? 0 : 56;
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
@@ -217,13 +215,13 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
 		break;
 	case CastleShort:
 		_kingSquares[otherSide >> 4] = move.From;
-		_squares[5 + castleBlackOffset] = NOPIECE;
-		_squares[7 + castleBlackOffset] = ROOK | otherSide;
+		_squares[5 + CastlesOffset[otherSide >> 4]] = NOPIECE;
+		_squares[7 + CastlesOffset[otherSide >> 4]] = ROOK | otherSide;
 		break;
 	case CastleLong:
 		_kingSquares[otherSide >> 4] = move.From;
-		_squares[3 + castleBlackOffset] = NOPIECE;
-		_squares[0 + castleBlackOffset] = ROOK | otherSide;
+		_squares[3 + CastlesOffset[otherSide >> 4]] = NOPIECE;
+		_squares[0 + CastlesOffset[otherSide >> 4]] = ROOK | otherSide;
 		break;
 	case EnPassantCapture:
 		_squares[move.To + _behind[otherSide >> 4]] = PAWN | _side;
@@ -249,7 +247,7 @@ bool SquareAttacked(int square, char attackedBy) {
 		{
 		case PAWN:
 		{
-			int captPat = attackedBy & WHITE ? 3 : 5;
+			int captPat = PawnCapturePattern[attackedBy >> 4];
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
@@ -333,7 +331,7 @@ void CreateMoves() {
 			{
 			case PAWN:
 			{
-				int pat = _side & WHITE ? 2 : 4; //todo: optimize
+				int pat = PawnPattern[_side >> 4];
 				int pawnPatLength = PieceTypeSquarePatterns[pat][i][0];
 				for (int pp = 1; pp <= pawnPatLength; pp++)
 				{
@@ -354,7 +352,7 @@ void CreateMoves() {
 					}					
 				}
 
-				int captPat = _side & WHITE ? 3 : 5; //todo: optimize
+				int captPat = PawnCapturePattern[_side >> 4];
 				int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 				for (int pc = 1; pc <= pawnCapPatLength; pc++)
 				{
@@ -377,9 +375,8 @@ void CreateMoves() {
 						if (enpFile > -1) {
 							int toFile = toSquare & 7;
 							int toRank = toSquare >> 3;
-							if (toFile == enpFile && toRank == (_side & WHITE ? 5 : 2)) { //todo: optimize
+							if (toFile == enpFile && toRank == EnpassantRankPattern[_side >> 4])
 								CreateMove(i, toSquare, EnPassantCapture);
-							}
 						}
 					}
 				}
@@ -408,7 +405,7 @@ void CreateMoves() {
 					}
 				}
 
-				int castleBlackOffset = _side == WHITE ? 0 : 56;
+				int castleBlackOffset = CastlesOffset[_side >> 4];
 				if (i == castleBlackOffset + 4) { //King on origin pos
 					if ((_side & WHITE && _gameState & WhiteCanCastleShort) || (_side & BLACK && _gameState & BlackCanCastleShort)) {
 						if ((_squares[castleBlackOffset + 7] & 7) == ROOK &&
@@ -611,9 +608,7 @@ void ReadFen(char * fen) {
 	if (enpFile >= 0 && enpFile <= 8)
 		_gameState |= (enpFile + 1);
 
-	//todo counters
-
-	
+	//todo: counters	
 	InitMaterial();
 }
 

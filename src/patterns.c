@@ -603,3 +603,10 @@ short MaterialMatrix[2][12] = {
 	/*white*/{0, -300,-500,-900,-100,-300,  0, -200, -400, -800, 0, -200},
 	/*black*/{0,  300, 500, 900, 100, 300,  0,  200,  400,  800, 0,  200}
 };
+
+//white, black
+short PawnCapturePattern[2] = { 3, 5 };
+short PawnPattern[2] = { 2, 4 };
+short EnpassantRankPattern[2] = { 5, 2 };
+short CastlesOffset[2] = { 0, 56 };
+

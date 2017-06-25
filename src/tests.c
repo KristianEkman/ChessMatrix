@@ -198,7 +198,6 @@ void EnPassantFromFenTest() {
 	ReadFen(fen);
 	Move moves[100];
 	int count = ValidMoves(moves);
-	//todo check that the move exists
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 	int startGameScore = GameMaterial;
@@ -249,8 +248,6 @@ void MaterialPromotion() {
 	Assert(MakePlayerMove("b7-b8"), "Move was not valid");
 	AssertAreEqualInts(-400, GameMaterial, "Game Material missmatch");
 }
-
-//todo: test more material, sides and promotion, undo promotion not finished.
 
 #pragma endregion
 
