@@ -7,7 +7,7 @@
 
 #include "main.h"
 #include "basic_structs.h"
-
+int _failedAsserts = 0;
 
 void printColor(char * msg, int color) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -33,46 +33,33 @@ void printGreen(char * msg) {
 	printColor(msg, FOREGROUND_GREEN);
 }
 
-void Assert(int goodResult, char * name, char * msg) {
+void Assert(int goodResult, char * msg) {
 	if (goodResult == 0)
 	{
-		printRed(name);
-		printRed(": ");
+		printf("\n");
 		printRed(msg);
 		printf("\n");
-	}
-	else {
-		printf("\n");
-		printGreen(name);
-		printGreen(" succeded\n");
+		_failedAsserts++;
 	}
 }
 
-void AssertAreEqual(char * s1, char * s2, char * name, char * msg) {
+void AssertAreEqual(char * s1, char * s2, char * msg) {
 	if (strcmp(s1, s2))
 	{
 		printf("\n");
-		printRed(name);
-		printRed(": ");
 		printRed(msg);
 		printf("\n");
 		printRed(s1);
 		printf("\n");
 		printRed(s2);
-	}
-	else {
-		printf("\n");
-		printGreen(name);
-		printGreen(" succeded\n");
+		_failedAsserts++;
 	}
 }
 
-void AssertAreEqualInts(int expected, int actual, char * name, char * msg) {
+void AssertAreEqualInts(int expected, int actual, char * msg) {
 	if (expected != actual)
 	{
 		printf("\n");
-		printRed(name);
-		printRed(": ");
 		printRed(msg);
 		printf("\n");
 		char str[24];
@@ -81,11 +68,7 @@ void AssertAreEqualInts(int expected, int actual, char * name, char * msg) {
 		printf("\n");
 		snprintf(str, 24, "Actual   %d", actual);
 		printRed(str);
-	}
-	else {
-		printf("\n");
-		printGreen(name);
-		printGreen(" succeded\n");
+		_failedAsserts++;
 	}
 }
 
@@ -110,7 +93,7 @@ void printMoves(int count, Move * moves) {
 	}
 }
 
-int PerftTest(char * fen, int depth, char * name) {
+int PerftTest(char * fen, int depth) {
 
 	ReadFen(fen);
 	//PrintGame();
@@ -124,19 +107,21 @@ int PerftTest(char * fen, int depth, char * name) {
 		_perftResult.Checks = 0;
 		_perftResult.Enpassants = 0;
 		_perftResult.Promotions = 0;
+		short startScore = GameMaterial;
 		perftCount = Perft(depth);
+		AssertAreEqualInts(startScore, GameMaterial, "Game material missmatch");
 		//printPerftResults();
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 		//printf("%.2fs\n", secs);
 		//printf("%d moves\n", perftCount);
-		printf("%.2fk moves/s\n", perftCount / (1000 * secs));
+		printf("\n%.2fk moves/s\n", perftCount / (1000 * secs));
 
 		//PrintGame();
 	}
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen, outFen, name, "Start and end FEN differ");
+	AssertAreEqual(fen, outFen, "Start and end FEN differ");
 	return perftCount;
 }
 
@@ -145,24 +130,26 @@ void FenTest() {
 	ReadFen(fen1);
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen1, outFen, "Fen test", "Start and end fen differ");
+	AssertAreEqual(fen1, outFen, "Start and end fen differ");
 }
 
 #pragma region Tests
 
 void PerfTestPosition2() {
-	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
-	PerftTest(fen1, 4, __func__);
-	AssertAreEqualInts(757163, _perftResult.Captures, __func__, "Captures missmatch");
-	AssertAreEqualInts(128013, _perftResult.Castles, __func__, "Castles missmatch");
-	AssertAreEqualInts(1929, _perftResult.Enpassants, __func__, "En passants missmatch");
-	AssertAreEqualInts(15172, _perftResult.Promotions, __func__, "Promotion missmatch");
+	printf("\n");printf(__func__);
+	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+	PerftTest(fen, 4);
+	AssertAreEqualInts(757163, _perftResult.Captures, "Captures missmatch");
+	AssertAreEqualInts(128013, _perftResult.Castles,  "Castles missmatch");
+	AssertAreEqualInts(1929, _perftResult.Enpassants,  "En passants missmatch");
+	AssertAreEqualInts(15172, _perftResult.Promotions, "Promotion missmatch");
 }
 
 void PerftTestStart() {
+	printf("\n");printf(__func__);
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	int count = PerftTest(startFen, 5, __func__);
-	AssertAreEqualInts(4865609, count, "PerftTestStart", "Perft Count missmatch");
+	int count = PerftTest(startFen, 5);
+	AssertAreEqualInts(4865609, count, "Perft Count missmatch");
 
 }
 
@@ -177,57 +164,98 @@ bool MovesContains(Move * moves, int count, Move move) {
 }
 
 void ValidMovesPromotionCaptureAndCastling() {
+	printf("\n");printf(__func__);
 	char * fen = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 	Move moves[100];
 	ReadFen(fen);
 	int count = ValidMoves(moves);
 	//printMoves(count, moves);
-	AssertAreEqualInts(44, count, __func__, "Moves count missmatch");
+	AssertAreEqualInts(44, count, "Moves count missmatch");
 	Move expectedMove;
 	expectedMove.From = 4;
 	expectedMove.To = 6;
 	expectedMove.MoveInfo = CastleShort;
-	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
 void LongCastling() {
+	printf("\n");printf(__func__);
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	Move moves[100];
 	ReadFen(fen);
 	int count = ValidMoves(moves);
-	AssertAreEqualInts(48, count, __func__, "Moves count missmatch");
+	AssertAreEqualInts(48, count, "Moves count missmatch");
 	Move expectedMove;
 	expectedMove.From = 4;
 	expectedMove.To = 2;
 	expectedMove.MoveInfo = CastleLong;
-	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
 void EnPassantFromFenTest() {
+	printf("\n");printf(__func__);
 	char * fen = "8/5k2/8/3Pp3/8/8/8/4K3 w - e6 0 3";
 	ReadFen(fen);
 	Move moves[100];
 	int count = ValidMoves(moves);
 	//todo check that the move exists
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
-	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
+	int startGameScore = GameMaterial;
+	Assert(MakePlayerMove("d5-e6"), "Invalid move");
+	AssertAreEqualInts(startGameScore - 100, GameMaterial, "Material should decrease by 100");
 }
 
 void EnPassantAfterMove() {
+	printf("\n");printf(__func__);
 	char * fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
 	ReadFen(fen);
-	Move move = parseMove("e7-e5", PlainMove);
-	Assert(MakePlayerMove(move), __func__, "Move was not valid");
+	Assert(MakePlayerMove("e7-e5"), "Move was not valid");
 
 	Move moves[100];
 	int count = ValidMoves(moves);
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
-	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
+
+void MaterialBlackPawnCapture() {
+	printf("\n");printf(__func__);
+	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
+	AssertAreEqualInts(-400, GameMaterial, "Start Material missmatch");
+	Assert(MakePlayerMove("d4-e5"), "Move was not valid");
+	AssertAreEqualInts(-500, GameMaterial, "Game Material missmatch");
+}
+
+void MaterialWhiteQueenCapture() {
+	printf("\n");printf(__func__);
+	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
+	AssertAreEqualInts(0, GameMaterial, "Start Material missmatch");
+	Assert(MakePlayerMove("d5-e4"), "Move was not valid");
+	AssertAreEqualInts(900, GameMaterial, "Game Material missmatch");
+}
+
+void MaterialCaptureAndPromotion() {
+	printf("\n");printf(__func__);
+	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+	AssertAreEqualInts(400, GameMaterial, "Start Material missmatch");
+	Assert(MakePlayerMove("b7-c8"), "Move was not valid");
+	AssertAreEqualInts(-900, GameMaterial, "Game Material missmatch");	
+}
+
+void MaterialPromotion() {
+	printf("\n");printf(__func__);
+	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+	AssertAreEqualInts(400, GameMaterial, "Start Material missmatch");
+	Assert(MakePlayerMove("b7-b8"), "Move was not valid");
+	AssertAreEqualInts(-400, GameMaterial, "Game Material missmatch");
+}
+
+//todo: test more material, sides and promotion, undo promotion not finished.
 
 #pragma endregion
 
 void runTests() {
+	_failedAsserts = 0;
 	PerftTestStart();
 	PerfTestPosition2();
 	FenTest();
@@ -235,6 +263,12 @@ void runTests() {
 	LongCastling();
 	EnPassantFromFenTest();
 	EnPassantAfterMove();
+	MaterialBlackPawnCapture();
+	MaterialWhiteQueenCapture();
+	MaterialPromotion();
+	MaterialCaptureAndPromotion();
+	if (_failedAsserts == 0)
+		printGreen("\nSuccess! Tests are good!");
 
 	printf("\nPress any key to continue.");
 	_getch();

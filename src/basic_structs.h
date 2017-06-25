@@ -33,7 +33,10 @@ typedef enum {
 	CastleShort = 7,
 	CastleLong = 8,
 	EnPassant = 9,
-	EnPassantCapture = 10
+	EnPassantCapture = 10,
+	//Bishop or Knight
+	//Queen
+	//
 }MoveInfo;
 
 typedef struct {
@@ -43,13 +46,15 @@ typedef struct {
 	//could shrink to short 16bits, move could easily fit into 4byte int
 } Move;
 
+
 typedef enum  {
 	EnPassantfile, //mask 1111 (15)
 	WhiteCanCastleShort = 16,
 	WhiteCanCastleLong = 32,
 	BlackCanCastleShort = 64,
 	BlackCanCastleLong = 128,
-	//sum 8 bits (nice)
+	//score bit 9 - 24 mask 0xFFFF00,
+	SCORE = 0xFFFF00
 } GameState;
 
 typedef struct {

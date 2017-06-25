@@ -1,12 +1,17 @@
 
 Flytta byt sida till make/unmake.
-Refaktorisera bort if-fsatser
+Refaktorisera bort if-satser
 Move : short
+införa game struct för trådningen
+
 
 Eval: 
-	Material,
+	Material, en passant
+	Mate, Stalemate
 	Pawn position
-	Knight, Kings position, Generera med chess ai.
+	Knight, Kings position, Generera matriser med chess ai.
+	Open rook file --performance ??
+	Bad bishops -- performance ??
 	Opening Score
 	End score
 

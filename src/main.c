@@ -28,7 +28,7 @@ int _movesBufferLength = 0;
 Move _movesBuffer[100];
 
 GameState _gameState;
-
+short GameMaterial = 0;
 
 //one square behind another square, subtract by 8 for white(0) and add 8 for black(1).
 int _behind[] = { -8, 8 };
@@ -69,6 +69,7 @@ void InitGame() {
 	_side = WHITE;
 
 	_gameState = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
+	GameMaterial = 0;
 }
 
 char PieceChar(PieceType pieceType) {
@@ -111,6 +112,9 @@ void PrintGame() {
 }
 
 void MakeMove(Move move) {
+	
+	PieceType pt = _squares[move.To];
+	GameMaterial -= MaterialMatrix[pt >> 4][pt & 7];
 
 	_squares[move.To] = _squares[move.From];
 	_squares[move.From] = NOPIECE;
@@ -123,15 +127,19 @@ void MakeMove(Move move) {
 	{
 	case PromotionQueen:
 		_squares[move.To] = QUEEN | _side;
+		GameMaterial += MaterialMatrix[_side >> 4][QUEEN + 6];
 		break;
 	case PromotionRook:
 		_squares[move.To] = ROOK | _side;
+		GameMaterial += MaterialMatrix[_side >> 4][ROOK + 6];
 		break;
 	case PromotionBishop:
 		_squares[move.To] = BISHOP | _side;
+		GameMaterial += MaterialMatrix[_side >> 4][BISHOP + 6];
 		break;
 	case PromotionKnight:
 		_squares[move.To] = KNIGHT | _side;
+		GameMaterial += MaterialMatrix[_side >> 4][KNIGHT + 6];
 		break;
 	case KingMove:
 		_kingSquares[_side >> 4] = move.To;
@@ -170,6 +178,7 @@ void MakeMove(Move move) {
 		break;
 	case EnPassantCapture:
 		_squares[move.To + _behind[_side >> 4]] = NOPIECE;
+		GameMaterial += MaterialMatrix[_side >> 4][PAWN];
 		break;
 	default:
 		break;
@@ -178,17 +187,29 @@ void MakeMove(Move move) {
 }
 
 void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
+
+	GameMaterial += MaterialMatrix[capture >> 4][capture & 7];
+
 	_squares[move.From] = _squares[move.To];
 	_squares[move.To] = capture;
 	int otherSide = _side ^ 24;
 	int castleBlackOffset = otherSide == WHITE ? 0 : 56;
 	switch (move.MoveInfo)
 	{
-
 	case PromotionQueen:
+		GameMaterial -= MaterialMatrix[otherSide >> 4][QUEEN + 6];
+		_squares[move.From] = PAWN | otherSide;
+		break;
 	case PromotionRook:
+		GameMaterial -= MaterialMatrix[otherSide >> 4][ROOK + 6];
+		_squares[move.From] = PAWN | otherSide;
+		break;
 	case PromotionBishop:
+		GameMaterial -= MaterialMatrix[otherSide >> 4][BISHOP + 6];
+		_squares[move.From] = PAWN | otherSide;
+		break;
 	case PromotionKnight:
+		GameMaterial -= MaterialMatrix[otherSide >> 4][KNIGHT + 6];
 		_squares[move.From] = PAWN | otherSide;
 		break;
 	case KingMove:
@@ -206,6 +227,7 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
 		break;
 	case EnPassantCapture:
 		_squares[move.To + _behind[otherSide >> 4]] = PAWN | _side;
+		GameMaterial -= MaterialMatrix[otherSide >> 4][PAWN];
 		break;
 	default:
 		break;
@@ -530,6 +552,16 @@ Move parseMove(char * sMove, MoveInfo info) {
 	return move;
 }
 
+void InitMaterial() {
+	GameMaterial = 0;
+	for (int i = 0; i < 64; i++)
+	{
+		PieceType pt = _squares[i] & 7;
+		int colorSide = (_squares[i] & (WHITE | BLACK)) >> 4;
+		GameMaterial += MaterialMatrix[colorSide][pt];
+	}
+}
+
 void ReadFen(char * fen) {
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
@@ -581,8 +613,11 @@ void ReadFen(char * fen) {
 	char enpFile = fen[index] - 'a';
 	if (enpFile >= 0 && enpFile <= 8)
 		_gameState |= (enpFile + 1);
-	//todo enpassant file
+
 	//todo counters
+
+	
+	InitMaterial();
 }
 
 void WriteFen(char * fenBuffer) {
@@ -634,7 +669,8 @@ int ValidMoves(Move * moves) {
 	return _movesBufferLength;
 }
 
-int MakePlayerMove(Move move) {
+int MakePlayerMove(char * sMove) {
+	Move move = parseMove(sMove, 0);
 	Move moves[100];
 	int length = ValidMoves(moves);
 	for (int i = 0; i < length; i++)
