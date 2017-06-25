@@ -1,8 +1,6 @@
 
-Flytta byt sida till make/unmake.
 Refaktorisera bort if-satser
-Move : short
-införa game struct för trådningen
+Införa game struct för trådningen
 
 
 Eval: 

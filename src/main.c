@@ -183,7 +183,7 @@ void MakeMove(Move move) {
 	default:
 		break;
 	}
-	//en passant
+	_side ^= 24;
 }
 
 void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
@@ -233,22 +233,23 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState) {
 		break;
 	}
 	_gameState = prevGameState;
+	_side ^= 24;
 }
 
-bool SquareAttacked(int square) {
+bool SquareAttacked(int square, char attackedBy) {
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = _squares[i];
-		PieceType color = pieceType & (BLACK | WHITE) ^ 24;
+		PieceType color = pieceType & (BLACK | WHITE);
 
-		if (color != _side)
+		if (color != attackedBy)
 			continue;
 		PieceType pt = pieceType & 7;
 		switch (pt)
 		{
 		case PAWN:
 		{
-			int captPat = _side & WHITE ? 5 : 3;
+			int captPat = attackedBy & WHITE ? 3 : 5;
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
@@ -313,14 +314,12 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	move.MoveInfo = moveInfo;
 	MakeMove(move);
 	
-	int  kingSquare = _kingSquares[_side >> 4];
-	bool legal = !SquareAttacked(kingSquare);
-	_side ^= 24;
+	int  kingSquare = _kingSquares[(_side ^ 24) >> 4];
+	bool legal = !SquareAttacked(kingSquare, _side);
 	if (legal)
 		_movesBuffer[_movesBufferLength++] = move;
 
 	UnMakeMove(move, capture, prevGameState);
-	_side ^= 24;
 }
 
 void CreateMoves() {
@@ -416,7 +415,7 @@ void CreateMoves() {
 							_squares[castleBlackOffset + 5] == NOPIECE &&
 							_squares[castleBlackOffset + 6] == NOPIECE)
 						{
-							if (!SquareAttacked(5 + castleBlackOffset) && !SquareAttacked(4 + castleBlackOffset))
+							if (!SquareAttacked(5 + castleBlackOffset, _side ^ 24) && !SquareAttacked(4 + castleBlackOffset, _side ^ 24))
 								CreateMove(i, 6 + castleBlackOffset, CastleShort);
 						}
 					}
@@ -426,7 +425,7 @@ void CreateMoves() {
 							_squares[castleBlackOffset + 2] == NOPIECE &&
 							_squares[castleBlackOffset + 3] == NOPIECE)
 						{
-							if (!SquareAttacked(4 + castleBlackOffset) && !SquareAttacked(3 + castleBlackOffset))
+							if (!SquareAttacked(4 + castleBlackOffset, _side ^ 24) && !SquareAttacked(3 + castleBlackOffset, _side ^ 24))
 								CreateMove(i, 2 + castleBlackOffset, CastleLong);
 						}
 					}
@@ -500,10 +499,8 @@ int Perft(depth) {
 
 		GameState prevGameState = _gameState;
 		MakeMove(move);
-		_side ^= 24;
 		nodeCount += Perft(depth - 1);
 		UnMakeMove(move, capture, prevGameState);
-		_side ^= 24;
 	}
 	free(localMoves);
 	return nodeCount;
@@ -677,7 +674,6 @@ int MakePlayerMove(char * sMove) {
 	{
 		if (moves[i].From == move.From && moves[i].To == move.To) {
 			MakeMove(moves[i]);
-			_side ^= 24;
 			return 1;
 		}
 	}
