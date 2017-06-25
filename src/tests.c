@@ -25,7 +25,6 @@ void printColor(char * msg, int color) {
 	SetConsoleTextAttribute(hConsole, saved_attributes);
 }
 
-
 void printRed(char * msg) {
 	printColor(msg, FOREGROUND_RED);
 }
@@ -33,19 +32,6 @@ void printRed(char * msg) {
 void printGreen(char * msg) {
 	printColor(msg, FOREGROUND_GREEN);
 }
-
-Move parseMove(char * sMove, MoveInfo info) {
-	int fromFile = sMove[0] - 'a';
-	int fromRank = sMove[1] - '1';
-	int toFile = sMove[3] - 'a';
-	int toRank = sMove[4] - '1';
-	Move move;
-	move.From = fromRank * 8 + fromFile;
-	move.To = toRank * 8 + toFile;
-	move.MoveInfo = info;
-	return move;
-}
-
 
 void Assert(int goodResult, char * name, char * msg) {
 	if (goodResult == 0)
@@ -104,14 +90,29 @@ void AssertAreEqualInts(int expected, int actual, char * name, char * msg) {
 }
 
 void printPerftResults() {
-	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n", 
-    _perftResult.Captures, _perftResult.Castles, _perftResult.CheckMates, _perftResult.Checks, 
+	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n",
+		_perftResult.Captures, _perftResult.Castles, _perftResult.CheckMates, _perftResult.Checks,
 		_perftResult.Enpassants, _perftResult.Promotions);
 }
 
-int PerftTest(char * fen1, int depth, char * name) {
+void printMoves(int count, Move * moves) {
+	for (int i = 0; i < count; i++)
+	{
+		char sMove[6];
+		sMove[0] = (moves[i].From & 7) + 'a';
+		sMove[1] = (moves[i].From >> 3) + '1';
+		sMove[2] = '-';
+		sMove[3] = (moves[i].To & 7) + 'a';
+		sMove[4] = (moves[i].To >> 3) + '1';
+		sMove[5] = '\0';
 
-	ReadFen(fen1);
+		printf("%s, ", sMove);
+	}
+}
+
+int PerftTest(char * fen, int depth, char * name) {
+
+	ReadFen(fen);
 	//PrintGame();
 	int perftCount = 0;
 	for (size_t i = 0; i < 2; i++)
@@ -135,7 +136,7 @@ int PerftTest(char * fen1, int depth, char * name) {
 	}
 	char outFen[100];
 	WriteFen(outFen);
-	AssertAreEqual(fen1, outFen, name, "Start and end FEN differ");
+	AssertAreEqual(fen, outFen, name, "Start and end FEN differ");
 	return perftCount;
 }
 
@@ -146,6 +147,8 @@ void FenTest() {
 	WriteFen(outFen);
 	AssertAreEqual(fen1, outFen, "Fen test", "Start and end fen differ");
 }
+
+#pragma region Tests
 
 void PerfTestPosition2() {
 	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
@@ -163,22 +166,7 @@ void PerftTestStart() {
 
 }
 
-void printMoves(int count, Move * moves) {
-	for (int i = 0; i < count; i++)
-	{
-		char sMove[6];
-		sMove[0] = (moves[i].From & 7) + 'a';
-		sMove[1] = (moves[i].From >> 3) + '1';
-		sMove[2] = '-';
-		sMove[3] = (moves[i].To & 7) + 'a';
-		sMove[4] = (moves[i].To >> 3) + '1';
-		sMove[5] = '\0';
-
-		printf("%s, ", sMove);
-	}
-}
-
-bool ArrayContains(Move * moves, int count, Move move) {
+bool MovesContains(Move * moves, int count, Move move) {
 	for (int i = 0; i < count; i++)
 	{
 		if (moves[i].From == move.From && moves[i].To == move.To && moves[i].MoveInfo == move.MoveInfo) {
@@ -199,7 +187,7 @@ void ValidMovesPromotionCaptureAndCastling() {
 	expectedMove.From = 4;
 	expectedMove.To = 6;
 	expectedMove.MoveInfo = CastleShort;
-	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
 }
 
 void LongCastling() {
@@ -212,7 +200,7 @@ void LongCastling() {
 	expectedMove.From = 4;
 	expectedMove.To = 2;
 	expectedMove.MoveInfo = CastleLong;
-	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
 }
 
 void EnPassantFromFenTest() {
@@ -222,7 +210,7 @@ void EnPassantFromFenTest() {
 	int count = ValidMoves(moves);
 	//todo check that the move exists
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
-	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
 }
 
 void EnPassantAfterMove() {
@@ -234,8 +222,10 @@ void EnPassantAfterMove() {
 	Move moves[100];
 	int count = ValidMoves(moves);
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
-	Assert(ArrayContains(moves, count, expectedMove), __func__, "The move was not found");
+	Assert(MovesContains(moves, count, expectedMove), __func__, "The move was not found");
 }
+
+#pragma endregion
 
 void runTests() {
 	PerftTestStart();

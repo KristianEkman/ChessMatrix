@@ -8,4 +8,5 @@ void WriteFen(char * fen);
 int ValidMoves(Move * moves);
 int MakePlayerMove(Move move);
 PerftResult _perftResult;
+Move parseMove(char * sMove, MoveInfo info);
 

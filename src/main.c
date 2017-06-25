@@ -518,6 +518,18 @@ PieceType parseSide(char c) {
 	}
 }
 
+Move parseMove(char * sMove, MoveInfo info) {
+	int fromFile = sMove[0] - 'a';
+	int fromRank = sMove[1] - '1';
+	int toFile = sMove[3] - 'a';
+	int toRank = sMove[4] - '1';
+	Move move;
+	move.From = fromRank * 8 + fromFile;
+	move.To = toRank * 8 + toFile;
+	move.MoveInfo = info;
+	return move;
+}
+
 void ReadFen(char * fen) {
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
