@@ -1,20 +1,27 @@
-Teststa och hitta buggar så att fler counts funkar.
-	Position 2, depth 1 osv.
 
-Prestanda
-	Move : short
+Flytta byt sida till make/unmake.
+Refaktorisera bort if-fsatser
+Move : short
 
 Eval: 
 	Material,
 	Pawn position
 	Knight, Kings position, Generera med chess ai.
 	Opening Score
-
+	End score
 
 Sökning Engine
-	drjup d
+	djup d
 
 Transposition table.
+	Allokera array i början, 1gb
+
+ttentry
+	long hash
+	score
+	legal
+
+
 		
 
 

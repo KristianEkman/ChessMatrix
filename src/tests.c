@@ -124,11 +124,11 @@ int PerftTest(char * fen1, int depth, char * name) {
 		_perftResult.Enpassants = 0;
 		_perftResult.Promotions = 0;
 		perftCount = Perft(depth);
-		printPerftResults();
+		//printPerftResults();
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-		printf("%.2fs\n", secs);
-		printf("%d moves\n", perftCount);
+		//printf("%.2fs\n", secs);
+		//printf("%d moves\n", perftCount);
 		printf("%.2fk moves/s\n", perftCount / (1000 * secs));
 
 		//PrintGame();
@@ -147,9 +147,13 @@ void FenTest() {
 	AssertAreEqual(fen1, outFen, "Fen test", "Start and end fen differ");
 }
 
-void PerfTestComplexPosition() {
+void PerfTestPosition2() {
 	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	PerftTest(fen1, 4, __func__);
+	AssertAreEqualInts(757163, _perftResult.Captures, __func__, "Captures missmatch");
+	AssertAreEqualInts(128013, _perftResult.Castles, __func__, "Castles missmatch");
+	AssertAreEqualInts(1929, _perftResult.Enpassants, __func__, "En passants missmatch");
+	AssertAreEqualInts(15172, _perftResult.Promotions, __func__, "Promotion missmatch");
 }
 
 void PerftTestStart() {
@@ -189,7 +193,7 @@ void ValidMovesPromotionCaptureAndCastling() {
 	Move moves[100];
 	ReadFen(fen);
 	int count = ValidMoves(moves);
-	printMoves(count, moves);
+	//printMoves(count, moves);
 	AssertAreEqualInts(44, count, __func__, "Moves count missmatch");
 	Move expectedMove;
 	expectedMove.From = 4;
@@ -234,8 +238,8 @@ void EnPassantAfterMove() {
 }
 
 void runTests() {
-	PerfTestComplexPosition();
 	PerftTestStart();
+	PerfTestPosition2();
 	FenTest();
 	ValidMovesPromotionCaptureAndCastling();
 	LongCastling();
