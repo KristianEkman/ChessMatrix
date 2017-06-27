@@ -12,11 +12,6 @@ typedef enum  {
 	BLACK = 16 //10000 >> 4 ger 1
 } PieceType;
 
-
-typedef struct {
-	PieceType Squares[64];
-} Game;
-
 typedef enum {
 	false,
 	true
@@ -42,8 +37,8 @@ typedef enum {
 typedef struct {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
-	MoveInfo MoveInfo; //4 bits, 13-16
-	//could shrink to short 16bits, move could easily fit into 4byte int
+	char MoveInfo; //4 bits, 13-16
+	//could shrink to short 16bits
 } Move;
 
 
@@ -52,9 +47,7 @@ typedef enum  {
 	WhiteCanCastleShort = 16,
 	WhiteCanCastleLong = 32,
 	BlackCanCastleShort = 64,
-	BlackCanCastleLong = 128,
-	//score bit 9 - 24 mask 0xFFFF00,
-	SCORE = 0xFFFF00
+	BlackCanCastleLong = 128
 } GameState;
 
 typedef struct {
@@ -65,3 +58,16 @@ typedef struct {
 	int Checks;
 	int CheckMates;
 } PerftResult;
+
+typedef struct {
+	char Side;
+	int MovesBufferLength;
+	Move MovesBuffer[100];
+	int KingSquares[2];
+	GameState State;
+	short Material;
+	PieceType Squares[64];
+	PerftResult PerftResult;
+	int _perftCount;
+
+} Game;

@@ -7,6 +7,5 @@ void ReadFen(char * fen);
 void WriteFen(char * fen);
 int ValidMoves(Move * moves);
 int MakePlayerMove(char * sMove);
-PerftResult _perftResult;
 Move parseMove(char * sMove, MoveInfo info);
-short GameMaterial;
+Game game;

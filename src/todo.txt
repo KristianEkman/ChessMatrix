@@ -1,4 +1,3 @@
-Införa game struct för trådningen
 
 Eval: 
 	Material, en passant

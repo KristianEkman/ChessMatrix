@@ -74,8 +74,8 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 
 void printPerftResults() {
 	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n",
-		_perftResult.Captures, _perftResult.Castles, _perftResult.CheckMates, _perftResult.Checks,
-		_perftResult.Enpassants, _perftResult.Promotions);
+		game.PerftResult.Captures, game.PerftResult.Castles, game.PerftResult.CheckMates, game.PerftResult.Checks,
+		game.PerftResult.Enpassants, game.PerftResult.Promotions);
 }
 
 void printMoves(int count, Move * moves) {
@@ -101,15 +101,15 @@ int PerftTest(char * fen, int depth) {
 	for (size_t i = 0; i < 2; i++)
 	{
 		clock_t start = clock();
-		_perftResult.Captures = 0;
-		_perftResult.Castles = 0;
-		_perftResult.CheckMates = 0;
-		_perftResult.Checks = 0;
-		_perftResult.Enpassants = 0;
-		_perftResult.Promotions = 0;
-		short startScore = GameMaterial;
+		game.PerftResult.Captures = 0;
+		game.PerftResult.Castles = 0;
+		game.PerftResult.CheckMates = 0;
+		game.PerftResult.Checks = 0;
+		game.PerftResult.Enpassants = 0;
+		game.PerftResult.Promotions = 0;
+		short startScore = game.Material;
 		perftCount = Perft(depth);
-		AssertAreEqualInts(startScore, GameMaterial, "Game material missmatch");
+		AssertAreEqualInts(startScore, game.Material, "Game material missmatch");
 		//printPerftResults();
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -139,10 +139,10 @@ void PerfTestPosition2() {
 	printf("\n");printf(__func__);
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	PerftTest(fen, 4);
-	AssertAreEqualInts(757163, _perftResult.Captures, "Captures missmatch");
-	AssertAreEqualInts(128013, _perftResult.Castles,  "Castles missmatch");
-	AssertAreEqualInts(1929, _perftResult.Enpassants,  "En passants missmatch");
-	AssertAreEqualInts(15172, _perftResult.Promotions, "Promotion missmatch");
+	AssertAreEqualInts(757163, game.PerftResult.Captures, "Captures missmatch");
+	AssertAreEqualInts(128013, game.PerftResult.Castles,  "Castles missmatch");
+	AssertAreEqualInts(1929, game.PerftResult.Enpassants,  "En passants missmatch");
+	AssertAreEqualInts(15172, game.PerftResult.Promotions, "Promotion missmatch");
 }
 
 void PerftTestStart() {
@@ -200,9 +200,9 @@ void EnPassantFromFenTest() {
 	int count = ValidMoves(moves);
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
-	int startGameScore = GameMaterial;
+	int startGameScore = game.Material;
 	Assert(MakePlayerMove("d5-e6"), "Invalid move");
-	AssertAreEqualInts(startGameScore - 100, GameMaterial, "Material should decrease by 100");
+	AssertAreEqualInts(startGameScore - 100, game.Material, "Material should decrease by 100");
 }
 
 void EnPassantAfterMove() {
@@ -220,33 +220,33 @@ void EnPassantAfterMove() {
 void MaterialBlackPawnCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
-	AssertAreEqualInts(-400, GameMaterial, "Start Material missmatch");
+	AssertAreEqualInts(-400, game.Material, "Start Material missmatch");
 	Assert(MakePlayerMove("d4-e5"), "Move was not valid");
-	AssertAreEqualInts(-500, GameMaterial, "Game Material missmatch");
+	AssertAreEqualInts(-500, game.Material, "Game Material missmatch");
 }
 
 void MaterialWhiteQueenCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
-	AssertAreEqualInts(0, GameMaterial, "Start Material missmatch");
+	AssertAreEqualInts(0, game.Material, "Start Material missmatch");
 	Assert(MakePlayerMove("d5-e4"), "Move was not valid");
-	AssertAreEqualInts(900, GameMaterial, "Game Material missmatch");
+	AssertAreEqualInts(900, game.Material, "Game Material missmatch");
 }
 
 void MaterialCaptureAndPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, GameMaterial, "Start Material missmatch");
+	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
 	Assert(MakePlayerMove("b7-c8"), "Move was not valid");
-	AssertAreEqualInts(-900, GameMaterial, "Game Material missmatch");	
+	AssertAreEqualInts(-900, game.Material, "Game Material missmatch");
 }
 
 void MaterialPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, GameMaterial, "Start Material missmatch");
+	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
 	Assert(MakePlayerMove("b7-b8"), "Move was not valid");
-	AssertAreEqualInts(-400, GameMaterial, "Game Material missmatch");
+	AssertAreEqualInts(-400, game.Material, "Game Material missmatch");
 }
 
 #pragma endregion
