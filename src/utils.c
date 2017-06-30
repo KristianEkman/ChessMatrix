@@ -15,3 +15,13 @@ int parseChar(char c) {
 		return 0;
 	}
 }
+
+unsigned long long llrand() {
+	unsigned long long r = 0;
+
+	for (int i = 0; i < 4; ++i) {
+		r = (r << 15) | (rand() & 0x7FFF);
+	}
+
+	return r & 0xFFFFFFFFFFFFFFFFULL;
+}

@@ -1,11 +1,15 @@
+Paralell metod för move generation
 
 Eval: 
-	Material, en passant
+	Material
 	Mate, Stalemate
-	Pawn position
-	Knight, Kings position, Generera matriser med chess ai.
+
+	Position för all pieces
+
+
 	Open rook file --performance ??
 	Bad bishops -- performance ??
+	
 	Opening Score
 	End score
 

@@ -43,6 +43,16 @@ void Assert(int goodResult, char * msg) {
 	}
 }
 
+void AssertNot(int result, char * msg) {
+	if (result != 0)
+	{
+		printf("\n");
+		printRed(msg);
+		printf("\n");
+		_failedAsserts++;
+	}
+}
+
 void AssertAreEqual(char * s1, char * s2, char * msg) {
 	if (strcmp(s1, s2))
 	{
@@ -201,7 +211,7 @@ void EnPassantFromFenTest() {
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 	int startGameScore = game.Material;
-	Assert(MakePlayerMove("d5-e6"), "Invalid move");
+	AssertNot(MakePlayerMove("d5-e6").Invalid, "Invalid move");
 	AssertAreEqualInts(startGameScore - 100, game.Material, "Material should decrease by 100");
 }
 
@@ -209,7 +219,7 @@ void EnPassantAfterMove() {
 	printf("\n");printf(__func__);
 	char * fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
 	ReadFen(fen);
-	Assert(MakePlayerMove("e7-e5"), "Move was not valid");
+	AssertNot(MakePlayerMove("e7-e5").Invalid, "Move was not valid");
 
 	Move moves[100];
 	int count = ValidMoves(moves);
@@ -221,7 +231,7 @@ void MaterialBlackPawnCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
 	AssertAreEqualInts(-400, game.Material, "Start Material missmatch");
-	Assert(MakePlayerMove("d4-e5"), "Move was not valid");
+	AssertNot(MakePlayerMove("d4-e5").Invalid, "Move was not valid");
 	AssertAreEqualInts(-500, game.Material, "Game Material missmatch");
 }
 
@@ -229,7 +239,7 @@ void MaterialWhiteQueenCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
 	AssertAreEqualInts(0, game.Material, "Start Material missmatch");
-	Assert(MakePlayerMove("d5-e4"), "Move was not valid");
+	AssertNot(MakePlayerMove("d5-e4").Invalid, "Move was not valid");
 	AssertAreEqualInts(900, game.Material, "Game Material missmatch");
 }
 
@@ -237,16 +247,33 @@ void MaterialCaptureAndPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
-	Assert(MakePlayerMove("b7-c8"), "Move was not valid");
+	PlayerMove pm = MakePlayerMove("b7-c8");
+	AssertNot(pm.Invalid, "Move was not valid");
 	AssertAreEqualInts(-900, game.Material, "Game Material missmatch");
+	UnMakePlayerMove(pm);
+	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
 }
 
 void MaterialPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
-	Assert(MakePlayerMove("b7-b8"), "Move was not valid");
+	AssertNot(MakePlayerMove("b7-b8").Invalid, "Move was not valid");
 	AssertAreEqualInts(-400, game.Material, "Game Material missmatch");
+}
+
+
+void EnPassantMaterial() {
+	printf("\n");printf(__func__);
+	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
+	AssertAreEqualInts(0, game.Material, "Start Material missmatch");
+	AssertNot(MakePlayerMove("d7-d5").Invalid, "Move was not valid");
+	PlayerMove nextMove = MakePlayerMove("e5-d6");
+	AssertNot(nextMove.Invalid, "Move was not valid");
+	AssertAreEqualInts(-100, game.Material, "Game Material missmatch");
+	UnMakePlayerMove(nextMove);
+	AssertAreEqualInts(0, game.Material, "Game Material missmatch");
+
 }
 
 #pragma endregion
@@ -264,6 +291,7 @@ void runTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
+	EnPassantMaterial();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");
 

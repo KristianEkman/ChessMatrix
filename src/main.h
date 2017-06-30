@@ -6,6 +6,8 @@ void PrintGame();
 void ReadFen(char * fen);
 void WriteFen(char * fen);
 int ValidMoves(Move * moves);
-int MakePlayerMove(char * sMove);
+PlayerMove MakePlayerMove(char * sMove);
+void UnMakePlayerMove(PlayerMove move);
+
 Move parseMove(char * sMove, MoveInfo info);
 Game game;

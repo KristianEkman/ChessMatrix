@@ -662,18 +662,28 @@ int ValidMoves(Move * moves) {
 	return game.MovesBufferLength;
 }
 
-int MakePlayerMove(char * sMove) {
+PlayerMove MakePlayerMove(char * sMove) {
 	Move move = parseMove(sMove, 0);
 	Move moves[100];
 	int length = ValidMoves(moves);
+	PlayerMove plaerMove;
 	for (int i = 0; i < length; i++)
 	{
 		if (moves[i].From == move.From && moves[i].To == move.To) {
+			plaerMove.Move = moves[i];
+			plaerMove.Capture = game.Squares[move.To];
+			plaerMove.PreviousGameState = game.State;
+			plaerMove.Invalid = false;
 			MakeMove(moves[i]);
-			return 1;
+			return plaerMove;
 		}
 	}
-	return 0;
+	plaerMove.Invalid = true;
+	return plaerMove;
+}
+
+void UnMakePlayerMove(PlayerMove playerMove) {
+	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.Capture);
 }
 
 int main() {

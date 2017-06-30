@@ -60,6 +60,13 @@ typedef struct {
 } PerftResult;
 
 typedef struct {
+	Move Move;
+	PieceType Capture;
+	GameState PreviousGameState;
+	bool Invalid;
+} PlayerMove;
+
+typedef struct {
 	char Side;
 	int MovesBufferLength;
 	Move MovesBuffer[100];

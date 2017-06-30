@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HashTable.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="patterns.c" />
     <ClCompile Include="tests.c" />
