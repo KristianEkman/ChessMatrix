@@ -2,21 +2,26 @@
 #include <time.h>
 #include <stdlib.h>
 
-//Array of 16 777 215 pointers to stort of smaller list of entries (67MB)
-//4Byte entry och 8 entries för varje pointer på varje ger max storlek 537 MB 
-//och ca 134 miljoner entries. ca 26 s sökning.
-int *index[0xFFFFFF];
+#include "basic_structs.h"
 
-addEntry(long long hash, short score) {
-	int entry = score;
-	int i = (int)(hash & 0xFFFFFF);
-	int  * p = index[i];
-	if (p == NULL) {
-		index[i] = malloc(8 * sizeof(int));
-		*index[i] = score;
-	}
-	//else find next empty and write it
+//Very Simple hash table
+//Array of 268435455, 2^28 or FFFFFFF entries usining 28 first bits of hash as hopefully uniqueue index.
+//One entry is 4byte so hashtable is fixed at exactly 1 gb.
+HashTableEntry index[0xFFFFFFF];
+
+void addEntry(unsigned long long hash, short score) {
+	int i = (int)(hash & 0xFFFFFFF);
+	index[i] = score;
+	return;
+	//todo
+	//else check if score is from a deeper iteration, then replace it
 }
+
+short getScoreFromHash(unsigned long long hash) {
+	int i = (int)(hash & 0xFFFFFFF);
+	return index[i];
+}
+
 //
 //int main() {
 //	clock_t start = clock();

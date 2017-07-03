@@ -4,9 +4,11 @@
 #include <Windows.h>
 #include <conio.h>
 
-
 #include "main.h"
 #include "basic_structs.h"
+#include "HashTable.h"
+#include "utils.h"
+
 int _failedAsserts = 0;
 
 void printColor(char * msg, int color) {
@@ -143,6 +145,17 @@ void FenTest() {
 	AssertAreEqual(fen1, outFen, "Start and end fen differ");
 }
 
+void TimedTest(int iterations, void(*func)(int)) {
+	clock_t start = clock();
+	(*func)(iterations);
+	clock_t stop = clock();
+
+	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
+	
+	printf("\n%.2fk iterations/s\n", iterations / (1000 * secs));
+
+}
+
 #pragma region Tests
 
 void PerfTestPosition2() {
@@ -150,8 +163,8 @@ void PerfTestPosition2() {
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	PerftTest(fen, 4);
 	AssertAreEqualInts(757163, game.PerftResult.Captures, "Captures missmatch");
-	AssertAreEqualInts(128013, game.PerftResult.Castles,  "Castles missmatch");
-	AssertAreEqualInts(1929, game.PerftResult.Enpassants,  "En passants missmatch");
+	AssertAreEqualInts(128013, game.PerftResult.Castles, "Castles missmatch");
+	AssertAreEqualInts(1929, game.PerftResult.Enpassants, "En passants missmatch");
 	AssertAreEqualInts(15172, game.PerftResult.Promotions, "Promotion missmatch");
 }
 
@@ -262,6 +275,40 @@ void MaterialPromotion() {
 	AssertAreEqualInts(-400, game.Material, "Game Material missmatch");
 }
 
+void HashTableRoundTrip() {
+	printf("\n");printf(__func__);
+	unsigned long long hash = 0x1234567890ABCDEF;
+	short expected = 3000;
+	addEntry(hash, expected);
+	short score = getScoreFromHash(hash);
+	AssertAreEqualInts(expected, score, "hash table score missmatch");
+
+	unsigned long long hash2 = hash + 1;
+	short expected2 = 4000;
+	addEntry(hash2, expected2);
+	short score2 = getScoreFromHash(hash2);
+	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
+
+	score = getScoreFromHash(hash);
+	AssertAreEqualInts(expected, score, "hash table score missmatch");
+}
+
+void HashTablePerformance(int iterations) {
+	printf("\n");printf(__func__);
+	unsigned long long hash = llrand();
+	short expected = 1;
+
+	for (int i = 0; i < iterations; i++)
+	{
+		expected++;
+		hash ++;
+		addEntry(hash, expected);
+		short score = getScoreFromHash(hash);
+		AssertAreEqualInts(expected, score, "hash table score missmatch");
+	}
+}
+
+
 
 void EnPassantMaterial() {
 	printf("\n");printf(__func__);
@@ -292,6 +339,8 @@ void runTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
+	HashTableRoundTrip();
+	TimedTest(100000000, HashTablePerformance);
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");
 

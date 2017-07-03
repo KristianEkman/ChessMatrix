@@ -152,6 +152,7 @@
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HashTable.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />

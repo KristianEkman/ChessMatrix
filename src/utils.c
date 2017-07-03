@@ -19,7 +19,7 @@ int parseChar(char c) {
 unsigned long long llrand() {
 	unsigned long long r = 0;
 
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 5; ++i) {
 		r = (r << 15) | (rand() & 0x7FFF);
 	}
 

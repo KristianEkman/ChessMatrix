@@ -78,3 +78,14 @@ typedef struct {
 	int _perftCount;
 
 } Game;
+
+typedef enum  {
+	HashTableEmptyEntry = 0,
+	Legal = 1, //bit 1
+	Draw = 2, //bit 2
+	CheckMate = 4, //bit 3
+	NegScore = 8, //bit 4
+	Score = 0x1FFF0, //max 8191, 13 bits, no 5 tom 17
+	SearchDepth = 0x3E0000, //max 31, 5 bit, no 18 tom 22
+	//10 bits free, could be used as second key
+}HashTableEntry;
