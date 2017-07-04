@@ -1,34 +1,36 @@
-Paralell metod för move generation
+
+Två metoder för move generation och evaluation?
+	- Generation, ingen material, position eller score beräkning. Vid CreateMoves. Sätter hashen.
+	- Score behövs efter generering för sorteringens skull och bättre ju mer djup, 
+	  men om det inte finns ett entry i hashtable räknas score ut och lagras med djup.
+	  
+	  Vid sökning med hash table.
+		- Lista möjliga drag
+		- Räkna ut hash
+		- Hämta entry från db. Kan ge score, legal
+		(Man behöver vit och svarts material för att kunna avgöra när endgame börjar. Räcker det med 4 byte?)
+		(endgame som flagga?)
+
+		- Om inget entry finns
+			- Gör draget och räkna ut scores.			
+			Spara entry.
+			Undo.
+		- Skicka tillbaka listan med möjliga drag.
+
+	Hashning behövs för att hämta score uträknad med stort djup, så att sortering och pruning kan ske.
+
 
 Eval: 
-	Material
-	Mate, Stalemate
+	Mate, Stale mate
 
-	Position för all pieces
-
+	För mycket poäng för position? Dela matriser med 2?
 
 	Open rook file --performance ??
 	Bad bishops -- performance ??
 	
+	Opening Book
 	Opening Score
 	End score
 
 Sökning Engine
 	djup d
-
-Transposition table.
-	Allokera array i början, 1gb
-
-ttentry
-	long hash
-	score
-	legal
-
-
-		
-
-
-Poäng från position.
-	Ju högre djup som det beräknats från desto bättre. Mer job att se i framtiden.
-	Ju 
-

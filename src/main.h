@@ -11,3 +11,4 @@ void UnMakePlayerMove(PlayerMove move);
 
 Move parseMove(char * sMove, MoveInfo info);
 Game game;
+short TotalMaterial();

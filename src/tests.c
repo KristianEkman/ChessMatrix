@@ -8,6 +8,7 @@
 #include "basic_structs.h"
 #include "HashTable.h"
 #include "utils.h"
+#pragma region TestsHelpers
 
 int _failedAsserts = 0;
 
@@ -105,6 +106,9 @@ void printMoves(int count, Move * moves) {
 	}
 }
 
+#pragma endregion
+
+
 int PerftTest(char * fen, int depth) {
 
 	ReadFen(fen);
@@ -119,9 +123,9 @@ int PerftTest(char * fen, int depth) {
 		game.PerftResult.Checks = 0;
 		game.PerftResult.Enpassants = 0;
 		game.PerftResult.Promotions = 0;
-		short startScore = game.Material;
+		short startScore = TotalMaterial();
 		perftCount = Perft(depth);
-		AssertAreEqualInts(startScore, game.Material, "Game material missmatch");
+		AssertAreEqualInts(startScore, TotalMaterial(), "Game material missmatch");
 		//printPerftResults();
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -155,8 +159,6 @@ void TimedTest(int iterations, void(*func)(int)) {
 	printf("\n%.2fk iterations/s\n", iterations / (1000 * secs));
 
 }
-
-#pragma region Tests
 
 void PerfTestPosition2() {
 	printf("\n");printf(__func__);
@@ -223,9 +225,9 @@ void EnPassantFromFenTest() {
 	int count = ValidMoves(moves);
 	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
-	int startGameScore = game.Material;
+	int startGameScore = TotalMaterial();
 	AssertNot(MakePlayerMove("d5-e6").Invalid, "Invalid move");
-	AssertAreEqualInts(startGameScore - 100, game.Material, "Material should decrease by 100");
+	AssertAreEqualInts(startGameScore - 100, TotalMaterial(), "Material should decrease by 100");
 }
 
 void EnPassantAfterMove() {
@@ -243,36 +245,36 @@ void EnPassantAfterMove() {
 void MaterialBlackPawnCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
-	AssertAreEqualInts(-400, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(-400, TotalMaterial(), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d4-e5").Invalid, "Move was not valid");
-	AssertAreEqualInts(-500, game.Material, "Game Material missmatch");
+	AssertAreEqualInts(-500, TotalMaterial(), "Game Material missmatch");
 }
 
 void MaterialWhiteQueenCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
-	AssertAreEqualInts(0, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(0, TotalMaterial(), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d5-e4").Invalid, "Move was not valid");
-	AssertAreEqualInts(900, game.Material, "Game Material missmatch");
+	AssertAreEqualInts(900, TotalMaterial(), "Game Material missmatch");
 }
 
 void MaterialCaptureAndPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(400, TotalMaterial(), "Start Material missmatch");
 	PlayerMove pm = MakePlayerMove("b7-c8");
 	AssertNot(pm.Invalid, "Move was not valid");
-	AssertAreEqualInts(-900, game.Material, "Game Material missmatch");
+	AssertAreEqualInts(-900, TotalMaterial(), "Game Material missmatch");
 	UnMakePlayerMove(pm);
-	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(400, TotalMaterial(), "Start Material missmatch");
 }
 
 void MaterialPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(400, TotalMaterial(), "Start Material missmatch");
 	AssertNot(MakePlayerMove("b7-b8").Invalid, "Move was not valid");
-	AssertAreEqualInts(-400, game.Material, "Game Material missmatch");
+	AssertAreEqualInts(-400, TotalMaterial(), "Game Material missmatch");
 }
 
 void HashTableRoundTrip() {
@@ -308,22 +310,55 @@ void HashTablePerformance(int iterations) {
 	}
 }
 
-
-
 void EnPassantMaterial() {
 	printf("\n");printf(__func__);
 	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
-	AssertAreEqualInts(0, game.Material, "Start Material missmatch");
+	AssertAreEqualInts(0, TotalMaterial(), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d7-d5").Invalid, "Move was not valid");
 	PlayerMove nextMove = MakePlayerMove("e5-d6");
 	AssertNot(nextMove.Invalid, "Move was not valid");
-	AssertAreEqualInts(-100, game.Material, "Game Material missmatch");
+	AssertAreEqualInts(-100, TotalMaterial(), "Game Material missmatch");
 	UnMakePlayerMove(nextMove);
-	AssertAreEqualInts(0, game.Material, "Game Material missmatch");
-
+	AssertAreEqualInts(0, TotalMaterial(), "Game Material missmatch");
 }
 
-#pragma endregion
+void PositionScorePawns() {
+	printf("\n");printf(__func__);
+	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+	ReadFen(startFen);
+	AssertAreEqualInts(0, game.PositionScore, "Position Score Missmatch");
+	MakePlayerMove("d2-d4");
+	AssertAreEqualInts(-40, game.PositionScore, "Position Score Missmatch");
+	PlayerMove m2 = MakePlayerMove("d7-d5");
+	AssertAreEqualInts(0, game.PositionScore, "Position Score Missmatch");
+	UnMakePlayerMove(m2);
+	AssertAreEqualInts(-40, game.PositionScore, "Position Score Missmatch");
+}
+
+void PositionScoreKnights() {
+	printf("\n");printf(__func__);
+	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+	ReadFen(startFen);
+	MakePlayerMove("b1-c3");
+	AssertAreEqualInts(-50, game.PositionScore, "Position Score Missmatch");
+	PlayerMove m2 = MakePlayerMove("g8-f6");
+	AssertAreEqualInts(0, game.PositionScore, "Position Score Missmatch");
+	UnMakePlayerMove(m2);
+	AssertAreEqualInts(-50, game.PositionScore, "Position Score Missmatch");
+}
+
+void PositionScoreCastling() {
+	printf("\n");printf(__func__);
+	char * startFen = "r3k2r/p1qnbppp/bpp2n2/3pp3/B2P4/2N1PN2/PPPBQPPP/R3K2R w KQkq - 0 1";
+	ReadFen(startFen);
+	AssertAreEqualInts(-15, game.PositionScore, "Position Score Missmatch");
+
+	MakePlayerMove("e1-g1");
+	AssertAreEqualInts(-45, game.PositionScore, "Position Score Missmatch");
+
+	MakePlayerMove("e8-g8");
+	AssertAreEqualInts(-15, game.PositionScore, "Position Score Missmatch");
+}
 
 void runTests() {
 	_failedAsserts = 0;
@@ -341,6 +376,9 @@ void runTests() {
 	EnPassantMaterial();
 	HashTableRoundTrip();
 	TimedTest(100000000, HashTablePerformance);
+	PositionScorePawns();
+	PositionScoreKnights();
+	PositionScoreCastling();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");
 

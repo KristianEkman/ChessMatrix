@@ -38,9 +38,9 @@ typedef struct {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
+	short ScoreAtDepth;
 	//could shrink to short 16bits
 } Move;
-
 
 typedef enum  {
 	EnPassantfile, //mask 1111 (15)
@@ -64,6 +64,7 @@ typedef struct {
 	PieceType Capture;
 	GameState PreviousGameState;
 	bool Invalid;
+	int PreviousPositionScore;
 } PlayerMove;
 
 typedef struct {
@@ -72,10 +73,11 @@ typedef struct {
 	Move MovesBuffer[100];
 	int KingSquares[2];
 	GameState State;
-	short Material;
+	short Material[2];
 	PieceType Squares[64];
 	PerftResult PerftResult;
 	int _perftCount;
+	int PositionScore;
 
 } Game;
 

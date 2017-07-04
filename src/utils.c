@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 int parseChar(char c) {
 	switch (c)
 	{
