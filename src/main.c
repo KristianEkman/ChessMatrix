@@ -15,6 +15,7 @@
 const int MOVESIZE = sizeof(Move);
 Game game;
 int _behind[] = { -8, 8 };
+int SearchedLeafs = 0;
 
 void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	game.Squares[rank * 8 + file] = type | color;
@@ -104,7 +105,7 @@ void KingPositionScore(Move move) {
 }
 
 void MakeMove(Move move) {
-	
+
 	PieceType captType = game.Squares[move.To];
 	int captColor = captType >> 4;
 	int side01 = game.Side >> 4;
@@ -113,7 +114,7 @@ void MakeMove(Move move) {
 	game.Material[captColor] -= MaterialMatrix[captColor][captType & 7];
 	//removing piece from square removes its position score
 	game.PositionScore -= PositionValueMatrix[captType & 7][captColor][move.To];
-	
+
 	char pt = game.Squares[move.From] & 7;
 	game.PositionScore -= PositionValueMatrix[pt][side01][move.From];
 	game.PositionScore += PositionValueMatrix[pt][side01][move.To];
@@ -330,7 +331,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	move.MoveInfo = moveInfo;
 	int prevPosScore = game.PositionScore;
 	MakeMove(move);
-	
+
 	int  kingSquare = game.KingSquares[(game.Side ^ 24) >> 4];
 	bool legal = !SquareAttacked(kingSquare, game.Side);
 	if (legal)
@@ -368,7 +369,7 @@ void CreateMoves() {
 					}
 					else {
 						CreateMove(i, toSquare, PlainMove);
-					}					
+					}
 				}
 
 				int captPat = PawnCapturePattern[game.Side >> 4];
@@ -475,11 +476,10 @@ void CreateMoves() {
 				break;
 			}
 			}
-
-			//en passant
-			//castling
 		}
 	}
+
+
 }
 
 int Perft(depth) {
@@ -491,15 +491,13 @@ int Perft(depth) {
 	CreateMoves();
 	if (game.MovesBufferLength == 0)
 		return nodeCount;
-	//unsigned int size = sizeof(Move);
-	Move * localMoves = malloc(game.MovesBufferLength * MOVESIZE);
-	memcpy(localMoves, game.MovesBuffer, game.MovesBufferLength * MOVESIZE);
 	int count = game.MovesBufferLength;
+	Move * localMoves = malloc(count * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, count * MOVESIZE);
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
 		PieceType capture = game.Squares[move.To];
-		
 		if (depth == 1) {
 			if (capture != NOPIECE)
 				game.PerftResult.Captures++;
@@ -517,7 +515,7 @@ int Perft(depth) {
 		int prevPositionScore = game.PositionScore;
 		MakeMove(move);
 		nodeCount += Perft(depth - 1);
-		UnMakeMove(move, capture, prevGameState,prevPositionScore);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -538,7 +536,7 @@ PieceType parsePieceType(char c) {
 	case 'N': return KNIGHT | WHITE;
 	case 'Q': return QUEEN | WHITE;
 	case 'K': return KING | WHITE;
-		
+
 	default:
 		return NOPIECE;
 	}
@@ -646,7 +644,7 @@ void ReadFen(char * fen) {
 			game.KingSquares[color] = i;
 		}
 	}
-	
+
 	InitScores();
 }
 
@@ -664,9 +662,8 @@ void WriteFen(char * fenBuffer) {
 			}
 
 			if (emptyCount > 0) {
-				{fenBuffer[index++] = '0' + emptyCount;
+				fenBuffer[index++] = '0' + emptyCount;
 				file--;
-				}
 			}
 			else {
 				fenBuffer[index++] = PieceChar(game.Squares[rank * 8 + file]);
@@ -744,6 +741,104 @@ void SwitchSignOfWhitePositionValue() {
 	}
 }
 
+int GetScore() {
+	//I think it is unlikely to find the hash in db here. Perhaps only use db in move generation and ordering.
+	int score = game.Material[0] + game.Material[1] + game.PositionScore;
+	return score;
+}
+
+int AlphaBeta(int alpha, int beta, int depth) {
+	if (!depth) {
+		SearchedLeafs++;
+		
+		return GetScore();
+	}
+	int bestVal = 0;
+	CreateMoves();
+	int moveCount = game.MovesBufferLength;
+	Move * localMoves = malloc(moveCount * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
+	if (moveCount == 0) {
+		if (SquareAttacked(game.KingSquares[game.Side >> 4], game.Side ^ 24)) {
+			//mate
+			bestVal = game.Side == WHITE ? 8000 : -8000;
+		}
+		else {
+			//stale mate
+			bestVal = 0;
+		}
+	}
+	else if (game.Side == BLACK) { //maximizing
+		bestVal = alpha;
+		for (int i = 0; i < moveCount; i++)
+		{
+			Move childMove = localMoves[i];
+			PieceType capture = game.Squares[childMove.To];
+			GameState state = game.State;
+			int prevPosScore = game.PositionScore;
+			MakeMove(childMove);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1);
+			UnMakeMove(childMove, capture, state, prevPosScore);
+			bestVal = max(bestVal, childValue);
+			if (bestVal >= beta)
+				break;
+		}
+	}
+	else { //minimizing
+		bestVal = beta;
+		for (int i = 0; i < moveCount; i++)
+		{
+			Move childMove = localMoves[i];
+			PieceType capture = game.Squares[childMove.To];
+			GameState state = game.State;
+			int prevPosScore = game.PositionScore;
+			MakeMove(childMove);
+			int childValue = AlphaBeta(alpha, bestVal, depth - 1);
+			UnMakeMove(childMove, capture, state, prevPosScore);
+			bestVal = min(bestVal, childValue);
+			if (bestVal <= alpha)
+				break;
+		}
+	}
+	return bestVal;
+}
+
+Move BestMoveAtDepth(int depth) {
+	SearchedLeafs = 0;
+	CreateMoves();
+	int moveCount = game.MovesBufferLength;
+	Move * localMoves = malloc(moveCount * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
+
+	Move bestMove = localMoves[0];
+	int bestValue = game.Side == WHITE ? 9000 : -9000;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move move = localMoves[i];
+		PieceType capt = game.Squares[move.To];
+		GameState gameState = game.State;
+		int positionScore = game.PositionScore;
+		MakeMove(move);
+		int score = AlphaBeta(-9000, 9000, depth);
+		UnMakeMove(move, capt, gameState, positionScore);
+		if (game.Side == WHITE) {
+			if (score < bestValue)
+			{
+				bestValue = score;
+				bestMove = move;
+			}
+		}
+		else {
+			if (score > bestValue)
+			{
+				bestValue = score;
+				bestMove = move;
+			}
+		}
+	}
+	return bestMove;
+}
+
 int main() {
 	SwitchSignOfWhitePositionValue();
 	InitGame();
@@ -774,7 +869,7 @@ int main() {
 			break;
 		}
 	}
-		
+
 	return 0;
 }
 

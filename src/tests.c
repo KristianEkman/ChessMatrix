@@ -91,21 +91,18 @@ void printPerftResults() {
 		game.PerftResult.Enpassants, game.PerftResult.Promotions);
 }
 
-void printMoves(int count, Move * moves) {
-	for (int i = 0; i < count; i++)
-	{
-		char sMove[6];
-		sMove[0] = (moves[i].From & 7) + 'a';
-		sMove[1] = (moves[i].From >> 3) + '1';
-		sMove[2] = '-';
-		sMove[3] = (moves[i].To & 7) + 'a';
-		sMove[4] = (moves[i].To >> 3) + '1';
-		sMove[5] = '\0';
-
-		printf("%s, ", sMove);
-	}
+void MoveToString(Move move, char * sMove) {
+	char fromFile = (move.From & 7) + 'a';
+	char fromRank = (move.From >> 3) + '1';
+	char toFile = (move.To & 7) + 'a';
+	char toRank = (move.To >> 3) + '1';
+	sMove[0] = fromFile;
+	sMove[1] = fromRank;
+	sMove[2] = '-';
+	sMove[3] = toFile;
+	sMove[4] = toRank;
+	sMove[5] = '\0';
 }
-
 #pragma endregion
 
 
@@ -194,7 +191,6 @@ void ValidMovesPromotionCaptureAndCastling() {
 	Move moves[100];
 	ReadFen(fen);
 	int count = ValidMoves(moves);
-	//printMoves(count, moves);
 	AssertAreEqualInts(44, count, "Moves count missmatch");
 	Move expectedMove;
 	expectedMove.From = 4;
@@ -360,9 +356,60 @@ void PositionScoreCastling() {
 	AssertAreEqualInts(-15, game.PositionScore, "Position Score Missmatch");
 }
 
+void BestMoveTest() {
+	printf("\n");printf(__func__);
+	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+	ReadFen(startFen);
+
+	clock_t start = clock();
+	Move bestMove = BestMoveAtDepth(5);
+	clock_t stop = clock();
+
+	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
+	printf("\nFrom:%u  To:%u  Leafs:%u", bestMove.From, bestMove.To, SearchedLeafs);
+	printf("\n%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
+}
+
+
+void BestMoveTestBlackCaptureBishop() {
+	printf("\n");printf(__func__);
+	char * startFen = "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6";
+	ReadFen(startFen);
+
+	Move bestMove = BestMoveAtDepth(4);
+	char sMove[5];
+	MoveToString(bestMove, sMove);
+	AssertAreEqual("d5-c4", sMove, "Not the expected move");
+}
+
+void TestWhiteMateIn2() {
+	printf("\n");printf(__func__);
+	char * startFen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
+	ReadFen(startFen);
+
+	Move bestMove = BestMoveAtDepth(2);
+	char sMove[6];
+	MoveToString(bestMove, sMove);
+	AssertAreEqual("d5-d7", sMove, "Not the expected move");
+}
+
+//mate in 7 2r1nrk1/p4p1p/1p2p1pQ/nPqbRN2/8/P2B4/1BP2PPP/3R2K1 w - - 0 1
+//f5-e7
+
+void TestBlackMateIn5() {
+	printf("\n");printf(__func__);
+	char * startFen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
+	ReadFen(startFen);
+
+	Move bestMove = BestMoveAtDepth(5);
+	char sMove[6];
+	MoveToString(bestMove, sMove);
+	AssertAreEqual("f4-h4", sMove, "Not the expected move");
+}
+
 void runTests() {
 	_failedAsserts = 0;
-	PerftTestStart();
+	/*PerftTestStart();
 	PerfTestPosition2();
 	FenTest();
 	ValidMovesPromotionCaptureAndCastling();
@@ -379,6 +426,10 @@ void runTests() {
 	PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();
+	BestMoveTest();
+	BestMoveTestBlackCaptureBishop();
+	TestWhiteMateIn2();*/
+	TestBlackMateIn5();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");
 

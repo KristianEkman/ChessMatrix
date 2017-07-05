@@ -1,3 +1,9 @@
+Iterative deepening och ordering.
+
+Multithreading.
+
+(Hash table, kanske inte behövs)
+
 
 Två metoder för move generation och evaluation?
 	- Generation, ingen material, position eller score beräkning. Vid CreateMoves. Sätter hashen.
@@ -21,8 +27,6 @@ Två metoder för move generation och evaluation?
 
 
 Eval: 
-	Mate, Stale mate
-
 	För mycket poäng för position? Dela matriser med 2?
 
 	Open rook file --performance ??
@@ -33,4 +37,5 @@ Eval:
 	End score
 
 Sökning Engine
-	djup d
+	Quite search, hur snabb är den? Branching factor?
+	Vad är null move pruning

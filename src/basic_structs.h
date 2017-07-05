@@ -39,7 +39,7 @@ typedef struct {
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
 	short ScoreAtDepth;
-	//could shrink to short 16bits
+	//could shrink
 } Move;
 
 typedef enum  {
