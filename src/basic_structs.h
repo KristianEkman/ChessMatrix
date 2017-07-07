@@ -65,6 +65,7 @@ typedef struct {
 	GameState PreviousGameState;
 	bool Invalid;
 	int PreviousPositionScore;
+	unsigned long long PreviousHash;
 } PlayerMove;
 
 typedef struct {
@@ -78,8 +79,10 @@ typedef struct {
 	PerftResult PerftResult;
 	int _perftCount;
 	int PositionScore;
+	unsigned long long Hash;
 
 } Game;
+
 
 typedef enum  {
 	HashTableEmptyEntry = 0,

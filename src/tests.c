@@ -275,13 +275,13 @@ void HashTableRoundTrip() {
 	printf("\n");printf(__func__);
 	unsigned long long hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	addEntry(hash, expected);
+	addEntry(hash, expected, 1);
 	short score = getScoreFromHash(hash);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	unsigned long long hash2 = hash + 1;
 	short expected2 = 4000;
-	addEntry(hash2, expected2);
+	addEntry(hash2, expected2, 1);
 	short score2 = getScoreFromHash(hash2);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 
@@ -298,7 +298,7 @@ void HashTablePerformance(int iterations) {
 	{
 		expected++;
 		hash ++;
-		addEntry(hash, expected);
+		addEntry(hash, expected, 1);
 		short score = getScoreFromHash(hash);
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}

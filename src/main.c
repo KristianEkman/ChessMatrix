@@ -11,7 +11,7 @@
 #include "tests.h"
 #include "evaluation.h"
 #include "sort.h"
-
+#include "HashTable.h"
 
 const int MOVESIZE = sizeof(Move);
 Game game;
@@ -106,22 +106,31 @@ void KingPositionScore(Move move) {
 }
 
 void MakeMove(Move move) {
+	char f = move.From;
+	char t = move.To;
 
-	PieceType captType = game.Squares[move.To];
+	PieceType captType = game.Squares[t];
 	int captColor = captType >> 4;
 	int side01 = game.Side >> 4;
 
 	//Capturing
 	game.Material[captColor] -= MaterialMatrix[captColor][captType & 7];
+
 	//removing piece from square removes its position score
-	game.PositionScore -= PositionValueMatrix[captType & 7][captColor][move.To];
+	game.PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
 
-	char pt = game.Squares[move.From] & 7;
-	game.PositionScore -= PositionValueMatrix[pt][side01][move.From];
-	game.PositionScore += PositionValueMatrix[pt][side01][move.To];
+	PieceType pieceType = game.Squares[f];
 
-	game.Squares[move.To] = game.Squares[move.From];
-	game.Squares[move.From] = NOPIECE;
+	char pt = pieceType & 7;
+	game.PositionScore -= PositionValueMatrix[pt][side01][f];
+	game.PositionScore += PositionValueMatrix[pt][side01][t];
+
+	game.Squares[t] = game.Squares[f];
+	game.Squares[f] = NOPIECE;
+
+	unsigned long long hash = ZobritsPieceTypesSquares[pieceType][f];
+	hash ^= ZobritsPieceTypesSquares[pieceType][t];
+	hash ^= ZobritsPieceTypesSquares[captType][t];
 
 	//resetting en passant every move
 	game.State &= ~15;
@@ -129,27 +138,31 @@ void MakeMove(Move move) {
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
-		game.Squares[move.To] = QUEEN | game.Side;
+		game.Squares[t] = QUEEN | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][QUEEN + 6];
-		game.PositionScore += PositionValueMatrix[QUEEN][side01][move.To];
+		game.PositionScore += PositionValueMatrix[QUEEN][side01][t];
+		hash ^= ZobritsPieceTypesSquares[QUEEN | game.Side][t];
 		break;
 	case PromotionRook:
-		game.Squares[move.To] = ROOK | game.Side;
+		game.Squares[t] = ROOK | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][ROOK + 6];
-		game.PositionScore += PositionValueMatrix[ROOK][side01][move.To];
+		game.PositionScore += PositionValueMatrix[ROOK][side01][t];
+		hash ^= ZobritsPieceTypesSquares[ROOK | game.Side][t];
 		break;
 	case PromotionBishop:
-		game.Squares[move.To] = BISHOP | game.Side;
+		game.Squares[t] = BISHOP | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][BISHOP + 6];
-		game.PositionScore += PositionValueMatrix[BISHOP][side01][move.To];
+		game.PositionScore += PositionValueMatrix[BISHOP][side01][t];
+		hash ^= ZobritsPieceTypesSquares[BISHOP | game.Side][t];
 		break;
 	case PromotionKnight:
 		game.Squares[move.To] = KNIGHT | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
-		game.PositionScore += PositionValueMatrix[KNIGHT][side01][move.To];
+		game.PositionScore += PositionValueMatrix[KNIGHT][side01][t];
+		hash ^= ZobritsPieceTypesSquares[KNIGHT | game.Side][t];
 		break;
 	case KingMove:
-		game.KingSquares[side01] = move.To;
+		game.KingSquares[side01] = t;
 		KingPositionScore(move);
 		break;
 	case RookMove:
@@ -157,53 +170,77 @@ void MakeMove(Move move) {
 		{
 		case 0:
 			game.State &= ~WhiteCanCastleLong;
+			hash ^= ZobritsCastlingRights[0];
 			break;
 		case 7:
 			game.State &= ~WhiteCanCastleShort;
+			hash ^= ZobritsCastlingRights[1];
 			break;
 		case 56:
 			game.State &= ~BlackCanCastleLong;
+			hash ^= ZobritsCastlingRights[2];
 			break;
 		case 63:
 			game.State &= ~BlackCanCastleShort;
+			hash ^= ZobritsCastlingRights[3];
 			break;
 		default:
 			break;
 		}
 		break;
 	case CastleShort:
-		game.KingSquares[side01] = move.To;
-		game.Squares[7 + CastlesOffset[side01]] = NOPIECE;
-		game.Squares[5 + CastlesOffset[side01]] = ROOK | game.Side;
+	{
+		game.KingSquares[side01] = t;
+		char rookFr = 7 + CastlesOffset[side01];
+		char rookTo = 5 + CastlesOffset[side01];
+		PieceType rook = ROOK | game.Side;
+		game.Squares[rookFr] = NOPIECE;
+		game.Squares[rookTo] = rook;
 
-		game.PositionScore -= PositionValueMatrix[ROOK][side01][7 + CastlesOffset[side01]];
-		game.PositionScore += PositionValueMatrix[ROOK][side01][5 + CastlesOffset[side01]];
+		game.PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
+		game.PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move);
-		break;
+		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
+		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+	}
+	break;
 	case CastleLong:
-		game.KingSquares[side01] = move.To;
-		game.Squares[0 + CastlesOffset[side01]] = NOPIECE;
-		game.Squares[3 + CastlesOffset[side01]] = ROOK | game.Side;
+	{
+		game.KingSquares[side01] = t;
+		char rookFr = CastlesOffset[side01];
+		char rookTo = 3 + CastlesOffset[side01];
+		PieceType rook = ROOK | game.Side;
+		game.Squares[rookFr] = NOPIECE;
+		game.Squares[rookTo] = ROOK | game.Side;
 
-		game.PositionScore -= PositionValueMatrix[ROOK][side01][0 + CastlesOffset[side01]];
-		game.PositionScore += PositionValueMatrix[ROOK][side01][3 + CastlesOffset[side01]];
+		game.PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
+		game.PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move);
-		break;
+		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
+		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+	}
+	break;
 	case EnPassant:
 		game.State |= ((move.From & 7) + 1); //Sets the file. a to h file is 1 to 8.
 		break;
 	case EnPassantCapture:
-		game.Squares[move.To + _behind[side01]] = NOPIECE;
+	{
+		char behind = t + _behind[side01];
+		game.Squares[behind] = NOPIECE;
 		game.Material[side01] += MaterialMatrix[side01][PAWN];
-		game.PositionScore -= PositionValueMatrix[PAWN][captColor][move.To + _behind[side01]];
-		break;
+		game.PositionScore -= PositionValueMatrix[PAWN][captColor][behind];
+		hash ^= ZobritsPieceTypesSquares[PAWN | captColor][behind];
+	}
+	break;
 	default:
 		break;
 	}
+	hash ^= ZobritsSides[side01];
+	game.Hash ^= hash;
 	game.Side ^= 24;
 }
 
-void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore) {
+void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore, unsigned long long prevHash) {
 
 	game.Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
 
@@ -251,8 +288,10 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevP
 	}
 	game.State = prevGameState;
 	game.PositionScore = prevPositionScore;
+	game.Hash = prevHash;
 	game.Side ^= 24;
 }
+
 
 bool SquareAttacked(int square, char attackedBy) {
 	for (int i = 0; i < 64; i++)
@@ -338,6 +377,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	int prevPosScore = game.PositionScore;
+	unsigned long long prevHash = game.Hash;
 	MakeMove(move);
 	move.ScoreAtDepth = GetScore();
 	int  kingSquare = game.KingSquares[(game.Side ^ 24) >> 4];
@@ -345,7 +385,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	if (legal)
 		game.MovesBuffer[game.MovesBufferLength++] = move;
 
-	UnMakeMove(move, capture, prevGameState, prevPosScore);
+	UnMakeMove(move, capture, prevGameState, prevPosScore, prevHash);
 }
 
 void CreateMoves() {
@@ -520,9 +560,10 @@ int Perft(depth) {
 
 		GameState prevGameState = game.State;
 		int prevPositionScore = game.PositionScore;
+		unsigned long long prevHash = game.Hash;
 		MakeMove(move);
 		nodeCount += Perft(depth - 1);
-		UnMakeMove(move, capture, prevGameState, prevPositionScore);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore, prevHash);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -591,6 +632,13 @@ void InitScores() {
 	game.PositionScore += KingPositionValueMatrix[endGame][1][game.KingSquares[1]];
 }
 
+void InitHash() {
+	game.Hash = 0;
+	for (int i = 0; i < 64; i++)
+		game.Hash ^= ZobritsPieceTypesSquares[game.Squares[i]][i];
+	game.Hash ^= ZobritsSides[game.Side >> 4];
+}
+
 void ReadFen(char * fen) {
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
@@ -653,6 +701,7 @@ void ReadFen(char * fen) {
 	}
 
 	InitScores();
+	InitHash();
 }
 
 void WriteFen(char * fenBuffer) {
@@ -716,6 +765,7 @@ PlayerMove MakePlayerMove(char * sMove) {
 			playerMove.PreviousGameState = game.State;
 			playerMove.Invalid = false;
 			playerMove.PreviousPositionScore = game.PositionScore;
+			playerMove.PreviousHash = game.Hash;
 			MakeMove(moves[i]);
 			return playerMove;
 		}
@@ -725,7 +775,7 @@ PlayerMove MakePlayerMove(char * sMove) {
 }
 
 void UnMakePlayerMove(PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore);
+	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, playerMove.PreviousHash);
 }
 
 short TotalMaterial() {
@@ -749,13 +799,15 @@ void SwitchSignOfWhitePositionValue() {
 }
 
 int GetScore() {
-	//I think it is unlikely to find the hash in db here. Perhaps only use db in move generation and ordering.
+	// First get the score from database.
+	// or	
 	return game.Material[0] + game.Material[1] + game.PositionScore;
 }
 
 int AlphaBeta(int alpha, int beta, int depth) {
 	if (!depth) {
 		SearchedLeafs++;
+		//todo, is it worth probing database here? Dont think so.
 		return GetScore();
 	}
 	int bestVal = 0;
@@ -781,9 +833,11 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			PieceType capture = game.Squares[childMove.To];
 			GameState state = game.State;
 			int prevPosScore = game.PositionScore;
+			unsigned long long prevHash = game.Hash;
+
 			MakeMove(childMove);
 			int childValue = AlphaBeta(bestVal, beta, depth - 1);
-			UnMakeMove(childMove, capture, state, prevPosScore);
+			UnMakeMove(childMove, capture, state, prevPosScore, prevHash);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
 				break;
@@ -797,9 +851,10 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			PieceType capture = game.Squares[childMove.To];
 			GameState state = game.State;
 			int prevPosScore = game.PositionScore;
+			unsigned long long prevHash = game.Hash;
 			MakeMove(childMove);
 			int childValue = AlphaBeta(alpha, bestVal, depth - 1);
-			UnMakeMove(childMove, capture, state, prevPosScore);
+			UnMakeMove(childMove, capture, state, prevPosScore, prevHash);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
 				break;
@@ -815,9 +870,12 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 		PieceType capt = game.Squares[move.To];
 		GameState gameState = game.State;
 		int positionScore = game.PositionScore;
+		unsigned long long prevHash = game.Hash;
+
 		MakeMove(move);
 		localMoves[i].ScoreAtDepth = AlphaBeta(-9000, 9000, depth);
-		UnMakeMove(move, capt, gameState, positionScore);
+		//todo: store this better score for this position
+		UnMakeMove(move, capt, gameState, positionScore, prevHash);
 	}
 }
 
@@ -876,6 +934,7 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 int main() {
 	SwitchSignOfWhitePositionValue();
 	InitGame();
+	GenerateZobritsKeys();
 	char s = 0;
 	while (s != 'q')
 	{

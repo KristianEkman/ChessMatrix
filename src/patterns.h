@@ -5,4 +5,4 @@ extern const short MaterialMatrix[2][12];
 extern const short PawnCapturePattern[2];
 extern const short PawnPattern[2];
 extern const short EnpassantRankPattern[2];
-extern const short CastlesOffset[2];
+extern const char CastlesOffset[2];

@@ -608,5 +608,5 @@ short MaterialMatrix[2][12] = {
 short PawnCapturePattern[2] = { 3, 5 };
 short PawnPattern[2] = { 2, 4 };
 short EnpassantRankPattern[2] = { 5, 2 };
-short CastlesOffset[2] = { 0, 56 };
+char CastlesOffset[2] = { 0, 56 };
 
