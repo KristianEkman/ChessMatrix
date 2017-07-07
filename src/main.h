@@ -14,3 +14,5 @@ Game game;
 short TotalMaterial();
 Move BestMoveAtDepth(int depth);
 int SearchedLeafs;
+Move BestMoveAtDepthDeepening(int maxDepth);
+int GetScore();

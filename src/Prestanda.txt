@@ -1,0 +1,16 @@
+****   BestMoveByWhite   **** Djup 6. 
+
+Utan oredering efter varje create moves.
+86029.92k leafs in 49.63s
+1733.32k leafs/s
+Best Move: d2-d4 score -205
+
+Med oredering efter varje create moves.
+5858.99k leafs in 12.31s
+476.11k leafs/s
+Best Move: d2-d4 score -205
+
+Resultat:
+4:del av tiden
+3,6 ggr långsammare
+14 ggr färre drag

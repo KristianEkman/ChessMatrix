@@ -151,10 +151,8 @@ void TimedTest(int iterations, void(*func)(int)) {
 	(*func)(iterations);
 	clock_t stop = clock();
 
-	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	
+	float secs = (float)(stop - start) / CLOCKS_PER_SEC;	
 	printf("\n%.2fk iterations/s\n", iterations / (1000 * secs));
-
 }
 
 void PerfTestPosition2() {
@@ -360,7 +358,7 @@ void BestMoveTest() {
 	printf("\n");printf(__func__);
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	ReadFen(startFen);
-
+	SearchedLeafs = 0;
 	clock_t start = clock();
 	Move bestMove = BestMoveAtDepth(5);
 	clock_t stop = clock();
@@ -407,9 +405,38 @@ void TestBlackMateIn5() {
 	AssertAreEqual("f4-h4", sMove, "Not the expected move");
 }
 
+
+void BestMoveDeepening(char * testName, char * fen, char * expected) {
+	printf("\n\n****   %s   ****", testName);
+	ReadFen(fen);
+	SearchedLeafs = 0;
+	clock_t start = clock();
+	Move bestMove = BestMoveAtDepthDeepening(6);
+	clock_t stop = clock();
+	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
+	printf("\n%.2fk leafs in %.2fs", (float)SearchedLeafs / 1000, secs);
+	printf("\n%.2fk leafs/s", SearchedLeafs / (1000 * secs));
+	char sMove[6];
+	MoveToString(bestMove, sMove);
+	printf("\nBest Move: %s score %d", sMove, bestMove.ScoreAtDepth);
+	AssertAreEqual(expected, sMove, "Not the expected move");
+}
+
+
+void BlackMatesIn5Deeping() {
+	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
+	BestMoveDeepening(__func__, fen, "f4-h4");
+}
+
+void BestMoveByWhite() {
+	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
+	//requires atlest depth 6 to be found
+	BestMoveDeepening(__func__, fen, "d2-d4");
+}
+
 void runTests() {
 	_failedAsserts = 0;
-	/*PerftTestStart();
+	PerftTestStart();
 	PerfTestPosition2();
 	FenTest();
 	ValidMovesPromotionCaptureAndCastling();
@@ -428,10 +455,12 @@ void runTests() {
 	PositionScoreCastling();
 	BestMoveTest();
 	BestMoveTestBlackCaptureBishop();
-	TestWhiteMateIn2();*/
+	TestWhiteMateIn2();
 	TestBlackMateIn5();
+	BlackMatesIn5Deeping();
+	BestMoveByWhite();
 	if (_failedAsserts == 0)
-		printGreen("\nSuccess! Tests are good!");
+		printGreen("\nSuccess! Tests are good!");	
 
 	printf("\nPress any key to continue.");
 	_getch();

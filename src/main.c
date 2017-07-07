@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "tests.h"
 #include "evaluation.h"
+#include "sort.h"
 
 
 const int MOVESIZE = sizeof(Move);
@@ -322,6 +323,13 @@ bool SquareAttacked(int square, char attackedBy) {
 	return false;
 }
 
+void SortMoves(Move * moves, int moveCount) {
+	if (game.Side == WHITE)
+		QuickSort(moves, 0, moveCount - 1);
+	else
+		QuickSortDescending(moves, 0, moveCount - 1);
+}
+
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	PieceType capture = game.Squares[toSquare];
 	GameState prevGameState = game.State;
@@ -331,7 +339,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	move.MoveInfo = moveInfo;
 	int prevPosScore = game.PositionScore;
 	MakeMove(move);
-
+	move.ScoreAtDepth = GetScore();
 	int  kingSquare = game.KingSquares[(game.Side ^ 24) >> 4];
 	bool legal = !SquareAttacked(kingSquare, game.Side);
 	if (legal)
@@ -478,8 +486,7 @@ void CreateMoves() {
 			}
 		}
 	}
-
-
+	SortMoves(game.MovesBuffer, game.MovesBufferLength);
 }
 
 int Perft(depth) {
@@ -743,14 +750,12 @@ void SwitchSignOfWhitePositionValue() {
 
 int GetScore() {
 	//I think it is unlikely to find the hash in db here. Perhaps only use db in move generation and ordering.
-	int score = game.Material[0] + game.Material[1] + game.PositionScore;
-	return score;
+	return game.Material[0] + game.Material[1] + game.PositionScore;
 }
 
 int AlphaBeta(int alpha, int beta, int depth) {
 	if (!depth) {
 		SearchedLeafs++;
-		
 		return GetScore();
 	}
 	int bestVal = 0;
@@ -803,15 +808,7 @@ int AlphaBeta(int alpha, int beta, int depth) {
 	return bestVal;
 }
 
-Move BestMoveAtDepth(int depth) {
-	SearchedLeafs = 0;
-	CreateMoves();
-	int moveCount = game.MovesBufferLength;
-	Move * localMoves = malloc(moveCount * MOVESIZE);
-	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
-
-	Move bestMove = localMoves[0];
-	int bestValue = game.Side == WHITE ? 9000 : -9000;
+void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 	for (int i = 0; i < moveCount; i++)
 	{
 		Move move = localMoves[i];
@@ -819,8 +816,18 @@ Move BestMoveAtDepth(int depth) {
 		GameState gameState = game.State;
 		int positionScore = game.PositionScore;
 		MakeMove(move);
-		int score = AlphaBeta(-9000, 9000, depth);
+		localMoves[i].ScoreAtDepth = AlphaBeta(-9000, 9000, depth);
 		UnMakeMove(move, capt, gameState, positionScore);
+	}
+}
+
+Move BestMove(Move * moves, int moveCount) {
+	int bestValue = game.Side == WHITE ? 9000 : -9000;
+	Move bestMove;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move move = moves[i];
+		int score = move.ScoreAtDepth;
 		if (game.Side == WHITE) {
 			if (score < bestValue)
 			{
@@ -837,6 +844,33 @@ Move BestMoveAtDepth(int depth) {
 		}
 	}
 	return bestMove;
+}
+
+Move BestMoveAtDepth(int depth) {
+	CreateMoves();
+	int moveCount = game.MovesBufferLength;
+	Move * localMoves = malloc(moveCount * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
+
+	SetMovesScoreAtDepth(depth, localMoves, moveCount);
+	return BestMove(localMoves, moveCount);
+}
+
+Move BestMoveAtDepthDeepening(int maxDepth) {
+	CreateMoves();
+	int moveCount = game.MovesBufferLength;
+	Move * localMoves = malloc(moveCount * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
+
+	int depth = 1;
+	do
+	{
+		SetMovesScoreAtDepth(depth, localMoves, moveCount);
+		SortMoves(localMoves, moveCount);
+
+		depth++;
+	} while (depth <= maxDepth); //todo: continue until time ends
+	return localMoves[0];
 }
 
 int main() {

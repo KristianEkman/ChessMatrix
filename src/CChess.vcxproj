@@ -149,6 +149,7 @@
     <ClCompile Include="HashTable.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="patterns.c" />
+    <ClCompile Include="sort.c" />
     <ClCompile Include="tests.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
@@ -158,10 +159,12 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />
+    <ClInclude Include="sort.h" />
     <ClInclude Include="tests.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Prestanda.txt" />
     <Text Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

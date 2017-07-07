@@ -1,3 +1,4 @@
+Undersök effekten av sortering
 Iterative deepening och ordering.
 
 Multithreading.
@@ -24,13 +25,15 @@ Två metoder för move generation och evaluation?
 		- Skicka tillbaka listan med möjliga drag.
 
 	Hashning behövs för att hämta score uträknad med stort djup, så att sortering och pruning kan ske.
-
+	Fast sortering kan ju ske vid varje iteration i deepeing. Det borde öka cut-off.
+	Sortering borde nog också ske i varje alphbeta - create move? Tests separat isf.
 
 Eval: 
 	För mycket poäng för position? Dela matriser med 2?
 
 	Open rook file --performance ??
 	Bad bishops -- performance ??
+	Outposts
 	
 	Opening Book
 	Opening Score
