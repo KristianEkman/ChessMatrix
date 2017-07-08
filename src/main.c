@@ -11,7 +11,6 @@
 #include "tests.h"
 #include "evaluation.h"
 #include "sort.h"
-#include "HashTable.h"
 
 const int MOVESIZE = sizeof(Move);
 Game game;
@@ -127,11 +126,7 @@ void MakeMove(Move move) {
 
 	game.Squares[t] = game.Squares[f];
 	game.Squares[f] = NOPIECE;
-
-	unsigned long long hash = ZobritsPieceTypesSquares[pieceType][f];
-	hash ^= ZobritsPieceTypesSquares[pieceType][t];
-	hash ^= ZobritsPieceTypesSquares[captType][t];
-
+	
 	//resetting en passant every move
 	game.State &= ~15;
 
@@ -141,25 +136,21 @@ void MakeMove(Move move) {
 		game.Squares[t] = QUEEN | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][QUEEN + 6];
 		game.PositionScore += PositionValueMatrix[QUEEN][side01][t];
-		hash ^= ZobritsPieceTypesSquares[QUEEN | game.Side][t];
 		break;
 	case PromotionRook:
 		game.Squares[t] = ROOK | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][ROOK + 6];
 		game.PositionScore += PositionValueMatrix[ROOK][side01][t];
-		hash ^= ZobritsPieceTypesSquares[ROOK | game.Side][t];
 		break;
 	case PromotionBishop:
 		game.Squares[t] = BISHOP | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][BISHOP + 6];
 		game.PositionScore += PositionValueMatrix[BISHOP][side01][t];
-		hash ^= ZobritsPieceTypesSquares[BISHOP | game.Side][t];
 		break;
 	case PromotionKnight:
 		game.Squares[move.To] = KNIGHT | game.Side;
 		game.Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
 		game.PositionScore += PositionValueMatrix[KNIGHT][side01][t];
-		hash ^= ZobritsPieceTypesSquares[KNIGHT | game.Side][t];
 		break;
 	case KingMove:
 		game.KingSquares[side01] = t;
@@ -170,19 +161,15 @@ void MakeMove(Move move) {
 		{
 		case 0:
 			game.State &= ~WhiteCanCastleLong;
-			hash ^= ZobritsCastlingRights[0];
 			break;
 		case 7:
 			game.State &= ~WhiteCanCastleShort;
-			hash ^= ZobritsCastlingRights[1];
 			break;
 		case 56:
 			game.State &= ~BlackCanCastleLong;
-			hash ^= ZobritsCastlingRights[2];
 			break;
 		case 63:
 			game.State &= ~BlackCanCastleShort;
-			hash ^= ZobritsCastlingRights[3];
 			break;
 		default:
 			break;
@@ -200,8 +187,6 @@ void MakeMove(Move move) {
 		game.PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
 		game.PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move);
-		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
-		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 	}
 	break;
 	case CastleLong:
@@ -216,8 +201,6 @@ void MakeMove(Move move) {
 		game.PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
 		game.PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move);
-		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
-		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 	}
 	break;
 	case EnPassant:
@@ -229,18 +212,15 @@ void MakeMove(Move move) {
 		game.Squares[behind] = NOPIECE;
 		game.Material[side01] += MaterialMatrix[side01][PAWN];
 		game.PositionScore -= PositionValueMatrix[PAWN][captColor][behind];
-		hash ^= ZobritsPieceTypesSquares[PAWN | captColor][behind];
 	}
 	break;
 	default:
 		break;
 	}
-	hash ^= ZobritsSides[side01];
-	game.Hash ^= hash;
 	game.Side ^= 24;
 }
 
-void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore, unsigned long long prevHash) {
+void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore) {
 
 	game.Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
 
@@ -288,7 +268,6 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevP
 	}
 	game.State = prevGameState;
 	game.PositionScore = prevPositionScore;
-	game.Hash = prevHash;
 	game.Side ^= 24;
 }
 
@@ -345,9 +324,9 @@ bool SquareAttacked(int square, char attackedBy) {
 			for (int r = 1; r <= raysCount; r++)
 			{
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
-				for (int s = 1; s <= rayLength; s++)
+				for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
 				{
-					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];
+					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
 					if (toSquare == square)
 						return true;
 					if (game.Squares[toSquare] > NOPIECE)
@@ -377,7 +356,6 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	int prevPosScore = game.PositionScore;
-	unsigned long long prevHash = game.Hash;
 	MakeMove(move);
 	move.ScoreAtDepth = GetScore();
 	int  kingSquare = game.KingSquares[(game.Side ^ 24) >> 4];
@@ -385,7 +363,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo) {
 	if (legal)
 		game.MovesBuffer[game.MovesBufferLength++] = move;
 
-	UnMakeMove(move, capture, prevGameState, prevPosScore, prevHash);
+	UnMakeMove(move, capture, prevGameState, prevPosScore);
 }
 
 void CreateMoves() {
@@ -504,9 +482,9 @@ void CreateMoves() {
 				for (int r = 1; r <= raysCount; r++)
 				{
 					int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
-					for (int s = 1; s <= rayLength; s++)
+					for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
 					{
-						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][s];
+						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
 						PieceType toPiece = game.Squares[toSquare];
 						MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 
@@ -560,10 +538,9 @@ int Perft(depth) {
 
 		GameState prevGameState = game.State;
 		int prevPositionScore = game.PositionScore;
-		unsigned long long prevHash = game.Hash;
 		MakeMove(move);
 		nodeCount += Perft(depth - 1);
-		UnMakeMove(move, capture, prevGameState, prevPositionScore, prevHash);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -632,13 +609,6 @@ void InitScores() {
 	game.PositionScore += KingPositionValueMatrix[endGame][1][game.KingSquares[1]];
 }
 
-void InitHash() {
-	game.Hash = 0;
-	for (int i = 0; i < 64; i++)
-		game.Hash ^= ZobritsPieceTypesSquares[game.Squares[i]][i];
-	game.Hash ^= ZobritsSides[game.Side >> 4];
-}
-
 void ReadFen(char * fen) {
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
@@ -701,7 +671,6 @@ void ReadFen(char * fen) {
 	}
 
 	InitScores();
-	InitHash();
 }
 
 void WriteFen(char * fenBuffer) {
@@ -765,7 +734,6 @@ PlayerMove MakePlayerMove(char * sMove) {
 			playerMove.PreviousGameState = game.State;
 			playerMove.Invalid = false;
 			playerMove.PreviousPositionScore = game.PositionScore;
-			playerMove.PreviousHash = game.Hash;
 			MakeMove(moves[i]);
 			return playerMove;
 		}
@@ -775,7 +743,7 @@ PlayerMove MakePlayerMove(char * sMove) {
 }
 
 void UnMakePlayerMove(PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore);
 }
 
 short TotalMaterial() {
@@ -785,9 +753,9 @@ short TotalMaterial() {
 void SwitchSignOfWhitePositionValue() {
 	for (int i = 1; i < 7; i++)
 	{
-		for (int s = 0; s < 64; s++)
+		for (int rnd_seed = 0; rnd_seed < 64; rnd_seed++)
 		{
-			PositionValueMatrix[i][0][s] = -PositionValueMatrix[i][0][s];
+			PositionValueMatrix[i][0][rnd_seed] = -PositionValueMatrix[i][0][rnd_seed];
 		}
 	}
 
@@ -799,8 +767,6 @@ void SwitchSignOfWhitePositionValue() {
 }
 
 int GetScore() {
-	// First get the score from database.
-	// or	
 	return game.Material[0] + game.Material[1] + game.PositionScore;
 }
 
@@ -833,11 +799,10 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			PieceType capture = game.Squares[childMove.To];
 			GameState state = game.State;
 			int prevPosScore = game.PositionScore;
-			unsigned long long prevHash = game.Hash;
 
 			MakeMove(childMove);
 			int childValue = AlphaBeta(bestVal, beta, depth - 1);
-			UnMakeMove(childMove, capture, state, prevPosScore, prevHash);
+			UnMakeMove(childMove, capture, state, prevPosScore);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
 				break;
@@ -851,10 +816,9 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			PieceType capture = game.Squares[childMove.To];
 			GameState state = game.State;
 			int prevPosScore = game.PositionScore;
-			unsigned long long prevHash = game.Hash;
 			MakeMove(childMove);
 			int childValue = AlphaBeta(alpha, bestVal, depth - 1);
-			UnMakeMove(childMove, capture, state, prevPosScore, prevHash);
+			UnMakeMove(childMove, capture, state, prevPosScore);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
 				break;
@@ -870,12 +834,13 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 		PieceType capt = game.Squares[move.To];
 		GameState gameState = game.State;
 		int positionScore = game.PositionScore;
-		unsigned long long prevHash = game.Hash;
 
 		MakeMove(move);
-		localMoves[i].ScoreAtDepth = AlphaBeta(-9000, 9000, depth);
-		//todo: store this better score for this position
-		UnMakeMove(move, capt, gameState, positionScore, prevHash);
+
+		//todo: aspiration window here
+		int score = AlphaBeta(-9000, 9000, depth);
+		localMoves[i].ScoreAtDepth = score;
+		UnMakeMove(move, capt, gameState, positionScore);
 	}
 }
 
@@ -934,18 +899,17 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 int main() {
 	SwitchSignOfWhitePositionValue();
 	InitGame();
-	GenerateZobritsKeys();
-	char s = 0;
-	while (s != 'q')
+	char rnd_seed = 0;
+	while (rnd_seed != 'q')
 	{
 		PrintGame();
 		printf("m: make move\n");
 		printf("c: cpu move\n");
 		printf("t: run tests\n");
 		printf("q: quit\n");
-		scanf_s(" %c", &s, 1);
+		scanf_s(" %c", &rnd_seed, 1);
 		system("@cls||clear");
-		switch (s)
+		switch (rnd_seed)
 		{
 		case 'm':
 			break;

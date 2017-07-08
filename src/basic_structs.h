@@ -65,7 +65,7 @@ typedef struct {
 	GameState PreviousGameState;
 	bool Invalid;
 	int PreviousPositionScore;
-	unsigned long long PreviousHash;
+	//unsigned long long PreviousHash;
 } PlayerMove;
 
 typedef struct {
@@ -79,18 +79,15 @@ typedef struct {
 	PerftResult PerftResult;
 	int _perftCount;
 	int PositionScore;
-	unsigned long long Hash;
+	//unsigned long long Hash;
 
 } Game;
 
 
 typedef enum  {
-	HashTableEmptyEntry = 0,
-	Legal = 1, //bit 1
-	Draw = 2, //bit 2
-	CheckMate = 4, //bit 3
-	NegScore = 8, //bit 4
-	Score = 0x1FFF0, //max 8191, 13 bits, no 5 tom 17
-	SearchDepth = 0x3E0000, //max 31, 5 bit, no 18 tom 22
-	//10 bits free, could be used as second key
+	HT_EmptyEntry = 0,
+	HT_NegScore = 1, //bit 1
+	HT_Score = 0x3FFE, //max 8191, 13 bits, no 2 tom 14
+	HT_SearchDepth = 0x1F, //max 31, 5 bit, no 15 tom 19
+	HT_SecondKey = 0xFFF //bit 20-32, 13 bits could be used as second key
 }HashTableEntry;

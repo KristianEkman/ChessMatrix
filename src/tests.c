@@ -6,7 +6,6 @@
 
 #include "main.h"
 #include "basic_structs.h"
-#include "HashTable.h"
 #include "utils.h"
 #pragma region TestsHelpers
 
@@ -271,39 +270,6 @@ void MaterialPromotion() {
 	AssertAreEqualInts(-400, TotalMaterial(), "Game Material missmatch");
 }
 
-void HashTableRoundTrip() {
-	printf("\n");printf(__func__);
-	unsigned long long hash = 0x1234567890ABCDEF;
-	short expected = 3000;
-	addEntry(hash, expected, 1);
-	short score = getScoreFromHash(hash);
-	AssertAreEqualInts(expected, score, "hash table score missmatch");
-
-	unsigned long long hash2 = hash + 1;
-	short expected2 = 4000;
-	addEntry(hash2, expected2, 1);
-	short score2 = getScoreFromHash(hash2);
-	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
-
-	score = getScoreFromHash(hash);
-	AssertAreEqualInts(expected, score, "hash table score missmatch");
-}
-
-void HashTablePerformance(int iterations) {
-	printf("\n");printf(__func__);
-	unsigned long long hash = llrand();
-	short expected = 1;
-
-	for (int i = 0; i < iterations; i++)
-	{
-		expected++;
-		hash ++;
-		addEntry(hash, expected, 1);
-		short score = getScoreFromHash(hash);
-		AssertAreEqualInts(expected, score, "hash table score missmatch");
-	}
-}
-
 void EnPassantMaterial() {
 	printf("\n");printf(__func__);
 	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
@@ -385,10 +351,11 @@ void TestWhiteMateIn2() {
 	char * startFen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
 	ReadFen(startFen);
 
-	Move bestMove = BestMoveAtDepth(2);
+	Move bestMove = BestMoveAtDepthDeepening(2);
 	char sMove[6];
 	MoveToString(bestMove, sMove);
 	AssertAreEqual("d5-d7", sMove, "Not the expected move");
+
 }
 
 //mate in 7 2r1nrk1/p4p1p/1p2p1pQ/nPqbRN2/8/P2B4/1BP2PPP/3R2K1 w - - 0 1
@@ -448,8 +415,6 @@ void runTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
-	HashTableRoundTrip();
-	TimedTest(100000000, HashTablePerformance);
 	PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();
