@@ -827,7 +827,11 @@ int AlphaBeta(int alpha, int beta, int depth) {
 	return bestVal;
 }
 
-void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
+void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount, bool * mate) {
+	int window = 8000;
+	if (depth > 5)
+		window = 250;
+
 	for (int i = 0; i < moveCount; i++)
 	{
 		Move move = localMoves[i];
@@ -837,10 +841,24 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 
 		MakeMove(move);
 
-		//todo: aspiration window here
-		int score = AlphaBeta(-9000, 9000, depth);
+		int alpha = move.ScoreAtDepth - window; 
+		int beta = move.ScoreAtDepth + window;
+		int score = AlphaBeta(alpha, beta, depth);
+		if (score < alpha || score > beta) {
+			i--;
+			window = 8000;
+			UnMakeMove(move, capt, gameState, positionScore);
+			continue;
+		}
+		if (depth > 5)
+			window = 250;
 		localMoves[i].ScoreAtDepth = score;
 		UnMakeMove(move, capt, gameState, positionScore);
+		if ((game.Side == WHITE && score < -7000) || (game.Side == BLACK && score > 7000))
+		{
+			*mate = true;
+			break;
+		}
 	}
 }
 
@@ -869,30 +887,21 @@ Move BestMove(Move * moves, int moveCount) {
 	return bestMove;
 }
 
-Move BestMoveAtDepth(int depth) {
-	CreateMoves();
-	int moveCount = game.MovesBufferLength;
-	Move * localMoves = malloc(moveCount * MOVESIZE);
-	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
-
-	SetMovesScoreAtDepth(depth, localMoves, moveCount);
-	return BestMove(localMoves, moveCount);
-}
-
 Move BestMoveAtDepthDeepening(int maxDepth) {
 	CreateMoves();
 	int moveCount = game.MovesBufferLength;
 	Move * localMoves = malloc(moveCount * MOVESIZE);
 	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
-
+	
 	int depth = 1;
+	bool mate = false;
 	do
 	{
-		SetMovesScoreAtDepth(depth, localMoves, moveCount);
+		SetMovesScoreAtDepth(depth, localMoves, moveCount, &mate);
 		SortMoves(localMoves, moveCount);
-
+		
 		depth++;
-	} while (depth <= maxDepth); //todo: continue until time ends
+	} while (depth <= maxDepth && !mate); //todo: continue until time ends
 	return localMoves[0];
 }
 

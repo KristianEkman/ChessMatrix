@@ -326,7 +326,7 @@ void BestMoveTest() {
 	ReadFen(startFen);
 	SearchedLeafs = 0;
 	clock_t start = clock();
-	Move bestMove = BestMoveAtDepth(5);
+	Move bestMove = BestMoveAtDepthDeepening(5);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -340,7 +340,7 @@ void BestMoveTestBlackCaptureBishop() {
 	char * startFen = "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6";
 	ReadFen(startFen);
 
-	Move bestMove = BestMoveAtDepth(4);
+	Move bestMove = BestMoveAtDepthDeepening(4);
 	char sMove[5];
 	MoveToString(bestMove, sMove);
 	AssertAreEqual("d5-c4", sMove, "Not the expected move");
@@ -366,7 +366,7 @@ void TestBlackMateIn5() {
 	char * startFen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
 	ReadFen(startFen);
 
-	Move bestMove = BestMoveAtDepth(5);
+	Move bestMove = BestMoveAtDepthDeepening(5);
 	char sMove[6];
 	MoveToString(bestMove, sMove);
 	AssertAreEqual("f4-h4", sMove, "Not the expected move");
@@ -401,6 +401,11 @@ void BestMoveByWhite() {
 	BestMoveDeepening(__func__, fen, "d2-d4");
 }
 
+void BestMoveByBlack() {
+	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
+	BestMoveDeepening(__func__, fen, "g7-g5");
+}
+
 void runTests() {
 	_failedAsserts = 0;
 	PerftTestStart();
@@ -424,6 +429,7 @@ void runTests() {
 	TestBlackMateIn5();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite();
+	BestMoveByBlack();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 
