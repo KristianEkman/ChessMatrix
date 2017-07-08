@@ -126,7 +126,7 @@ void MakeMove(Move move) {
 
 	game.Squares[t] = game.Squares[f];
 	game.Squares[f] = NOPIECE;
-	
+
 	//resetting en passant every move
 	game.State &= ~15;
 
@@ -371,7 +371,7 @@ void CreateMoves() {
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = game.Squares[i];
-		if (pieceType != NOPIECE && (pieceType & game.Side)) {
+		if (pieceType & game.Side) {
 			PieceType pt = pieceType & 7;
 			switch (pt)
 			{
@@ -505,6 +505,97 @@ void CreateMoves() {
 		}
 	}
 	SortMoves(game.MovesBuffer, game.MovesBufferLength);
+}
+
+void CreateCaptureMoves() {
+	game.MovesBufferLength = 0;
+	for (int i = 0; i < 64; i++)
+	{
+		PieceType pieceType = game.Squares[i];
+		if (pieceType & game.Side) {
+			PieceType pt = pieceType & 7;
+			char otherSide = game.Side ^ 24;
+			switch (pt)
+			{
+			case PAWN:
+			{
+				int captPat = PawnCapturePattern[game.Side >> 4];
+				int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
+				for (int pc = 1; pc <= pawnCapPatLength; pc++)
+				{
+					int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
+					//Must be a piece of opposite color.
+					if (game.Squares[toSquare] & (game.Side ^ 24))
+					{
+						if (toSquare < 8 || toSquare > 55) {
+							CreateMove(i, toSquare, PromotionQueen);
+							CreateMove(i, toSquare, PromotionRook);
+							CreateMove(i, toSquare, PromotionBishop);
+							CreateMove(i, toSquare, PromotionKnight);
+						}
+						else {
+							CreateMove(i, toSquare, PlainMove);
+						}
+					}
+					else {
+						int enpFile = (game.State & 15) - 1;
+						if (enpFile > -1) {
+							int toFile = toSquare & 7;
+							int toRank = toSquare >> 3;
+							if (toFile == enpFile && toRank == EnpassantRankPattern[game.Side >> 4])
+								CreateMove(i, toSquare, EnPassantCapture);
+						}
+					}
+				}
+				break;
+			}
+			case KNIGHT:
+			{
+				int length = PieceTypeSquarePatterns[0][i][0];
+				for (int p = 1; p <= length; p++)
+				{
+					int toSquare = PieceTypeSquarePatterns[0][i][p];
+					if (game.Squares[toSquare] & otherSide) {
+						CreateMove(i, toSquare, 0);
+					}
+				}
+				break;
+			}
+			case KING:
+			{
+				int length = PieceTypeSquarePatterns[1][i][0];
+				for (int p = 1; p <= length; p++)
+				{
+					int toSquare = PieceTypeSquarePatterns[1][i][p];
+					if (game.Squares[toSquare] & otherSide) {
+						CreateMove(i, toSquare, KingMove);
+					}
+				}
+				break;
+			}
+			default:
+			{
+				int pat = pt - 1;
+				int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
+				for (int r = 1; r <= raysCount; r++)
+				{
+					int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
+					for (int rr = 1; rr <= rayLength; rr++)
+					{
+						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
+						PieceType toPiece = game.Squares[toSquare];
+						MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
+						if (toPiece & otherSide) {
+							CreateMove(i, toSquare, moveInfo);
+							break;
+						}
+					}
+				}
+				break;
+			}
+			}
+		}
+	}
 }
 
 int Perft(depth) {
@@ -770,9 +861,62 @@ int GetScore() {
 	return game.Material[0] + game.Material[1] + game.PositionScore;
 }
 
-int AlphaBeta(int alpha, int beta, int depth) {
+int AlphaBetaQuite(int alpha, int beta, int depth) {
 	if (!depth) {
 		SearchedLeafs++;
+		return GetScore();
+	}
+
+	int bestVal = 0;
+	CreateCaptureMoves();
+	int moveCount = game.MovesBufferLength;
+	Move * localMoves = malloc(moveCount * MOVESIZE);
+	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
+	if (moveCount == 0) {
+		return GetScore();
+	}
+	else if (game.Side == BLACK) { //maximizing
+		bestVal = alpha;
+		for (int i = 0; i < moveCount; i++)
+		{
+			Move childMove = localMoves[i];
+			PieceType capture = game.Squares[childMove.To];
+			GameState state = game.State;
+			int prevPosScore = game.PositionScore;
+
+			MakeMove(childMove);
+			int childValue = AlphaBetaQuite(bestVal, beta, depth - 1);
+			UnMakeMove(childMove, capture, state, prevPosScore);
+			bestVal = max(bestVal, childValue);
+			if (bestVal >= beta)
+				break;
+		}
+	}
+	else { //minimizing
+		bestVal = beta;
+		for (int i = 0; i < moveCount; i++)
+		{
+			Move childMove = localMoves[i];
+			PieceType capture = game.Squares[childMove.To];
+			GameState state = game.State;
+			int prevPosScore = game.PositionScore;
+			MakeMove(childMove);
+			int childValue = AlphaBetaQuite(alpha, bestVal, depth - 1);
+			UnMakeMove(childMove, capture, state, prevPosScore);
+			bestVal = min(bestVal, childValue);
+			if (bestVal <= alpha)
+				break;
+		}
+	}
+	return bestVal;
+}
+
+int AlphaBeta(int alpha, int beta, int depth, PieceType capture) {
+	if (!depth) {
+		SearchedLeafs++;
+		if (capture) {
+			return AlphaBetaQuite(alpha, beta, 1);
+		}
 		//todo, is it worth probing database here? Dont think so.
 		return GetScore();
 	}
@@ -801,7 +945,7 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			int prevPosScore = game.PositionScore;
 
 			MakeMove(childMove);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture);
 			UnMakeMove(childMove, capture, state, prevPosScore);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
@@ -817,7 +961,7 @@ int AlphaBeta(int alpha, int beta, int depth) {
 			GameState state = game.State;
 			int prevPosScore = game.PositionScore;
 			MakeMove(childMove);
-			int childValue = AlphaBeta(alpha, bestVal, depth - 1);
+			int childValue = AlphaBeta(alpha, bestVal, depth - 1, capture);
 			UnMakeMove(childMove, capture, state, prevPosScore);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
@@ -830,7 +974,7 @@ int AlphaBeta(int alpha, int beta, int depth) {
 void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount, bool * mate) {
 	int window = 8000;
 	if (depth > 5)
-		window = 250;
+		window = 15;
 
 	for (int i = 0; i < moveCount; i++)
 	{
@@ -841,9 +985,9 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount, bool * ma
 
 		MakeMove(move);
 
-		int alpha = move.ScoreAtDepth - window; 
+		int alpha = move.ScoreAtDepth - window;
 		int beta = move.ScoreAtDepth + window;
-		int score = AlphaBeta(alpha, beta, depth);
+		int score = AlphaBeta(alpha, beta, depth, capt);
 		if (score < alpha || score > beta) {
 			i--;
 			window = 8000;
@@ -851,7 +995,7 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount, bool * ma
 			continue;
 		}
 		if (depth > 5)
-			window = 250;
+			window = 15;
 		localMoves[i].ScoreAtDepth = score;
 		UnMakeMove(move, capt, gameState, positionScore);
 		if ((game.Side == WHITE && score < -7000) || (game.Side == BLACK && score > 7000))
@@ -892,14 +1036,14 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 	int moveCount = game.MovesBufferLength;
 	Move * localMoves = malloc(moveCount * MOVESIZE);
 	memcpy(localMoves, game.MovesBuffer, moveCount * MOVESIZE);
-	
+
 	int depth = 1;
 	bool mate = false;
 	do
 	{
 		SetMovesScoreAtDepth(depth, localMoves, moveCount, &mate);
 		SortMoves(localMoves, moveCount);
-		
+
 		depth++;
 	} while (depth <= maxDepth && !mate); //todo: continue until time ends
 	return localMoves[0];

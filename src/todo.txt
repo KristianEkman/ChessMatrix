@@ -1,5 +1,9 @@
-Undersök effekten av sortering
-Iterative deepening och ordering.
+ Quitesearch
+	- testa ordentligt.
+
+Hash table. 
+	- Läs i alpha beta.
+	- Dubbelkolla init.
 
 Multithreading.
 
