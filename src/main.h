@@ -1,6 +1,8 @@
 #pragma once
 #include "basic_structs.h"
 
+#define SEARCHTHREADS 8
+
 int Perft(int depth);
 void PrintGame();
 void ReadFen(char * fen);
@@ -10,8 +12,8 @@ PlayerMove MakePlayerMove(char * sMove);
 void UnMakePlayerMove(PlayerMove move);
 
 Move parseMove(char * sMove, MoveInfo info);
-Game game;
-short TotalMaterial();
+Game mainGame;
+short TotalMaterial(Game * game);
 int SearchedLeafs;
 Move BestMoveAtDepthDeepening(int maxDepth);
-int GetScore();
+int GetScore(Game * game);

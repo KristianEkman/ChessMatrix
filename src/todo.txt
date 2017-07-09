@@ -1,6 +1,13 @@
  Quitesearch
 	- testa ordentligt.
 
+Threading
+	byt namn game -> mainGame
+	byt till pekar-parameter utom read fen mm.
+	kopiera main till generering och sökning.
+	
+	array of thread games
+
 Hash table. 
 	- Läs i alpha beta.
 	- Dubbelkolla init.
