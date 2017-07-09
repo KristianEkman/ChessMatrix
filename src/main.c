@@ -15,7 +15,7 @@
 
 const int MOVESIZE = sizeof(Move);
 Game mainGame;
-Game threadGames[SEARCHTHREADS];
+Game threadGames[SEARCH_THREADS];
 
 int _behind[] = { -8, 8 };
 int SearchedLeafs = 0;
@@ -876,6 +876,7 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
 	Move * localMoves = malloc(moveCount * MOVESIZE);
 	memcpy(localMoves, game->MovesBuffer, moveCount * MOVESIZE);
 	if (moveCount == 0) {
+		free(localMoves);
 		return GetScore(game);
 	}
 	else if (game->Side == BLACK) { //maximizing
@@ -911,6 +912,7 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
 				break;
 		}
 	}
+	free(localMoves);
 	return bestVal;
 }
 
@@ -920,7 +922,6 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 		if (capture) {
 			return AlphaBetaQuite(alpha, beta, 1, game);
 		}
-		//todo, is it worth probing database here? Dont think so.
 		return GetScore(game);
 	}
 	int bestVal = 0;
@@ -971,10 +972,11 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 				break;
 		}
 	}
+	free(localMoves);
 	return bestVal;
 }
 
-void CopyMainGame(int threadNo){
+Game * CopyMainGame(int threadNo) {
 	threadGames[threadNo] = mainGame;
 	threadGames[threadNo].KingSquares[0] = mainGame.KingSquares[0];
 	threadGames[threadNo].KingSquares[1] = mainGame.KingSquares[1];
@@ -982,48 +984,77 @@ void CopyMainGame(int threadNo){
 	threadGames[threadNo].Material[1] = mainGame.Material[1];
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * MOVESIZE);
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
+	return &threadGames[threadNo];
 }
 
-DWORD SearchThread(int threadId) {
-	Game * game = &threadGames[threadId];
-	return 0;
-}
-
-void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount, bool * mate) {
-	int window = 8000;
-	if (depth > 5)
-		window = 15;
-
-	Game * game = &mainGame;
-
-	for (int i = 0; i < moveCount; i++)
+DWORD WINAPI SearchThread(ThreadParams * prm) {
+	//ThreadParams params = *prm;
+	do
 	{
-		Move move = localMoves[i];
+		Game * game = CopyMainGame(prm->threadID);
+		Move move = prm->moves[prm->moveIndex];
 		PieceType capt = game->Squares[move.To];
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
 
 		MakeMove(move, game);
 
-		int alpha = move.ScoreAtDepth - window;
-		int beta = move.ScoreAtDepth + window;
-		int score = AlphaBeta(alpha, beta, depth, capt, game);
+		int alpha = move.ScoreAtDepth - prm->window;
+		int beta = move.ScoreAtDepth + prm->window;
+		int score = AlphaBeta(alpha, beta, prm->depth, capt, game);
 		if (score < alpha || score > beta) {
-			i--;
-			window = 8000;
+			prm->window = 8000;
 			UnMakeMove(move, capt, gameState, positionScore, game);
 			continue;
 		}
-		if (depth > 5)
-			window = 15;
-		localMoves[i].ScoreAtDepth = score;
+		if (prm->depth > 5)
+			prm->window = 15;
+
+		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
+
 		UnMakeMove(move, capt, gameState, positionScore, game);
 		if ((game->Side == WHITE && score < -7000) || (game->Side == BLACK && score > 7000))
 		{
-			*mate = true;
-			break;
+			return 0;
 		}
+		prm->moveIndex += SEARCH_THREADS;
+	} while (prm->moveIndex < prm->moveCount);
+
+	return 0;
+}
+
+void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
+	int window = 8000;
+	if (depth > 5)
+		window = 15;
+	else
+		window = 8000;
+
+	int moveIndex = 0;
+	//starta en tråd per drag
+	//starta inte fler trådar än 8 (kärnor)
+	//när en tråd är klar, starta nästa
+	//när alla trådar är klara returnera
+	HANDLE threadHandles[SEARCH_THREADS];
+	ThreadParams params[SEARCH_THREADS];
+
+	for (int i = 0; i < SEARCH_THREADS; i++)
+	{
+		if (i > moveCount) //in case more threads than moves
+			break;
+
+		params[i].threadID = i;
+		params[i].depth = depth;
+		params[i].moves = localMoves;
+		params[i].moveIndex = i;
+		params[i].moveCount = moveCount;
+		params[i].window = window;
+
+		threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
+		//todo: error handling
 	}
+	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
+	
 }
 
 Move BestMove(Move * moves, int moveCount) {
@@ -1058,35 +1089,40 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 	memcpy(localMoves, mainGame.MovesBuffer, moveCount * MOVESIZE);
 
 	int depth = 1;
-	bool mate = false;
 	do
 	{
-		SetMovesScoreAtDepth(depth, localMoves, moveCount, &mate);
+		SetMovesScoreAtDepth(depth, localMoves, moveCount);
 		SortMoves(localMoves, moveCount, &mainGame);
 
 		depth++;
-	} while (depth <= maxDepth && !mate); //todo: continue until time ends
+	} while (depth <= maxDepth); //todo: continue until time ends
 	return localMoves[0];
+}
+
+void computerMove() {
+	Move move = BestMoveAtDepthDeepening(6);
+	MakeMove(move, &mainGame);
 }
 
 int main() {
 	SwitchSignOfWhitePositionValue();
 	InitGame();
-	char rnd_seed = 0;
-	while (rnd_seed != 'q')
+	char scan = 0;
+	while (scan != 'q')
 	{
 		PrintGame();
 		printf("m: make move\n");
-		printf("c: cpu move\n");
+		printf("c: computer move\n");
 		printf("t: run tests\n");
 		printf("q: quit\n");
-		scanf_s(" %c", &rnd_seed, 1);
+		scanf_s(" %c", &scan, 1);
 		system("@cls||clear");
-		switch (rnd_seed)
+		switch (scan)
 		{
 		case 'm':
 			break;
 		case 'c':
+			computerMove();
 			break;
 		case 't':
 			runTests();
@@ -1102,4 +1138,3 @@ int main() {
 
 	return 0;
 }
-

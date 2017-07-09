@@ -83,6 +83,15 @@ typedef struct {
 
 } Game;
 
+typedef struct {
+	int threadID;
+	Move * moves;
+	int moveCount;
+	int moveIndex;
+	int depth;
+	int window;
+} ThreadParams;
+
 
 typedef enum  {
 	HT_EmptyEntry = 0,

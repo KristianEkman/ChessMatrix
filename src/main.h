@@ -1,7 +1,7 @@
 #pragma once
 #include "basic_structs.h"
 
-#define SEARCHTHREADS 8
+#define SEARCH_THREADS 8
 
 int Perft(int depth);
 void PrintGame();
