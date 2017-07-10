@@ -1,12 +1,7 @@
  Quitesearch
 	- testa ordentligt.
 
-Threading
-	byt namn game -> mainGame
-	byt till pekar-parameter utom read fen mm.
-	kopiera main till generering och sökning.
-	
-	array of thread games
+Komprimera Move
 
 Hash table. 
 	- Läs i alpha beta.
@@ -50,6 +45,4 @@ Eval:
 	Opening Score
 	End score
 
-Sökning Engine
-	Quite search, hur snabb är den? Branching factor?
 	Vad är null move pruning
