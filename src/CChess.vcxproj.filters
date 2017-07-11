@@ -33,6 +33,9 @@
     <ClCompile Include="sort.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hashTable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patterns.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hashTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,55 +1,23 @@
- Quitesearch
-	- testa ordentligt.
+Enpassant file not working for fen undo senario.
 
-Threading
-	byt namn game -> mainGame
-	byt till pekar-parameter utom read fen mm.
-	kopiera main till generering och sökning.
-	
-	array of thread games
-
-Hash table. 
-	- Läs i alpha beta.
+Hash table.
+	- Testa hur unik hash är med fen.
+	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
+	- Tänka ut när hashtable ska användas. (I början och slutet av alpha och i create moves för sorteringens skull)
 	- Dubbelkolla init.
 
-Multithreading.
-
-(Hash table, kanske inte behövs)
-
-
-Två metoder för move generation och evaluation?
-	- Generation, ingen material, position eller score beräkning. Vid CreateMoves. Sätter hashen.
-	- Score behövs efter generering för sorteringens skull och bättre ju mer djup, 
-	  men om det inte finns ett entry i hashtable räknas score ut och lagras med djup.
-	  
-	  Vid sökning med hash table.
-		- Lista möjliga drag
-		- Räkna ut hash
-		- Hämta entry från db. Kan ge score, legal
-		(Man behöver vit och svarts material för att kunna avgöra när endgame börjar. Räcker det med 4 byte?)
-		(endgame som flagga?)
-
-		- Om inget entry finns
-			- Gör draget och räkna ut scores.			
-			Spara entry.
-			Undo.
-		- Skicka tillbaka listan med möjliga drag.
-
-	Hashning behövs för att hämta score uträknad med stort djup, så att sortering och pruning kan ske.
-	Fast sortering kan ju ske vid varje iteration i deepeing. Det borde öka cut-off.
-	Sortering borde nog också ske i varje alphbeta - create move? Tests separat isf.
+Mer pruning
+	Vad är null move pruning
+	Futilty pruning
 
 Eval: 
-	För mycket poäng för position? Dela matriser med 2?
+	För mycket poäng för position? Dela matriser med x?
 
 	Open rook file --performance ??
 	Bad bishops -- performance ??
-	Outposts
+	Outposts -- performance ??
 	
 	Opening Book
-	Opening Score
-	End score
+	Opening Score, early queen, minor piece count.
 
 Sökning Engine
-	Quite search, hur snabb är den? Branching factor?
-	Vad är null move pruning

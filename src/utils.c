@@ -20,13 +20,13 @@ int parseChar(char c) {
 
 unsigned long long  rnd_seed = 1070372;
 
-unsigned long long llrand() {
+unsigned long long _llrand() {
 
 	rnd_seed ^= rnd_seed >> 12, rnd_seed ^= rnd_seed << 25, rnd_seed ^= rnd_seed >> 27;
 	return rnd_seed * 2685821657736338717LL;
 }
 
-unsigned long long _llrand() {
+unsigned long long llrand() {
 	unsigned long long r = 0;
 
 	for (int i = 0; i < 5; ++i) {

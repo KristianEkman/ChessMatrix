@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="evaluation.c" />
+    <ClCompile Include="hashTable.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="patterns.c" />
     <ClCompile Include="sort.c" />
@@ -154,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="evaluation.h" />
+    <ClInclude Include="hashTable.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />

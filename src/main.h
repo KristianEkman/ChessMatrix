@@ -3,7 +3,6 @@
 
 #define SEARCH_THREADS 8
 
-int Perft(int depth);
 void PrintGame();
 void ReadFen(char * fen);
 void WriteFen(char * fen);
@@ -17,3 +16,9 @@ short TotalMaterial(Game * game);
 int SearchedLeafs;
 Move BestMoveAtDepthDeepening(int maxDepth);
 int GetScore(Game * game);
+void CreateMoves(Game * game);
+void MakeMove(Move move, Game * mainGame);
+void UnMakeMove(Move move,PieceType capture,GameState prevGameState, int prevPositionScore, Game * game, unsigned long long prevHash);
+const int MOVESIZE;
+
+

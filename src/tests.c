@@ -7,6 +7,8 @@
 #include "main.h"
 #include "basic_structs.h"
 #include "utils.h"
+#include "hashTable.h"
+
 #pragma region TestsHelpers
 
 int _failedAsserts = 0;
@@ -102,8 +104,161 @@ void MoveToString(Move move, char * sMove) {
 	sMove[4] = toRank;
 	sMove[5] = '\0';
 }
+
+typedef struct {
+	unsigned long long Hash;
+	char Fen[100];
+} HashFen;
+
+HashFen HashFenDb[1000000];
+
 #pragma endregion
 
+
+void HashTableRoundTrip() {
+	printf("\n");printf(__func__);
+	ClearHashTable();
+	unsigned long long hash = 0x1234567890ABCDEF;
+	short expected = 3000;
+	addEntry(hash, expected, 1);
+	short score = getScoreFromHash(hash);
+	AssertAreEqualInts(expected, score, "hash table score missmatch");
+
+	unsigned long long hash2 = hash + 1;
+	short expected2 = 4000;
+	addEntry(hash2, expected2, 1);
+	short score2 = getScoreFromHash(hash2);
+	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
+
+	score = getScoreFromHash(hash);
+	AssertAreEqualInts(expected, score, "hash table score missmatch");
+}
+
+void HashTableDepthTest() {
+	printf("\n");printf(__func__);
+	ClearHashTable();
+	unsigned long long hash = 0x1234567890ABCDEF;
+
+	addEntry(hash, 3000, 2);
+	short score = getScoreFromHash(hash);
+	AssertAreEqualInts(3000, score, "hash table score missmatch");
+
+	addEntry(hash, 4000, 1); //smaller depth
+	short score2 = getScoreFromHash(hash);
+	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
+
+	addEntry(hash, 5000, 3); //smaller depth
+	score = getScoreFromHash(hash);
+	AssertAreEqualInts(5000, score, "larger depth should replace value");
+}
+
+void HashTablePerformance(int iterations) {
+	printf("\n");printf(__func__);
+	ClearHashTable();
+	unsigned long long hash = llrand();
+	short expected = 1;
+
+	for (int i = 0; i < iterations; i++)
+	{
+		expected++;
+		hash++;
+		addEntry(hash, expected, 1);
+		short score = getScoreFromHash(hash);
+		AssertAreEqualInts(expected, score, "hash table score missmatch");
+	}
+}
+
+
+int Perft(depth) {
+	if (depth == 0)
+	{
+		return 1;
+	}
+	int nodeCount = 0;
+	CreateMoves(&mainGame);
+	if (mainGame.MovesBufferLength == 0)
+		return nodeCount;
+	int count = mainGame.MovesBufferLength;
+	Move * localMoves = malloc(count * MOVESIZE);
+	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	for (int i = 0; i < count; i++)
+	{
+		Move move = localMoves[i];
+		PieceType capture = mainGame.Squares[move.To];
+		if (depth == 1) {
+			if (capture != NOPIECE)
+				mainGame.PerftResult.Captures++;
+			if (move.MoveInfo == EnPassantCapture)
+				mainGame.PerftResult.Captures++;
+			if (move.MoveInfo == CastleLong || move.MoveInfo == CastleShort)
+				mainGame.PerftResult.Castles++;
+			if (move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight)
+				mainGame.PerftResult.Promotions++;
+			if (move.MoveInfo == EnPassantCapture)
+				mainGame.PerftResult.Enpassants++;
+		}
+
+		GameState prevGameState = mainGame.State;
+		int prevPositionScore = mainGame.PositionScore;
+		unsigned long long prevHash = mainGame.Hash;
+
+		MakeMove(move, &mainGame);
+		nodeCount += Perft(depth - 1);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+	}
+	free(localMoves);
+	return nodeCount;
+}
+
+int perftSaveHashCount = 0;
+int collisionCount = 0;
+void PerftSaveHash(depth) {
+
+	char hasHash = FALSE;
+	char fen[100];
+	WriteFen(fen);
+	for (size_t i = 0; i < perftSaveHashCount; i++)
+	{
+		if (HashFenDb[i].Hash == mainGame.Hash) {
+			hasHash = TRUE;
+			
+			if (strcmp(fen, HashFenDb[i].Fen)) {
+				collisionCount++;
+				printf("\ncollision %d:\n%s\n%s", collisionCount ,fen, HashFenDb[i].Fen);
+			}
+		}
+	}
+
+	if (!hasHash) {
+		HashFenDb[perftSaveHashCount].Hash = mainGame.Hash;
+		strcpy(HashFenDb[perftSaveHashCount].Fen, fen);
+		perftSaveHashCount++;
+		if (perftSaveHashCount % 10000 == 0)
+			printf("\n%d", perftSaveHashCount);
+	}
+
+	if (depth == 0)
+		return;
+	CreateMoves(&mainGame);
+	if (mainGame.MovesBufferLength == 0)
+		return;
+	int count = mainGame.MovesBufferLength;
+	Move * localMoves = malloc(count * MOVESIZE);
+	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	for (int i = 0; i < count; i++)
+	{
+		Move move = localMoves[i];
+		PieceType capture = mainGame.Squares[move.To];
+		GameState prevGameState = mainGame.State;
+		int prevPositionScore = mainGame.PositionScore;
+		unsigned long long prevHash = mainGame.Hash;
+
+		MakeMove(move, &mainGame);
+		PerftSaveHash(depth - 1);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+	}
+	free(localMoves);
+}
 
 int PerftTest(char * fen, int depth) {
 
@@ -135,6 +290,16 @@ int PerftTest(char * fen, int depth) {
 	WriteFen(outFen);
 	AssertAreEqual(fen, outFen, "Start and end FEN differ");
 	return perftCount;
+}
+
+void PerftSaveHashTest() {
+	printf("\n");printf(__func__);
+	perftSaveHashCount = 0;
+	collisionCount = 0;
+	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"); //quite complicated position
+	PerftSaveHash(3);
+	printf("\nHash entries: %d\n", perftSaveHashCount);
+	printf("\nCollisions: %d\n", collisionCount);
 }
 
 void FenTest() {
@@ -334,7 +499,6 @@ void BestMoveTest() {
 	printf("\n%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
 }
 
-
 void BestMoveTestBlackCaptureBishop() {
 	printf("\n");printf(__func__);
 	char * startFen = "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6";
@@ -372,7 +536,6 @@ void TestBlackMateIn5() {
 	AssertAreEqual("f4-h4", sMove, "Not the expected move");
 }
 
-
 void BestMoveDeepening(char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****", testName);
 	ReadFen(fen);
@@ -388,7 +551,6 @@ void BestMoveDeepening(char * testName, char * fen, char * expected) {
 	printf("\nBest Move: %s score %d", sMove, bestMove.ScoreAtDepth);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 }
-
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
@@ -408,8 +570,14 @@ void BestMoveByBlack() {
 
 void runTests() {
 	_failedAsserts = 0;
+	TimedTest(50000000, HashTablePerformance);
+	/*
+	*/
+	HashTableRoundTrip();
+	HashTableDepthTest();
 	PerftTestStart();
 	PerfTestPosition2();
+	PerftSaveHashTest();
 	FenTest();
 	ValidMovesPromotionCaptureAndCastling();
 	LongCastling();
@@ -430,6 +598,8 @@ void runTests() {
 	BlackMatesIn5Deeping();
 	BestMoveByWhite();
 	BestMoveByBlack();
+	/*
+	*/
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 
@@ -437,5 +607,3 @@ void runTests() {
 	_getch();
 	system("@cls||clear");
 }
-
-
