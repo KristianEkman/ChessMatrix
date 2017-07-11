@@ -6,7 +6,6 @@ Utan oredering efter varje create moves.
 Best Move: d2-d4 score -205
 
 Med oredering efter varje create moves.
-=======================================
 5858.99k leafs in 12.31s
 476.11k leafs/s
 Best Move: d2-d4 score -205
@@ -15,18 +14,3 @@ Resultat:
 4:del av tiden
 3,6 ggr långsammare
 14 ggr färre drag
-
-
-Med 8 trådar och aspiration window
-==================================
-4091.22k leafs in 1.74s
-2358.05k leafs/s
-Best Move: d2-d4 score -90
-
-7:e del av tiden
-5 ggr snabbare
-30% färre drag
-
-Move som int enum
-=================
-

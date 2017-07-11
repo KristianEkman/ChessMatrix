@@ -91,10 +91,10 @@ void printPerftResults() {
 }
 
 void MoveToString(Move move, char * sMove) {
-	char fromFile = (From(move) & 7) + 'a';
-	char fromRank = (From(move) >> 3) + '1';
-	char toFile = (To(move) & 7) + 'a';
-	char toRank = (To(move) >> 3) + '1';
+	char fromFile = (move.From & 7) + 'a';
+	char fromRank = (move.From >> 3) + '1';
+	char toFile = (move.To & 7) + 'a';
+	char toRank = (move.To >> 3) + '1';
 	sMove[0] = fromFile;
 	sMove[1] = fromRank;
 	sMove[2] = '-';
@@ -175,7 +175,7 @@ void PerftTestStart() {
 bool MovesContains(Move * moves, int count, Move move) {
 	for (int i = 0; i < count; i++)
 	{
-		if ((moves[i] >> 16) == (move >> 16)) {
+		if (moves[i].From == move.From && moves[i].To == move.To && moves[i].MoveInfo == move.MoveInfo) {
 			return true;
 		}
 	}
@@ -189,7 +189,10 @@ void ValidMovesPromotionCaptureAndCastling() {
 	ReadFen(fen);
 	int count = ValidMoves(moves);
 	AssertAreEqualInts(44, count, "Moves count missmatch");
-	Move expectedMove = parseMove("e1-g1", CastleShort);
+	Move expectedMove;
+	expectedMove.From = 4;
+	expectedMove.To = 6;
+	expectedMove.MoveInfo = CastleShort;
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
@@ -200,7 +203,10 @@ void LongCastling() {
 	ReadFen(fen);
 	int count = ValidMoves(moves);
 	AssertAreEqualInts(48, count, "Moves count missmatch");
-	Move expectedMove = parseMove("e1-c1", CastleLong);
+	Move expectedMove;
+	expectedMove.From = 4;
+	expectedMove.To = 2;
+	expectedMove.MoveInfo = CastleLong;
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
@@ -324,7 +330,7 @@ void BestMoveTest() {
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	//printf("\nFrom:%u  To:%u  Leafs:%u", bestMove.From, bestMove.To, SearchedLeafs);
+	printf("\nFrom:%u  To:%u  Leafs:%u", bestMove.From, bestMove.To, SearchedLeafs);
 	printf("\n%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
 }
 
@@ -379,7 +385,7 @@ void BestMoveDeepening(char * testName, char * fen, char * expected) {
 	printf("\n%.2fk leafs/s", SearchedLeafs / (1000 * secs));
 	char sMove[6];
 	MoveToString(bestMove, sMove);
-	printf("\nBest Move: %s score %d", sMove, (short)bestMove);
+	printf("\nBest Move: %s score %d", sMove, bestMove.ScoreAtDepth);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 }
 
@@ -402,7 +408,6 @@ void BestMoveByBlack() {
 
 void runTests() {
 	_failedAsserts = 0;
-	/*
 	PerftTestStart();
 	PerfTestPosition2();
 	FenTest();
@@ -418,9 +423,6 @@ void runTests() {
 	PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();
-	*/
-	/*
-	*/
 	BestMoveTest();
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();

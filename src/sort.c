@@ -29,12 +29,12 @@ int partition(Move moves[], int left, int right) {
 	{
 		do {
 			++i;
-		} while ((short)moves[i] <= (short)pivot && i <= right);
+		} while (moves[i].ScoreAtDepth <= pivot.ScoreAtDepth && i <= right);
 
 		do {
 			--j;
 		}
-		while ((short)moves[j] > (short)pivot);
+		while (moves[j].ScoreAtDepth > pivot.ScoreAtDepth);
 		
 		if (i >= j)
 			break;
@@ -70,11 +70,11 @@ int partitionDescending(Move moves[], int left, int right) {
 	{
 		do {
 			++i;
-		} while (-(short)moves[i] <= -(short)pivot && i <= right);
+		} while (-moves[i].ScoreAtDepth <= -pivot.ScoreAtDepth && i <= right);
 
 		do {
 			--j;
-		} while (-(short)moves[j] > -(short)pivot);
+		} while (-moves[j].ScoreAtDepth > -pivot.ScoreAtDepth);
 
 		if (i >= j)
 			break;

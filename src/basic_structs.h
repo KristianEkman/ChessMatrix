@@ -34,11 +34,12 @@ typedef enum {
 	//
 }MoveInfo;
 
-typedef enum {
-	ScoreMask = 0xFF,
-	FromMask = 0x3F, //0-63, 6bit, mask 3F, bit 17 - 22
-	ToMask = 0x3F, //0-63, 6bit, mask 3F, bit 23 - 28
-	MoveInfoMask = 0xF, //4 bits, bit 29 - 32
+typedef struct {
+	char From; //0-63, 6bit, mask 3F
+	char To; //0-63, 6bit, mask FC0, 4032
+	char MoveInfo; //4 bits, 13-16
+	short ScoreAtDepth;
+	//could shrink
 } Move;
 
 typedef enum  {
@@ -73,11 +74,11 @@ typedef struct {
 	Move MovesBuffer[100];
 	int KingSquares[2];
 	GameState State;
-	int Material[2];
+	short Material[2];
 	PieceType Squares[64];
 	PerftResult PerftResult;
 	int _perftCount;
-	short PositionScore;
+	int PositionScore;
 	//unsigned long long Hash;
 
 } Game;
