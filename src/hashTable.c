@@ -65,6 +65,10 @@ void GenerateZobritsKeys() {
 	ZobritsSides[1] = llrand();
 	for (int i = 0; i < 4; i++)
 		ZobritsCastlingRights[i] = llrand();
+
+	ZobritsEnpassantFile[0] = 0; //no enpassant file
+	for (int i = 1; i < 8; i++)
+		ZobritsEnpassantFile[i] = llrand();
 }
 
 void ClearHashTable() {

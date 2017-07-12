@@ -1,7 +1,6 @@
 Enpassant file not working for fen undo senario.
 
 Hash table.
-	- Testa hur unik hash är med fen.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
 	- Tänka ut när hashtable ska användas. (I början och slutet av alpha och i create moves för sorteringens skull)
 	- Dubbelkolla init.
@@ -9,6 +8,7 @@ Hash table.
 Mer pruning
 	Vad är null move pruning
 	Futilty pruning
+	Razoring
 
 Eval: 
 	För mycket poäng för position? Dela matriser med x?

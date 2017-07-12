@@ -135,6 +135,7 @@ void MakeMove(Move move, Game * game) {
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
 
+	hash ^= ZobritsEnpassantFile[game->State & 15];
 	//resetting en passant every move
 	game->State &= ~15;
 
@@ -228,7 +229,8 @@ void MakeMove(Move move, Game * game) {
 	}
 	break;
 	case EnPassant:
-		game->State |= ((move.From & 7) + 1); //Sets the file. a to h file is 1 to 8.
+		game->State |= ((f & 7) + 1); //Sets the file. a to h. File is 1 to 8.
+		hash ^= ZobritsEnpassantFile[(f & 7) + 1];
 		break;
 	case EnPassantCapture:
 	{
@@ -795,10 +797,16 @@ void WriteFen(char * fenBuffer) {
 	if (mainGame.State & BlackCanCastleShort) fenBuffer[index++] = 'k';
 	if (mainGame.State & BlackCanCastleLong) fenBuffer[index++] = 'q';
 	fenBuffer[index++] = ' ';
-	char enPassantFile = (mainGame.State & 15) + '0';
-	if (enPassantFile == '0') //todo, should be between a and h. rank 6 for white 3 for black
-		enPassantFile = '-';
-	//fenBuffer[index++] = enPassantFile;
+
+	char noFile = 'a' - 1;
+	char enPassantFile = (mainGame.State & 15) + noFile;
+	if (enPassantFile == noFile) //todo, should be between a and h. rank 6 for white 3 for black
+		fenBuffer[index++] = '-';
+	else
+	{
+		fenBuffer[index++] = enPassantFile;
+		fenBuffer[index++] = mainGame.Side == WHITE ? '6' : '3';
+	}
 	fenBuffer[index] = '\0';
 }
 

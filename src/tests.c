@@ -224,14 +224,14 @@ void PerftSaveHash(depth) {
 			
 			if (strcmp(fen, HashFenDb[i].Fen)) {
 				collisionCount++;
-				printf("\ncollision %d:\n%s\n%s", collisionCount ,fen, HashFenDb[i].Fen);
+				printf("\ncollision %d:\n%s\n%s\nHash: %llu", collisionCount ,fen, HashFenDb[i].Fen, mainGame.Hash);
 			}
 		}
 	}
 
 	if (!hasHash) {
 		HashFenDb[perftSaveHashCount].Hash = mainGame.Hash;
-		strcpy(HashFenDb[perftSaveHashCount].Fen, fen);
+		strcpy_s(HashFenDb[perftSaveHashCount].Fen, 100, fen);
 		perftSaveHashCount++;
 		if (perftSaveHashCount % 10000 == 0)
 			printf("\n%d", perftSaveHashCount);
@@ -308,6 +308,20 @@ void FenTest() {
 	char outFen[100];
 	WriteFen(outFen);
 	AssertAreEqual(fen1, outFen, "Start and end fen differ");
+}
+
+void FenEnppasantTest() {
+	printf("\n");printf(__func__);
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	MakePlayerMove("d2-d4");
+	char fen[100];
+	WriteFen(fen);
+	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
+
+	PlayerMove pm2 = MakePlayerMove("d7-d6");
+	UnMakePlayerMove(pm2);
+	WriteFen(fen);
+	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
 }
 
 void TimedTest(int iterations, void(*func)(int)) {
@@ -570,9 +584,9 @@ void BestMoveByBlack() {
 
 void runTests() {
 	_failedAsserts = 0;
-	TimedTest(50000000, HashTablePerformance);
 	/*
 	*/
+	TimedTest(50000000, HashTablePerformance);
 	HashTableRoundTrip();
 	HashTableDepthTest();
 	PerftTestStart();
@@ -600,6 +614,7 @@ void runTests() {
 	BestMoveByBlack();
 	/*
 	*/
+	FenEnppasantTest();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 
