@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <Windows.h>
+#include <assert.h>
 
 #include "basic_structs.h"
 #include "patterns.h"
@@ -247,6 +248,7 @@ void MakeMove(Move move, Game * game) {
 	hash ^= ZobritsSides[side01];
 	game->Hash ^= hash;
 	game->Side ^= 24;
+
 }
 
 void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore, Game * game, unsigned long long prevHash) {
@@ -894,7 +896,7 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
 			GameState state = game->State;
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
-			
+
 			MakeMove(childMove, game);
 			int childValue = AlphaBetaQuite(bestVal, beta, depth - 1, game);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
@@ -959,7 +961,13 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
+			bool empty = FALSE;
+			int childValue;
+			short dbScore = getScoreFromHash(game->Hash, &empty, depth);
+			if (!empty)
+				childValue = dbScore;
+			else
+				childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
@@ -975,9 +983,14 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 			GameState state = game->State;
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
-
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
+			bool empty = FALSE;
+			int childValue;
+			short dbScore = getScoreFromHash(game->Hash, &empty, depth);
+			if (!empty)
+				childValue = dbScore;
+			else
+				childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
@@ -985,6 +998,8 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 		}
 	}
 	free(localMoves);
+	if (depth > 1)
+		addEntry(game->Hash, bestVal, depth);
 	return bestVal;
 }
 
@@ -1011,21 +1026,31 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 		unsigned long long prevHash = game->Hash;
 
 		MakeMove(move, game);
-
-		int alpha = move.ScoreAtDepth - prm->window;
-		int beta = move.ScoreAtDepth + prm->window;
-		int score = AlphaBeta(alpha, beta, prm->depth, capt, game);
-		if (score < alpha || score > beta) {
-			prm->window = 8000;
-			UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
-			continue;
+		bool empty = FALSE;
+		int score;
+		short dbScore = getScoreFromHash(game->Hash, &empty, prm->depth);
+		if (!empty)
+		{
+			score = dbScore;
 		}
+		else {
+			int alpha = move.ScoreAtDepth - prm->window;
+			int beta = move.ScoreAtDepth + prm->window;
+			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
+			if (score < alpha || score > beta) {
+				prm->window = 8000;
+				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
+				continue;
+			}
+		}
+
 		if (prm->depth > 5)
-			prm->window = 15;
+			prm->window = ASPIRATION_WINDOW_SIZE;
 
 		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
+
 		if ((game->Side == WHITE && score < -7000) || (game->Side == BLACK && score > 7000))
 		{
 			return 0;
@@ -1039,7 +1064,7 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 	int window = 8000;
 	if (depth > 5)
-		window = 15;
+		window = ASPIRATION_WINDOW_SIZE;
 	else
 		window = 8000;
 
@@ -1067,7 +1092,7 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 		//todo: error handling
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	
+
 }
 
 Move BestMove(Move * moves, int moveCount) {
@@ -1096,6 +1121,7 @@ Move BestMove(Move * moves, int moveCount) {
 }
 
 Move BestMoveAtDepthDeepening(int maxDepth) {
+	ClearHashTable();
 	CreateMoves(&mainGame);
 	int moveCount = mainGame.MovesBufferLength;
 	Move * localMoves = malloc(moveCount * MOVESIZE);
@@ -1118,7 +1144,7 @@ void computerMove() {
 }
 
 int main() {
-	
+
 	SwitchSignOfWhitePositionValue();
 	GenerateZobritsKeys();
 	ClearHashTable();

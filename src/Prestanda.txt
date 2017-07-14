@@ -14,3 +14,19 @@ Resultat:
 4:del av tiden
 3,6 ggr långsammare
 14 ggr färre drag
+
+Med hash table, utan aspiration window, 7 trådar
+8845.61k leafs in 4.20s
+2106.60k leafs/s
+Best Move: d2-d4 score -20
+
+Aspiration window 25, 7 trådar, hash table
+5108.96k leafs in 2.49s
+2055.09k leafs/s
+Best Move: d2-d4 score -80
+
+
+Aspiration window 25, 7 trådar, utan hash table
+5029.99k leafs in 2.41s
+2088.87k leafs/s
+Best Move: d2-d4 score -80

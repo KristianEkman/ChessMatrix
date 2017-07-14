@@ -121,16 +121,16 @@ void HashTableRoundTrip() {
 	unsigned long long hash = 0x1234567890ABCDEF;
 	short expected = 3000;
 	addEntry(hash, expected, 1);
-	short score = getScoreFromHash(hash);
+	bool empty = FALSE;
+	short score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	unsigned long long hash2 = hash + 1;
 	short expected2 = 4000;
 	addEntry(hash2, expected2, 1);
-	short score2 = getScoreFromHash(hash2);
+	short score2 = getScoreFromHash(hash2, &empty, 1);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
-
-	score = getScoreFromHash(hash);
+	score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
@@ -140,15 +140,16 @@ void HashTableDepthTest() {
 	unsigned long long hash = 0x1234567890ABCDEF;
 
 	addEntry(hash, 3000, 2);
-	short score = getScoreFromHash(hash);
+	bool empty = FALSE;
+	short score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
 	addEntry(hash, 4000, 1); //smaller depth
-	short score2 = getScoreFromHash(hash);
+	short score2 = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
 	addEntry(hash, 5000, 3); //smaller depth
-	score = getScoreFromHash(hash);
+	score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
@@ -163,10 +164,12 @@ void HashTablePerformance(int iterations) {
 		expected++;
 		hash++;
 		addEntry(hash, expected, 1);
-		short score = getScoreFromHash(hash);
+		bool empty = FALSE;
+		short score = getScoreFromHash(hash, &empty, 1);
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
+
 
 
 int Perft(depth) {
@@ -213,7 +216,6 @@ int Perft(depth) {
 int perftSaveHashCount = 0;
 int collisionCount = 0;
 void PerftSaveHash(depth) {
-
 	char hasHash = FALSE;
 	char fen[100];
 	WriteFen(fen);
@@ -260,6 +262,32 @@ void PerftSaveHash(depth) {
 	free(localMoves);
 }
 
+int PerftHashDb(int depth) {
+	if (depth == 0)
+		return 1;
+	int nodeCount = 0;
+	CreateMoves(&mainGame);
+	if (mainGame.MovesBufferLength == 0)
+		return nodeCount;
+	int count = mainGame.MovesBufferLength;
+	Move * localMoves = malloc(count * MOVESIZE);
+	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	for (int i = 0; i < count; i++)
+	{
+		Move move = localMoves[i];
+		PieceType capture = mainGame.Squares[move.To];
+		GameState prevGameState = mainGame.State;
+		int prevPositionScore = mainGame.PositionScore;
+		unsigned long long prevHash = mainGame.Hash;
+
+		MakeMove(move, &mainGame);
+		nodeCount += PerftHashDb(depth - 1);
+		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+	}
+	free(localMoves);
+	return nodeCount;
+}
+
 int PerftTest(char * fen, int depth) {
 
 	ReadFen(fen);
@@ -302,6 +330,15 @@ void PerftSaveHashTest() {
 	printf("\nCollisions: %d\n", collisionCount);
 }
 
+void PerftHashDbTest() {
+	printf("\n");printf(__func__);
+	ClearHashTable();
+	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+	PerftHashDb(4);
+	//printf("\nEntries:    %d", HashTableEntries);
+	//printf("\nMatches:    %d", HashTableMatches);
+	//printf("\nFull count: %d", HashTableFullCount);
+}
 void FenTest() {
 	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	ReadFen(fen1);
@@ -505,7 +542,7 @@ void BestMoveTest() {
 	ReadFen(startFen);
 	SearchedLeafs = 0;
 	clock_t start = clock();
-	Move bestMove = BestMoveAtDepthDeepening(5);
+	Move bestMove = BestMoveAtDepthDeepening(7);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -587,6 +624,7 @@ void runTests() {
 	/*
 	*/
 	TimedTest(50000000, HashTablePerformance);
+	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
 	PerftTestStart();
@@ -606,14 +644,14 @@ void runTests() {
 	PositionScoreKnights();
 	PositionScoreCastling();
 	BestMoveTest();
+	
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	TestBlackMateIn5();
 	BlackMatesIn5Deeping();
+
 	BestMoveByWhite();
 	BestMoveByBlack();
-	/*
-	*/
 	FenEnppasantTest();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	

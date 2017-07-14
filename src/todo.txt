@@ -1,7 +1,10 @@
-Enpassant file not working for fen undo senario.
+Benchmark utan db.
+
+Resning av drag.
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
+		- Ta bort räknare från hashdb, slöar ner.
 	- Tänka ut när hashtable ska användas. (I början och slutet av alpha och i create moves för sorteringens skull)
 	- Dubbelkolla init.
 

@@ -1,7 +1,8 @@
 #pragma once
 #include "basic_structs.h"
 
-#define SEARCH_THREADS 8
+#define SEARCH_THREADS 7
+#define ASPIRATION_WINDOW_SIZE 25
 
 void PrintGame();
 void ReadFen(char * fen);
