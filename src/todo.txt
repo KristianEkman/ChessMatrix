@@ -1,11 +1,20 @@
-Benchmark utan db.
+UI - Integrera
+	- Integrera mot chessai
+	- Integrera mot arena
 
-Resning av drag.
+Fler testafall.
+
+Ta bort hashning. Denverkar inte ge något.
+
+Tidsbegränsning
+
+Rensning av drag.
+
+illegal moves db
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
 		- Ta bort räknare från hashdb, slöar ner.
-	- Tänka ut när hashtable ska användas. (I början och slutet av alpha och i create moves för sorteringens skull)
 	- Dubbelkolla init.
 
 Mer pruning
@@ -22,5 +31,3 @@ Eval:
 	
 	Opening Book
 	Opening Score, early queen, minor piece count.
-
-Sökning Engine

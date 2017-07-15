@@ -392,7 +392,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game * game) {
 
 	MakeMove(move, game);
 	move.ScoreAtDepth = GetScore(game);
-	int  kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+	int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
 		game->MovesBuffer[game->MovesBufferLength++] = move;
@@ -999,7 +999,7 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 	}
 	free(localMoves);
 	if (depth > 1)
-		addEntry(game->Hash, bestVal, depth);
+		addHashScore(game->Hash, bestVal, depth);
 	return bestVal;
 }
 
@@ -1143,6 +1143,14 @@ void computerMove() {
 	MakeMove(move, &mainGame);
 }
 
+void manualMove() {
+	printf("\nYour move: ");
+	char sMove[6];
+	scanf_s(" %6c", sMove, 6);
+
+	MakePlayerMove(sMove);
+}
+
 int main() {
 
 	SwitchSignOfWhitePositionValue();
@@ -1162,14 +1170,13 @@ int main() {
 		switch (scan)
 		{
 		case 'm':
+			manualMove();
 			break;
 		case 'c':
 			computerMove();
 			break;
 		case 't':
 			runTests();
-			break;
-		case 'p':
 			break;
 		case 'q':
 			break;

@@ -120,14 +120,14 @@ void HashTableRoundTrip() {
 	ClearHashTable();
 	unsigned long long hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	addEntry(hash, expected, 1);
+	addHashScore(hash, expected, 1);
 	bool empty = FALSE;
 	short score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	unsigned long long hash2 = hash + 1;
 	short expected2 = 4000;
-	addEntry(hash2, expected2, 1);
+	addHashScore(hash2, expected2, 1);
 	short score2 = getScoreFromHash(hash2, &empty, 1);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	score = getScoreFromHash(hash, &empty, 1);
@@ -139,16 +139,16 @@ void HashTableDepthTest() {
 	ClearHashTable();
 	unsigned long long hash = 0x1234567890ABCDEF;
 
-	addEntry(hash, 3000, 2);
+	addHashScore(hash, 3000, 2);
 	bool empty = FALSE;
 	short score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	addEntry(hash, 4000, 1); //smaller depth
+	addHashScore(hash, 4000, 1); //smaller depth
 	short score2 = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	addEntry(hash, 5000, 3); //smaller depth
+	addHashScore(hash, 5000, 3); //smaller depth
 	score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
@@ -163,7 +163,7 @@ void HashTablePerformance(int iterations) {
 	{
 		expected++;
 		hash++;
-		addEntry(hash, expected, 1);
+		addHashScore(hash, expected, 1);
 		bool empty = FALSE;
 		short score = getScoreFromHash(hash, &empty, 1);
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
@@ -608,10 +608,26 @@ void BlackMatesIn5Deeping() {
 	BestMoveDeepening(__func__, fen, "f4-h4");
 }
 
-void BestMoveByWhite() {
+void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
 	BestMoveDeepening(__func__, fen, "d2-d4");
+}
+
+void BestMoveByBlack2() {
+	char * fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
+	BestMoveDeepening(__func__, fen, "a4-c3");
+}
+
+void BestMoveByBlack3() {
+	char * fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
+	BestMoveDeepening(__func__, fen, "d2-e2");
+}
+
+void BestMoveByWhite2() {
+	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
+	//requires atlest depth 6 to be found
+	BestMoveDeepening(__func__, fen, "d4-f5");
 }
 
 void BestMoveByBlack() {
@@ -621,8 +637,7 @@ void BestMoveByBlack() {
 
 void runTests() {
 	_failedAsserts = 0;
-	/*
-	*/
+	
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
@@ -649,10 +664,15 @@ void runTests() {
 	TestWhiteMateIn2();
 	TestBlackMateIn5();
 	BlackMatesIn5Deeping();
-
-	BestMoveByWhite();
+	BestMoveByWhite1();
 	BestMoveByBlack();
 	FenEnppasantTest();
+	BestMoveByBlack2();
+
+	//These two doesnt work yet.
+	/*BestMoveByBlack3();	
+	BestMoveByWhite2();*/
+	
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 

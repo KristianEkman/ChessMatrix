@@ -12,7 +12,7 @@
 //Can be incerased by 128MB by increasing slot count by one.
 
 HashTableEntry HashTable[IndexLength + 1][SlotCount];
-void addEntry(unsigned long long hash, short score, char depth) {
+void addHashScore(unsigned long long hash, short score, char depth) {
 	//return;
 	int idx = (int)(hash & IndexLength);
 	HashTableEntry * entry = HashTable[idx];
@@ -70,7 +70,6 @@ void GenerateZobritsKeys() {
 	for (int i = 1; i < 8; i++)
 		ZobritsEnpassantFile[i] = llrand();
 }
-
 void ClearHashTable() {
 	HashTableEntry emptyEntry;
 	emptyEntry.Depth = 0;
@@ -78,7 +77,9 @@ void ClearHashTable() {
 	emptyEntry.Score = 0;
 	for (size_t i = 0; i < IndexLength; i++)
 		for (size_t s = 0; s < SlotCount; s++)
+		{
 			HashTable[i][s] = emptyEntry;
+		}
 	/*HashTableFullCount = 0;
 	HashTableEntries = 0;
 	HashTableMatches = 0;*/

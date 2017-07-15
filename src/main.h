@@ -2,7 +2,7 @@
 #include "basic_structs.h"
 
 #define SEARCH_THREADS 7
-#define ASPIRATION_WINDOW_SIZE 25
+#define ASPIRATION_WINDOW_SIZE 100
 
 void PrintGame();
 void ReadFen(char * fen);
@@ -21,5 +21,3 @@ void CreateMoves(Game * game);
 void MakeMove(Move move, Game * mainGame);
 void UnMakeMove(Move move,PieceType capture,GameState prevGameState, int prevPositionScore, Game * game, unsigned long long prevHash);
 const int MOVESIZE;
-
-
