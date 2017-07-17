@@ -630,15 +630,31 @@ void BestMoveByWhite2() {
 	BestMoveDeepening(__func__, fen, "d4-f5");
 }
 
-void BestMoveByBlack() {
+void BestMoveByBlack1() {
 	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
 	BestMoveDeepening(__func__, fen, "g7-g5");
+}
+
+void BestMoveByBlack4() {
+	char * fen = "r1b2r2/2q2pk1/2pb3p/pp2pNpn/4Pn2/P1NB2BP/1PP1QPP1/R4RK1 b - - 0 1";
+	BestMoveDeepening(__func__, fen, "c8-f5");
+}
+
+
+void BestMoveByBlack5() {
+	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
+	BestMoveDeepening(__func__, fen, "b7-e4");
+}
+
+void BestMoveByWhite3() {
+	char * fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
+	BestMoveDeepening(__func__, fen, "d3-c4");
 }
 
 void runTests() {
 	_failedAsserts = 0;
 	
-	TimedTest(50000000, HashTablePerformance);
+	/*TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -658,21 +674,22 @@ void runTests() {
 	PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();
+	*/
 	BestMoveTest();
-	
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	TestBlackMateIn5();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
-	BestMoveByBlack();
+	BestMoveByBlack1();
 	FenEnppasantTest();
 	BestMoveByBlack2();
-
+	BestMoveByBlack4();
+	BestMoveByBlack5();
 	//These two doesnt work yet.
 	/*BestMoveByBlack3();	
 	BestMoveByWhite2();*/
-	
+	BestMoveByWhite3();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 

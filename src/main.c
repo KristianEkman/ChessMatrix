@@ -941,14 +941,10 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 	Move * localMoves = malloc(moveCount * MOVESIZE);
 	memcpy(localMoves, game->MovesBuffer, moveCount * MOVESIZE);
 	if (moveCount == 0) {
-		if (SquareAttacked(game->KingSquares[game->Side >> 4], game->Side ^ 24, game)) {
-			//mate
-			bestVal = game->Side == WHITE ? 8000 : -8000;
-		}
-		else {
-			//stale mate
-			bestVal = 0;
-		}
+		if (SquareAttacked(game->KingSquares[game->Side >> 4], game->Side ^ 24, game))
+			bestVal = game->Side == WHITE ? 8000 : -8000;//mate
+		else			
+			bestVal = 0;//stale mate
 	}
 	else if (game->Side == BLACK) { //maximizing
 		bestVal = alpha;
@@ -961,7 +957,7 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			bool empty = FALSE;
+			bool empty = false;
 			int childValue;
 			short dbScore = getScoreFromHash(game->Hash, &empty, depth);
 			if (!empty)
@@ -984,7 +980,7 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
-			bool empty = FALSE;
+			bool empty = false;
 			int childValue;
 			short dbScore = getScoreFromHash(game->Hash, &empty, depth);
 			if (!empty)
@@ -998,7 +994,7 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
 		}
 	}
 	free(localMoves);
-	if (depth > 1)
+	//if (depth > 1)
 		addHashScore(game->Hash, bestVal, depth);
 	return bestVal;
 }
@@ -1034,27 +1030,25 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 			score = dbScore;
 		}
 		else {
-			int alpha = move.ScoreAtDepth - prm->window;
-			int beta = move.ScoreAtDepth + prm->window;
+			int alpha = -8000;//move.ScoreAtDepth - prm->window;
+			int beta = 8000;//move.ScoreAtDepth + prm->window;
 			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
-			if (score < alpha || score > beta) {
-				prm->window = 8000;
+			/*if (score < alpha || score > beta) {
+				prm->window = 7000;
 				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 				continue;
-			}
+			}*/
 		}
-
+/*
 		if (prm->depth > 5)
-			prm->window = ASPIRATION_WINDOW_SIZE;
+			prm->window = ASPIRATION_WINDOW_SIZE;*/
 
 		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
 		if ((game->Side == WHITE && score < -7000) || (game->Side == BLACK && score > 7000))
-		{
-			return 0;
-		}
+			return 0; //a check mate is found, no need to search further.
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
 
@@ -1062,11 +1056,11 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 }
 
 void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
-	int window = 8000;
+	/*int window = 8000;
 	if (depth > 5)
 		window = ASPIRATION_WINDOW_SIZE;
 	else
-		window = 8000;
+		window = 8000;*/
 
 	int moveIndex = 0;
 	//starta en tråd per drag
@@ -1086,7 +1080,7 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 		params[i].moves = localMoves;
 		params[i].moveIndex = i;
 		params[i].moveCount = moveCount;
-		params[i].window = window;
+		//params[i].window = window;
 
 		threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		//todo: error handling
@@ -1133,6 +1127,8 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
 		SortMoves(localMoves, moveCount, &mainGame);
 
+		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
+			return localMoves[0]; //a check mate is found, no need to search further.
 		depth++;
 	} while (depth <= maxDepth); //todo: continue until time ends
 	return localMoves[0];

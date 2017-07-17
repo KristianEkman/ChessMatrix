@@ -49,7 +49,6 @@ short getScoreFromHash(unsigned long long hash, bool * empty, int depth) {
 		if (entry[i].Depth >= depth && entry[i].Key2 == key2)
 		{
 			//HashTableMatches++;
-			empty = FALSE;
 			return entry[i].Score;
 		}
 	}
