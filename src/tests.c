@@ -178,7 +178,7 @@ int Perft(depth) {
 		return 1;
 	}
 	int nodeCount = 0;
-	CreateMoves(&mainGame);
+	CreateMoves(&mainGame, 0);
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
@@ -241,7 +241,7 @@ void PerftSaveHash(depth) {
 
 	if (depth == 0)
 		return;
-	CreateMoves(&mainGame);
+	CreateMoves(&mainGame, 0);
 	if (mainGame.MovesBufferLength == 0)
 		return;
 	int count = mainGame.MovesBufferLength;
@@ -266,7 +266,7 @@ int PerftHashDb(int depth) {
 	if (depth == 0)
 		return 1;
 	int nodeCount = 0;
-	CreateMoves(&mainGame);
+	CreateMoves(&mainGame, 0);
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
@@ -592,7 +592,7 @@ void BestMoveDeepening(char * testName, char * fen, char * expected) {
 	ReadFen(fen);
 	SearchedLeafs = 0;
 	clock_t start = clock();
-	Move bestMove = BestMoveAtDepthDeepening(6);
+	Move bestMove = BestMoveAtDepthDeepening(5);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	printf("\n%.2fk leafs in %.2fs", (float)SearchedLeafs / 1000, secs);
@@ -601,11 +601,15 @@ void BestMoveDeepening(char * testName, char * fen, char * expected) {
 	MoveToString(bestMove, sMove);
 	printf("\nBest Move: %s score %d", sMove, bestMove.ScoreAtDepth);
 	AssertAreEqual(expected, sMove, "Not the expected move");
+	/*printf("\nEntries:    %d", HashTableEntries);
+	printf("\nMatches:    %d", HashTableMatches);
+	printf("\nFull count: %d", HashTableFullCount);*/
 }
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
 	BestMoveDeepening(__func__, fen, "f4-h4");
+
 }
 
 void BestMoveByWhite1() {
@@ -673,8 +677,8 @@ void runTests() {
 	EnPassantMaterial();
 	PositionScorePawns();
 	PositionScoreKnights();
-	PositionScoreCastling();
-	*/
+	PositionScoreCastling();*/
+	
 	BestMoveTest();
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
@@ -684,12 +688,15 @@ void runTests() {
 	BestMoveByBlack1();
 	FenEnppasantTest();
 	BestMoveByBlack2();
-	BestMoveByBlack4();
-	BestMoveByBlack5();
+	
+	//BestMoveByBlack4();
+	//BestMoveByBlack5();
+
 	//These two doesnt work yet.
 	/*BestMoveByBlack3();	
 	BestMoveByWhite2();*/
-	BestMoveByWhite3();
+
+	//BestMoveByWhite3();
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
 
