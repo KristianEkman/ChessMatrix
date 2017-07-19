@@ -1,8 +1,8 @@
 #pragma once
 
 #define IndexLength 0x1FFFFFF
-#define SlotCount 4
-//entry of 8 bytes gives 1GB big array
+#define SlotCount 7
+//entry of 8 bytes gives xGB big array
 
 unsigned long long ZobritsPieceTypesSquares[23][64];
 unsigned long long ZobritsSides[2];

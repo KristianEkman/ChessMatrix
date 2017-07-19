@@ -1030,24 +1030,24 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 			score = dbScore;
 		}
 		else {
-			int alpha = -8000;//move.ScoreAtDepth - prm->window;
-			int beta = 8000;//move.ScoreAtDepth + prm->window;
+			int alpha = move.ScoreAtDepth - prm->window;
+			int beta = move.ScoreAtDepth + prm->window;
 			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
-			/*if (score < alpha || score > beta) {
-				prm->window = 7000;
+			if (score < alpha || score > beta) {
+				prm->window = 9000;
 				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 				continue;
-			}*/
+			}
 		}
-/*
+
 		if (prm->depth > 5)
-			prm->window = ASPIRATION_WINDOW_SIZE;*/
+			prm->window = ASPIRATION_WINDOW_SIZE;
 
 		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
-		if ((game->Side == WHITE && score < -7000) || (game->Side == BLACK && score > 7000))
+		if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
 			return 0; //a check mate is found, no need to search further.
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
@@ -1056,12 +1056,7 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 }
 
 void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
-	/*int window = 8000;
-	if (depth > 5)
-		window = ASPIRATION_WINDOW_SIZE;
-	else
-		window = 8000;*/
-
+	
 	int moveIndex = 0;
 	//starta en tråd per drag
 	//starta inte fler trådar än 8 (kärnor)
@@ -1080,7 +1075,7 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 		params[i].moves = localMoves;
 		params[i].moveIndex = i;
 		params[i].moveCount = moveCount;
-		//params[i].window = window;
+		params[i].window = 9000;
 
 		threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		//todo: error handling

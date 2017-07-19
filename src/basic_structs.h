@@ -89,7 +89,7 @@ typedef struct {
 	int moveCount;
 	int moveIndex;
 	int depth;
-	//int window;
+	int window;
 } ThreadParams;
 
 
