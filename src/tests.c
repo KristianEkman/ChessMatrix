@@ -632,7 +632,7 @@ void BestMoveByWhite3() {
 void runTests() {
 	_failedAsserts = 0;
 	
-	/*TimedTest(50000000, HashTablePerformance);
+	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -652,18 +652,18 @@ void runTests() {
 	EnPassantMaterial();
 	PositionScorePawns();
 	PositionScoreKnights();
-	PositionScoreCastling();*/
+	PositionScoreCastling();
 	
-	/*BestMoveTest();
-	BestMoveTestBlackCaptureBishop();*/
+	BestMoveTest();
+	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
-	/*BlackMatesIn5Deeping();
+	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
 	BestMoveByWhite2();
 	BestMoveByWhite3();
 	BestMoveByBlack1();
 	BestMoveByBlack4();
-	BestMoveByBlack5();*/
+	BestMoveByBlack5();
 
 	//Requires depth 7, takes a minute
 	//BestMoveByBlack3();

@@ -1,5 +1,6 @@
-Hash check,
-inget null move vid check.
+killer-heuristic
+
+sorting using MVV-LVA
 
 UI - Integrera
 	- Integrera mot chessai

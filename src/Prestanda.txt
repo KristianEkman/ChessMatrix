@@ -1,32 +1,115 @@
-****   BestMoveByWhite   **** Djup 6. 
+  ---------------------------------
+8 | r | n | b | q | k | b | n | r |
+  ---------------------------------
+7 | p | p | p | p | p | p | p | p |
+  ---------------------------------
+6 |   |   |   |   |   |   |   |   |
+  ---------------------------------
+5 |   |   |   |   |   |   |   |   |
+  ---------------------------------
+4 |   |   |   |   |   |   |   |   |
+  ---------------------------------
+3 |   |   |   |   |   |   |   |   |
+  ---------------------------------
+2 | P | P | P | P | P | P | P | P |
+  ---------------------------------
+1 | R | N | B | Q | K | B | N | R |
+  ---------------------------------
+    a   b   c   d   e   f   g   h
+m: make move
+c: computer move
+t: run tests
+q: quit
+t
 
-Utan oredering efter varje create moves.
-86029.92k leafs in 49.63s
-1733.32k leafs/s
-Best Move: d2-d4 score -205
+HashTablePerformance
+113378.69k iterations/s
 
-Med oredering efter varje create moves.
-5858.99k leafs in 12.31s
-476.11k leafs/s
-Best Move: d2-d4 score -205
+PerftHashDbTest
+HashTableRoundTrip
+HashTableDepthTest
+PerftTestStart
+4560.08k moves/s
 
-Resultat:
-4:del av tiden
-3,6 ggr långsammare
-14 ggr färre drag
+4551.55k moves/s
 
-Med hash table, utan aspiration window, 7 trådar
-8845.61k leafs in 4.20s
-2106.60k leafs/s
-Best Move: d2-d4 score -20
+PerfTestPosition2
+3522.07k moves/s
 
-Aspiration window 25, 7 trådar, hash table
-5108.96k leafs in 2.49s
-2055.09k leafs/s
-Best Move: d2-d4 score -80
+3577.59k moves/s
+
+PerftSaveHashTest
+10000
+20000
+30000
+40000
+50000
+60000
+Hash entries: 65383
+
+Collisions: 0
+
+FenEnppasantTest
+ValidMovesPromotionCaptureAndCastling
+LongCastling
+EnPassantFromFenTest
+EnPassantAfterMove
+MaterialBlackPawnCapture
+MaterialWhiteQueenCapture
+MaterialPromotion
+MaterialCaptureAndPromotion
+EnPassantMaterial
+PositionScorePawns
+PositionScoreKnights
+PositionScoreCastling
+BestMoveTest
+From:6  To:21  Leafs:15339120
+2223.38k leafs/s
 
 
-Aspiration window 25, 7 trådar, utan hash table
-5029.99k leafs in 2.41s
-2088.87k leafs/s
-Best Move: d2-d4 score -80
+****   BestMoveTestBlackCaptureBishop   ****
+83347.99k leafs in 30.92s
+2695.17k leafs/s
+Best Move: d5-c4 score 190
+
+****   TestWhiteMateIn2   ****
+3.65k leafs in 0.18s
+20.41k leafs/s
+Best Move: c6-c7 score -8000
+
+****   BlackMatesIn5Deeping   ****
+3367.42k leafs in 1.87s
+1801.72k leafs/s
+Best Move: f4-h4 score 8000
+
+****   BestMoveByWhite1   ****
+23744.74k leafs in 9.82s
+2416.77k leafs/s
+Best Move: d2-d4 score -25
+
+****   BestMoveByWhite2   ****
+10195.53k leafs in 7.74s
+1317.93k leafs/s
+Best Move: d4-f5 score -190
+
+****   BestMoveByWhite3   ****
+31439.03k leafs in 20.29s
+1549.48k leafs/s
+Best Move: d3-c4 score -230
+
+****   BestMoveByBlack1   ****
+37756.57k leafs in 16.63s
+2269.98k leafs/s
+Best Move: g7-g5 score 195
+
+****   BestMoveByBlack4   ****
+7376.24k leafs in 2.94s
+2504.67k leafs/s
+Best Move: c8-f5 score 265
+
+****   BestMoveByBlack5   ****
+27005.28k leafs in 11.53s
+2342.17k leafs/s
+Best Move: b7-e4 score 235
+Success! Tests are good!
+Press any key to continue.

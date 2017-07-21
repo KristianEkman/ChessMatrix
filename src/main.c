@@ -4,7 +4,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <Windows.h>
-#include <assert.h>
 
 #include "basic_structs.h"
 #include "patterns.h"
@@ -21,6 +20,58 @@ const int MOVESIZE = sizeof(Move);
 
 int _behind[] = { -8, 8 };
 int SearchedLeafs = 0;
+
+
+void computerMove() {
+	Move move = BestMoveAtDepthDeepening(5);
+	MakeMove(move, &mainGame);
+}
+
+void manualMove() {
+	printf("\nYour move: ");
+	char sMove[6];
+	scanf_s(" %6c", sMove, 6);
+
+	MakePlayerMove(sMove);
+}
+
+int main() {
+
+	SwitchSignOfWhitePositionValue();
+	//AdjustPositionImportance();
+	GenerateZobritsKeys();
+	ClearHashTable();
+	InitGame();
+	char scan = 0;
+	while (scan != 'q')
+	{
+		system("@cls||clear");
+		PrintGame();
+		printf("m: make move\n");
+		printf("c: computer move\n");
+		printf("t: run tests\n");
+		printf("q: quit\n");
+		scanf_s(" %c", &scan, 1);
+		switch (scan)
+		{
+		case 'm':
+			manualMove();
+			break;
+		case 'c':
+			computerMove();
+			break;
+		case 't':
+			runTests();
+			break;
+		case 'q':
+			break;
+		default:
+			break;
+		}
+	}
+
+	return 0;
+}
 
 void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	mainGame.Squares[rank * 8 + file] = type | color;
@@ -398,6 +449,9 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game * game, in
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, capture, prevGameState, prevPosScore, game, prevHash);
+	/*int attacker = MaterialMatrix[0][game->Squares[move.From] & 7];
+	int attacked = MaterialMatrix[0][capture & 7];*/
+	move.SortScore = (short)(MaterialMatrix[1][capture & 7] - MaterialMatrix[1][game->Squares[move.From] & 7]);
 }
 
 void CreateMoves(Game * game,int depth) {
@@ -852,12 +906,33 @@ short TotalMaterial(Game * game) {
 	return game->Material[0] + game->Material[1];
 }
 
+void AdjustPositionImportance() {
+	for (int i = 1; i < 7; i++)
+	{
+		for (int s = 0; s < 64; s++)
+		{
+			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 2;
+			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 2;
+
+		}
+	}
+
+	for (int i = 0; i < 64; i++)
+	{
+		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 2;
+		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 2;
+
+		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 2;
+		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 2;
+	}
+}
+
 void SwitchSignOfWhitePositionValue() {
 	for (int i = 1; i < 7; i++)
 	{
-		for (int rnd_seed = 0; rnd_seed < 64; rnd_seed++)
+		for (int s = 0; s < 64; s++)
 		{
-			PositionValueMatrix[i][0][rnd_seed] = -PositionValueMatrix[i][0][rnd_seed];
+			PositionValueMatrix[i][0][s] = -PositionValueMatrix[i][0][s];
 		}
 	}
 
@@ -1127,54 +1202,4 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 		depth++;
 	} while (depth <= maxDepth); //todo: continue until time ends
 	return localMoves[0];
-}
-
-void computerMove() {
-	Move move = BestMoveAtDepthDeepening(5);
-	MakeMove(move, &mainGame);
-}
-
-void manualMove() {
-	printf("\nYour move: ");
-	char sMove[6];
-	scanf_s(" %6c", sMove, 6);
-
-	MakePlayerMove(sMove);
-}
-
-int main() {
-
-	SwitchSignOfWhitePositionValue();
-	GenerateZobritsKeys();
-	ClearHashTable();
-	InitGame();
-	char scan = 0;
-	while (scan != 'q')
-	{
-		system("@cls||clear");
-		PrintGame();
-		printf("m: make move\n");
-		printf("c: computer move\n");
-		printf("t: run tests\n");
-		printf("q: quit\n");
-		scanf_s(" %c", &scan, 1);
-		switch (scan)
-		{
-		case 'm':
-			manualMove();
-			break;
-		case 'c':
-			computerMove();
-			break;
-		case 't':
-			runTests();
-			break;
-		case 'q':
-			break;
-		default:
-			break;
-		}
-	}
-
-	return 0;
 }

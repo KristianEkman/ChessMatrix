@@ -22,3 +22,6 @@ void CreateMoves(Game * game, int depth);
 void MakeMove(Move move, Game * mainGame);
 void UnMakeMove(Move move,PieceType capture,GameState prevGameState, int prevPositionScore, Game * game, unsigned long long prevHash);
 const int MOVESIZE;
+
+void SwitchSignOfWhitePositionValue();
+void InitGame();
