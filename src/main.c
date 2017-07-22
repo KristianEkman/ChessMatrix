@@ -449,9 +449,6 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game * game, in
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, capture, prevGameState, prevPosScore, game, prevHash);
-	/*int attacker = MaterialMatrix[0][game->Squares[move.From] & 7];
-	int attacked = MaterialMatrix[0][capture & 7];*/
-	move.SortScore = (short)(MaterialMatrix[1][capture & 7] - MaterialMatrix[1][game->Squares[move.From] & 7]);
 }
 
 void CreateMoves(Game * game,int depth) {

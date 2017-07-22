@@ -632,7 +632,7 @@ void BestMoveByWhite3() {
 void runTests() {
 	_failedAsserts = 0;
 	
-	TimedTest(50000000, HashTablePerformance);
+	/*TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -654,7 +654,7 @@ void runTests() {
 	PositionScoreKnights();
 	PositionScoreCastling();
 	
-	BestMoveTest();
+	BestMoveTest();*/
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
