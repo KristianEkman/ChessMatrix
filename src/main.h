@@ -25,3 +25,5 @@ const int MOVESIZE;
 
 void SwitchSignOfWhitePositionValue();
 void InitGame();
+void EnterUciMode();
+int EnterInteractiveMode();

@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <Windows.h>
+#include <stdio.h>
 
 #include "basic_structs.h"
 #include "patterns.h"
@@ -35,13 +36,36 @@ void manualMove() {
 	MakePlayerMove(sMove);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
 	SwitchSignOfWhitePositionValue();
 	//AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
+
+	if (argc == 2 && argv[1] == "/i") {
+		return EnterInteractiveMode();
+	}
+	else {
+		EnterUciMode();
+		return 0;
+	}	
+}
+
+void EnterUciMode() {
+	char buf[1024];
+	buf[0] = '\0';
+	//fgets(buf, sizeof(buf), stdin);
+	gets(buf);
+	while (strcmp(buf, "quit") != 0)
+	{
+		printf("%s\n", buf);
+		gets(buf);
+	}
+}
+
+int EnterInteractiveMode() {
 	char scan = 0;
 	while (scan != 'q')
 	{
