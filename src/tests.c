@@ -92,19 +92,6 @@ void printPerftResults() {
 		mainGame.PerftResult.Enpassants, mainGame.PerftResult.Promotions);
 }
 
-void MoveToString(Move move, char * sMove) {
-	char fromFile = (move.From & 7) + 'a';
-	char fromRank = (move.From >> 3) + '1';
-	char toFile = (move.To & 7) + 'a';
-	char toRank = (move.To >> 3) + '1';
-	sMove[0] = fromFile;
-	sMove[1] = fromRank;
-	sMove[2] = '-';
-	sMove[3] = toFile;
-	sMove[4] = toRank;
-	sMove[5] = '\0';
-}
-
 typedef struct {
 	unsigned long long Hash;
 	char Fen[100];
@@ -432,10 +419,10 @@ void EnPassantFromFenTest() {
 	ReadFen(fen);
 	Move moves[100];
 	int count = ValidMoves(moves);
-	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
+	Move expectedMove = parseMove("d5e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 	int startGameScore = TotalMaterial(&mainGame);
-	AssertNot(MakePlayerMove("d5-e6").Invalid, "Invalid move");
+	AssertNot(MakePlayerMove("d5e6").Invalid, "Invalid move");
 	AssertAreEqualInts(startGameScore - 100, TotalMaterial(&mainGame), "Material should decrease by 100");
 }
 

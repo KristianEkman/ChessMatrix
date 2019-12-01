@@ -56,11 +56,37 @@ int main(int argc, char* argv[]) {
 void EnterUciMode() {
 	char buf[1024];
 	buf[0] = '\0';
-	//fgets(buf, sizeof(buf), stdin);
 	gets(buf);
-	while (strcmp(buf, "quit") != 0)
+	while (!streq(buf, "quit"))
 	{
-		printf("%s\n", buf);
+		if (streq(buf, "uci")) {
+			stdout_wl("id name CChess");
+			stdout_wl("id author Kristian Ekman");
+			stdout_wl("uciok");
+		}
+
+		if (streq(buf, "isready")) {
+			stdout_wl("readyok");
+		}
+
+		if (startsWith(buf, "position startpos moves ")) {
+			//postion fen | moves
+			InitGame();
+			char* token = strtok(&buf[24], " ");
+			while (token != NULL) {
+				MakePlayerMove(token);
+				token = strtok(NULL, " ");
+			}
+		}
+
+		if (startsWith(buf, "go ")) {
+			Move move = BestMoveAtDepthDeepening(5);
+			char sMove[5];
+			MoveToString(move, sMove);
+			printf("bestmove %s\n", sMove);
+			fflush(stdout);
+		}
+
 		gets(buf);
 	}
 }
@@ -741,8 +767,8 @@ PieceType parseSide(char c) {
 Move parseMove(char * sMove, MoveInfo info) {
 	int fromFile = sMove[0] - 'a';
 	int fromRank = sMove[1] - '1';
-	int toFile = sMove[3] - 'a';
-	int toRank = sMove[4] - '1';
+	int toFile = sMove[2] - 'a';
+	int toRank = sMove[3] - '1';
 	Move move;
 	move.From = fromRank * 8 + fromFile;
 	move.To = toRank * 8 + toFile;
@@ -840,6 +866,18 @@ void ReadFen(char * fen) {
 
 	InitScores();
 	InitHash();
+}
+
+void MoveToString(Move move, char sMove[5]) {
+	char fromFile = (move.From & 7) + 'a';
+	char fromRank = (move.From >> 3) + '1';
+	char toFile = (move.To & 7) + 'a';
+	char toRank = (move.To >> 3) + '1';
+	sMove[0] = fromFile;
+	sMove[1] = fromRank;
+	sMove[2] = toFile;
+	sMove[3] = toRank;
+	sMove[4] = '\0';
 }
 
 void WriteFen(char * fenBuffer) {
@@ -1222,5 +1260,7 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 			return localMoves[0]; //a check mate is found, no need to search further.
 		depth++;
 	} while (depth <= maxDepth); //todo: continue until time ends
+
+	// run this on thread and write it to stdout when ready
 	return localMoves[0];
 }

@@ -3,6 +3,8 @@ killer-heuristic
 sorting using MVV-LVA
 
 UI - Integrera
+	UCI protokoll
+		
 	- Integrera mot chessai
 	- Integrera mot arena
 

@@ -1,5 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "utils.h"
+#include <string.h>
+
+
 
 int parseChar(char c) {
 	switch (c)
@@ -35,4 +39,21 @@ unsigned long long llrand() {
 	}
 
 	return r & 0xFFFFFFFFFFFFFFFFULL;
+}
+
+
+bool streq(char s1[], char s2[])
+{
+	return strcmp(s1, s2) == 0;
+}
+
+bool startsWith(char a[], char b[])
+{
+	if (strncmp(a, b, strlen(b)) == 0) return true;
+	return false;
+}
+
+void stdout_wl(char* text) {
+	printf("%s\n", text);
+	fflush(stdout);
 }
