@@ -1,6 +1,15 @@
+Hitta varför det krashar ibland.
+
+skicka info via uci
+	- search leafs
+	- best line
+	- time control
+
 killer-heuristic
 
 sorting using MVV-LVA
+
+3-fold repetion
 
 UI - Integrera
 	UCI protokoll

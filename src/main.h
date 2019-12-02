@@ -1,12 +1,12 @@
 #pragma once
 #include "basic_structs.h"
 
-#define SEARCH_THREADS 6
+#define SEARCH_THREADS 7
 #define ASPIRATION_WINDOW_SIZE 10
 
 void PrintGame();
 void ReadFen(char * fen);
-void MoveToString(Move move, char* sMove);
+void MoveToString(Move move, char sMove[]);
 void WriteFen(char * fen);
 int ValidMoves(Move * moves);
 PlayerMove MakePlayerMove(char * sMove);

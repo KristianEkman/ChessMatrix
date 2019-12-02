@@ -997,8 +997,8 @@ void SwitchSignOfWhitePositionValue() {
 
 	for (int i = 0; i < 64; i++)
 	{
-		KingPositionValueMatrix[0][0][i] = -KingPositionValueMatrix[0][0][i];
-		KingPositionValueMatrix[1][0][i] = -KingPositionValueMatrix[1][0][i];
+		KingPositionValueMatrix[0][1][i] = -KingPositionValueMatrix[0][1][i];
+		KingPositionValueMatrix[1][1][i] = -KingPositionValueMatrix[1][1][i];
 	}
 }
 
@@ -1028,8 +1028,8 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 		return GetScore(game);
-	Move * localMoves = malloc(moveCount * MOVESIZE);
-	memcpy(localMoves, game->MovesBuffer, moveCount * MOVESIZE);
+	Move * localMoves = malloc(moveCount * sizeof(Move));
+	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
 		bestVal = alpha;
 		for (int i = 0; i < moveCount; i++)
@@ -1216,31 +1216,6 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 
-}
-
-Move BestMove(Move * moves, int moveCount) {
-	int bestValue = mainGame.Side == WHITE ? 9000 : -9000;
-	Move bestMove;
-	for (int i = 0; i < moveCount; i++)
-	{
-		Move move = moves[i];
-		int score = move.ScoreAtDepth;
-		if (mainGame.Side == WHITE) {
-			if (score < bestValue)
-			{
-				bestValue = score;
-				bestMove = move;
-			}
-		}
-		else {
-			if (score > bestValue)
-			{
-				bestValue = score;
-				bestMove = move;
-			}
-		}
-	}
-	return bestMove;
 }
 
 Move BestMoveAtDepthDeepening(int maxDepth) {
