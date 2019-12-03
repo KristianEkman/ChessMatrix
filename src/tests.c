@@ -337,12 +337,12 @@ void FenTest() {
 void FenEnppasantTest() {
 	printf("\n");printf(__func__);
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	MakePlayerMove("d2-d4");
+	MakePlayerMove("d2d4");
 	char fen[100];
 	WriteFen(fen);
 	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
 
-	PlayerMove pm2 = MakePlayerMove("d7-d6");
+	PlayerMove pm2 = MakePlayerMove("d7d6");
 	UnMakePlayerMove(pm2);
 	WriteFen(fen);
 	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
@@ -430,19 +430,49 @@ void EnPassantAfterMove() {
 	printf("\n");printf(__func__);
 	char * fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
 	ReadFen(fen);
-	AssertNot(MakePlayerMove("e7-e5").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("e7e5").Invalid, "Move was not valid");
 
 	Move moves[100];
 	int count = ValidMoves(moves);
-	Move expectedMove = parseMove("d5-e6", EnPassantCapture);
+	Move expectedMove = parseMove("d5e6", EnPassantCapture);
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
+}
+
+
+void BlackCastlingRightsAfterKingMove() {
+	printf("\n");printf(__func__);
+	char* fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
+	ReadFen(fen);
+	AssertNot(MakePlayerMove("e1f1").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("e8f8").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("f1e1").Invalid, "Move was not valid");
+
+	Move moves[100];
+	int count = ValidMoves(moves);
+	Move expectedMove = parseMove("e8g8", CastleShort);
+	AssertNot(MovesContains(moves, count, expectedMove), "Invalid move was found");
+}
+
+void WhiteCastlingRightsAfterKingMove() {
+	printf("\n");printf(__func__);
+	char* fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
+	ReadFen(fen);
+	AssertNot(MakePlayerMove("e1f1").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("e8f8").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("f1e1").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("f8e8").Invalid, "Move was not valid");
+
+	Move moves[100];
+	int count = ValidMoves(moves);
+	Move expectedMove = parseMove("e1g1", CastleShort);
+	AssertNot(MovesContains(moves, count, expectedMove), "Invalid move was found");
 }
 
 void MaterialBlackPawnCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
 	AssertAreEqualInts(-400, TotalMaterial(&mainGame), "Start Material missmatch");
-	AssertNot(MakePlayerMove("d4-e5").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("d4e5").Invalid, "Move was not valid");
 	AssertAreEqualInts(-500, TotalMaterial(&mainGame), "Game Material missmatch");
 }
 
@@ -450,7 +480,7 @@ void MaterialWhiteQueenCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&mainGame), "Start Material missmatch");
-	AssertNot(MakePlayerMove("d5-e4").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("d5e4").Invalid, "Move was not valid");
 	AssertAreEqualInts(900, TotalMaterial(&mainGame), "Game Material missmatch");
 }
 
@@ -458,7 +488,7 @@ void MaterialCaptureAndPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, TotalMaterial(&mainGame), "Start Material missmatch");
-	PlayerMove pm = MakePlayerMove("b7-c8");
+	PlayerMove pm = MakePlayerMove("b7c8");
 	AssertNot(pm.Invalid, "Move was not valid");
 	AssertAreEqualInts(-900, TotalMaterial(&mainGame), "Game Material missmatch");
 	UnMakePlayerMove(pm);
@@ -469,7 +499,7 @@ void MaterialPromotion() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, TotalMaterial(&mainGame), "Start Material missmatch");
-	AssertNot(MakePlayerMove("b7-b8").Invalid, "Move was not valid");
+	AssertNot(MakePlayerMove("b7b8").Invalid, "Move was not valid");
 	AssertAreEqualInts(-400, TotalMaterial(&mainGame), "Game Material missmatch");
 }
 
@@ -477,8 +507,8 @@ void EnPassantMaterial() {
 	printf("\n");printf(__func__);
 	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&mainGame), "Start Material missmatch");
-	AssertNot(MakePlayerMove("d7-d5").Invalid, "Move was not valid");
-	PlayerMove nextMove = MakePlayerMove("e5-d6");
+	AssertNot(MakePlayerMove("d7d5").Invalid, "Move was not valid");
+	PlayerMove nextMove = MakePlayerMove("e5d6");
 	AssertNot(nextMove.Invalid, "Move was not valid");
 	AssertAreEqualInts(-100, TotalMaterial(&mainGame), "Game Material missmatch");
 	UnMakePlayerMove(nextMove);
@@ -492,7 +522,7 @@ void PositionScorePawns() {
 	AssertAreEqualInts(0, mainGame.PositionScore, "Position Score Missmatch");
 	MakePlayerMove("d2-d4");
 	AssertAreEqualInts(-40, mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("d7-d5");
+	PlayerMove m2 = MakePlayerMove("d7d5");
 	AssertAreEqualInts(0, mainGame.PositionScore, "Position Score Missmatch");
 	UnMakePlayerMove(m2);
 	AssertAreEqualInts(-40, mainGame.PositionScore, "Position Score Missmatch");
@@ -504,7 +534,7 @@ void PositionScoreKnights() {
 	ReadFen(startFen);
 	MakePlayerMove("b1-c3");
 	AssertAreEqualInts(-50, mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("g8-f6");
+	PlayerMove m2 = MakePlayerMove("g8f6");
 	AssertAreEqualInts(0, mainGame.PositionScore, "Position Score Missmatch");
 	UnMakePlayerMove(m2);
 	AssertAreEqualInts(-50, mainGame.PositionScore, "Position Score Missmatch");
@@ -516,10 +546,10 @@ void PositionScoreCastling() {
 	ReadFen(startFen);
 	AssertAreEqualInts(-15, mainGame.PositionScore, "Position Score Missmatch");
 
-	MakePlayerMove("e1-g1");
+	MakePlayerMove("e1g1");
 	AssertAreEqualInts(-45, mainGame.PositionScore, "Position Score Missmatch");
 
-	MakePlayerMove("e8-g8");
+	MakePlayerMove("e8g8");
 	AssertAreEqualInts(-15, mainGame.PositionScore, "Position Score Missmatch");
 }
 
@@ -557,69 +587,75 @@ void BestMoveDeepening(char * testName, char * fen, char * expected) {
 }
 
 void BestMoveTestBlackCaptureBishop() {
-	BestMoveDeepening(__func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5-c4");
+	BestMoveDeepening(__func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
 }
 
 void TestWhiteMateIn2() {
 	char * fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
 	//BestMoveDeepening(__func__, fen, "d5-d7"); possible, c6-b7 also mate in 2
-	BestMoveDeepening(__func__, fen, "c6-c7");
+	BestMoveDeepening(__func__, fen, "c6c7");
 
 }
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
-	BestMoveDeepening(__func__, fen, "f4-h4");
+	BestMoveDeepening(__func__, fen, "f4h4");
 
 }
 
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
-	BestMoveDeepening(__func__, fen, "d2-d4");
+	BestMoveDeepening(__func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
 	char * fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
-	BestMoveDeepening(__func__, fen, "a4-c3");
+	BestMoveDeepening(__func__, fen, "a4c3");
 }
 
 void BestMoveByBlack3() {
 	char * fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
-	BestMoveDeepening(__func__, fen, "d2-e2");
+	BestMoveDeepening(__func__, fen, "d2e2");
 }
 
 void BestMoveByWhite2() {
 	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
 	//requires atlest depth 6 to be found
-	BestMoveDeepening(__func__, fen, "d4-f5");
+	BestMoveDeepening(__func__, fen, "d4f5");
 }
 
 void BestMoveByBlack1() {
 	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
-	BestMoveDeepening(__func__, fen, "g7-g5");
+	BestMoveDeepening(__func__, fen, "g7g5");
 }
 
 void BestMoveByBlack4() {
 	char * fen = "r1b2r2/2q2pk1/2pb3p/pp2pNpn/4Pn2/P1NB2BP/1PP1QPP1/R4RK1 b - - 0 1";
-	BestMoveDeepening(__func__, fen, "c8-f5");
+	BestMoveDeepening(__func__, fen, "c8f5");
 }
 
 
 void BestMoveByBlack5() {
 	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
-	BestMoveDeepening(__func__, fen, "b7-e4");
+	BestMoveDeepening(__func__, fen, "b7e4");
 }
 
 void BestMoveByWhite3() {
 	char * fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
-	BestMoveDeepening(__func__, fen, "d3-c4");
+	BestMoveDeepening(__func__, fen, "d3c4");
+}
+
+void _runTests() {
+	printf("\nPress any key to continue.");
+	_getch();
+	system("@cls||clear");
 }
 
 void runTests() {
 	_failedAsserts = 0;
 	
-	/*TimedTest(50000000, HashTablePerformance);
+	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -631,17 +667,21 @@ void runTests() {
 	ValidMovesPromotionCaptureAndCastling();
 	LongCastling();
 	EnPassantFromFenTest();
+	BlackCastlingRightsAfterKingMove();
+	WhiteCastlingRightsAfterKingMove();
+
+
 	EnPassantAfterMove();
 	MaterialBlackPawnCapture();
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
-	PositionScorePawns();
-	PositionScoreKnights();
-	PositionScoreCastling();
+	//PositionScorePawns();
+	//PositionScoreKnights();
+	//PositionScoreCastling();
 	
-	BestMoveTest();*/
+	BestMoveTest();
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();

@@ -1,15 +1,23 @@
-Hitta varför det krashar ibland.
+Fixa castling rights efter kung-drag. Ink testfall.
+
+Kontrollera att enpassant fungerar
+
+Spela matcher i demo-läge. 64bit (13% snabbare)
 
 skicka info via uci
 	- search leafs
 	- best line
-	- time control
+
+3-fold repetion
+
+Jobba på bättre pruning
+
+time control
 
 killer-heuristic
 
 sorting using MVV-LVA
 
-3-fold repetion
 
 UI - Integrera
 	UCI protokoll

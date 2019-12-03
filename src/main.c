@@ -20,6 +20,8 @@ Game threadGames[SEARCH_THREADS];
 const int MOVESIZE = sizeof(Move);
 
 int _behind[] = { -8, 8 };
+int sideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCanCastleLong | BlackCanCastleShort };
+
 int SearchedLeafs = 0;
 
 
@@ -85,6 +87,10 @@ void EnterUciMode() {
 			MoveToString(move, sMove);
 			printf("bestmove %s\n", sMove);
 			fflush(stdout);
+		}
+
+		if (streq(buf, "i")) {
+			EnterInteractiveMode();
 		}
 
 		gets(buf);
@@ -273,7 +279,8 @@ void MakeMove(Move move, Game * game) {
 		break;
 	case KingMove:
 		game->KingSquares[side01] = t;
-		// todo: castling rights should be set here
+		game->State &= ~sideCastlingRights[side01]; //sets castling rights bits for current player.
+
 		KingPositionScore(move, game);
 		break;
 	case RookMove:
