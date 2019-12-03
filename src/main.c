@@ -161,7 +161,7 @@ void InitGame() {
 	mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
 	mainGame.Material[0] = 0;
 	mainGame.Material[1] = 0;
-
+	InitHash();
 }
 
 char PieceChar(PieceType pieceType) {
@@ -273,6 +273,7 @@ void MakeMove(Move move, Game * game) {
 		break;
 	case KingMove:
 		game->KingSquares[side01] = t;
+		// todo: castling rights should be set here
 		KingPositionScore(move, game);
 		break;
 	case RookMove:
@@ -1144,6 +1145,10 @@ Game * CopyMainGame(int threadNo) {
 	return &threadGames[threadNo];
 }
 
+DWORD WINAPI DoNothingThread(int * prm) {
+	ExitThread(0);
+}
+
 DWORD WINAPI SearchThread(ThreadParams * prm) {
 	//ThreadParams params = *prm;
 	do
@@ -1185,7 +1190,7 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 			return 0; //a check mate is found, no need to search further.
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
-
+	ExitThread(0);
 	return 0;
 }
 
@@ -1201,22 +1206,24 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
-		if (i > moveCount) //in case more threads than moves
-			break;
+		if (i > moveCount - 1) //in case more threads than moves
+			threadHandles[i] = CreateThread(NULL, 0, DoNothingThread, NULL, 0, NULL);
+		else {
+			params[i].threadID = i;
+			params[i].depth = depth;
+			params[i].moves = localMoves;
+			params[i].moveIndex = i;
+			params[i].moveCount = moveCount;
+			params[i].window = 9000;
 
-		params[i].threadID = i;
-		params[i].depth = depth;
-		params[i].moves = localMoves;
-		params[i].moveIndex = i;
-		params[i].moveCount = moveCount;
-		params[i].window = 9000;
-
-		threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
+			threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
+		}
 		//todo: error handling
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-
 }
+
+
 
 Move BestMoveAtDepthDeepening(int maxDepth) {
 	ClearHashTable();

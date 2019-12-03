@@ -28,3 +28,4 @@ void SwitchSignOfWhitePositionValue();
 void InitGame();
 void EnterUciMode();
 int EnterInteractiveMode();
+void InitHash();
