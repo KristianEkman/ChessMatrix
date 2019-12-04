@@ -167,6 +167,7 @@ void InitGame() {
 	mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
 	mainGame.Material[0] = 0;
 	mainGame.Material[1] = 0;
+	mainGame.PositionHistoryLength = 0;
 	InitHash();
 }
 
@@ -357,6 +358,7 @@ void MakeMove(Move move, Game * game) {
 	hash ^= ZobritsSides[side01];
 	game->Hash ^= hash;
 	game->Side ^= 24;
+	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 
 }
 
@@ -410,6 +412,7 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevP
 	game->PositionScore = prevPositionScore;
 	game->Hash = prevHash;
 	game->Side ^= 24;
+	game->PositionHistoryLength--;
 }
 
 
@@ -1011,18 +1014,23 @@ void SwitchSignOfWhitePositionValue() {
 }
 
 int GetScore(Game * game) {
+	if (game->PositionHistory[game->PositionHistoryLength - 2] == game->Hash)
+		return 0; // Three fold repetition.
+
+	// todo 50 move rule.
+
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
 short GetBestScore(Game * game, int depth) {
 	if (depth == 0)
-		return game->Material[0] + game->Material[1] + game->PositionScore;
+		return GetScore(game);
 	bool empty = false;
 	short dbScore = getScoreFromHash(game->Hash, &empty, depth);
 	if (!empty)
 		return dbScore;
 
-	return game->Material[0] + game->Material[1] + game->PositionScore;
+	return GetScore(game);
 }
 
 int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
@@ -1149,6 +1157,8 @@ Game * CopyMainGame(int threadNo) {
 	threadGames[threadNo].Material[1] = mainGame.Material[1];
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * MOVESIZE);
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
+	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
+
 	return &threadGames[threadNo];
 }
 
