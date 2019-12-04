@@ -1,14 +1,8 @@
-Fixa castling rights efter kung-drag. Ink testfall.
-
-Kontrollera att enpassant fungerar
-
-Spela matcher i demo-läge. 64bit (13% snabbare)
+3-fold repetion
 
 skicka info via uci
 	- search leafs
 	- best line
-
-3-fold repetion
 
 Jobba på bättre pruning
 
