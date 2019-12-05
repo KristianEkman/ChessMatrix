@@ -81,7 +81,8 @@ typedef struct {
 	int _perftCount;
 	int PositionScore;
 	unsigned long long Hash;
-
+	unsigned long long PositionHistory[256];
+	int PositionHistoryLength;
 } Game;
 
 typedef struct {
