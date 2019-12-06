@@ -2,6 +2,11 @@
 skicka info via uci
 	- search leafs
 	- best line
+	
+Test ta bort hashning? Ger den något?
+
+Spela matcher i demo-läge. 64bit (13% snabbare)
+
 
 Jobba på bättre pruning
 
@@ -12,15 +17,12 @@ killer-heuristic
 sorting using MVV-LVA
 
 
-UI - Integrera
-	UCI protokoll
-		
-	- Integrera mot chessai
-	- Integrera mot arena
+UCI protokoll
+	FEN
+	stop (en extra tråd?)
 
 Fler testafall.
 
-Ta bort hashning. Denverkar inte ge något.
 
 Tidsbegränsning
 
