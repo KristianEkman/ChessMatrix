@@ -359,7 +359,7 @@ void MakeMove(Move move, Game * game) {
 	game->Hash ^= hash;
 	game->Side ^= 24;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
-
+	
 }
 
 void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore, Game * game, unsigned long long prevHash) {
@@ -442,7 +442,7 @@ bool SquareAttacked(int square, char attackedBy, Game * game) {
 		case KNIGHT:
 		{
 			int length = PieceTypeSquarePatterns[0][i][0];
-			for (int p = 1; p <= length; p++)
+			for (int p = 1; p <= length; p++)	
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
 				if (toSquare == square)
@@ -1243,6 +1243,8 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 
 
 Move BestMoveAtDepthDeepening(int maxDepth) {
+	clock_t start = clock();
+
 	ClearHashTable();
 	CreateMoves(&mainGame, 0);
 	int moveCount = mainGame.MovesBufferLength;
@@ -1256,9 +1258,19 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 		SortMoves(localMoves, moveCount, &mainGame);
 
 		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
-			return localMoves[0]; //a check mate is found, no need to search further.
+			break; //Ä check mate is found, no need to search further.
 		depth++;
-	} while (depth <= maxDepth); //todo: continue until time ends
+	} while (depth <= maxDepth); // todo: continue until time ends
+	clock_t stop = clock();
+
+	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
+	int nps = SearchedLeafs / secs; // todo
+	int score = GetScore(&mainGame);
+
+	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
+	fflush(stdout);
+
+	//pv, bestline. hur?
 
 	// run this on thread and write it to stdout when ready
 	return localMoves[0];
