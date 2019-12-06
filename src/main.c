@@ -82,7 +82,7 @@ void EnterUciMode() {
 		}
 
 		if (startsWith(buf, "go ")) {
-			Move move = BestMoveAtDepthDeepening(5);
+			Move move = BestMoveAtDepthDeepening(6);
 			char sMove[5];
 			MoveToString(move, sMove);
 			printf("bestmove %s\n", sMove);
@@ -503,11 +503,13 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game * game, in
 	unsigned long long prevHash = game->Hash;
 
 	MakeMove(move, game);
-	move.ScoreAtDepth = GetBestScore(game, depth);
 	int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
+	{
+		move.ScoreAtDepth = GetBestScore(game, depth);
 		game->MovesBuffer[game->MovesBufferLength++] = move;
+	}
 
 	UnMakeMove(move, capture, prevGameState, prevPosScore, game, prevHash);
 }
@@ -1196,8 +1198,8 @@ DWORD WINAPI SearchThread(ThreadParams * prm) {
 			}
 		}
 
-		if (prm->depth > 5)
-			prm->window = ASPIRATION_WINDOW_SIZE;
+		/*if (prm->depth > 5)
+			prm->window = ASPIRATION_WINDOW_SIZE;*/
 
 		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
@@ -1253,13 +1255,13 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 	do
 	{
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
-		SortMoves(localMoves, moveCount, &mainGame);
+		SortMoves(localMoves, moveCount, &mainGame);		
 
 		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
 			return localMoves[0]; //a check mate is found, no need to search further.
 		depth++;
 	} while (depth <= maxDepth); //todo: continue until time ends
-
+	
 	// run this on thread and write it to stdout when ready
 	return localMoves[0];
 }

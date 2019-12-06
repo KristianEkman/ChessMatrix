@@ -1,4 +1,3 @@
-3-fold repetion
 
 skicka info via uci
 	- search leafs
