@@ -6,7 +6,7 @@
 
 void PrintGame();
 void ReadFen(char * fen);
-void MoveToString(Move move, char sMove[]);
+void MoveToString(Move move, char sMove[5]);
 void WriteFen(char * fen);
 int ValidMoves(Move * moves);
 PlayerMove MakePlayerMove(char * sMove);
@@ -16,7 +16,7 @@ Move parseMove(char * sMove, MoveInfo info);
 Game mainGame;
 short TotalMaterial(Game * game);
 int SearchedLeafs;
-Move BestMoveAtDepthDeepening(int maxDepth);
+void BestMoveDeepening(TopSearchParams * params);
 int GetScore(Game * game);
 short GetBestScore(Game * game, int depth);
 void CreateMoves(Game * game, int depth);
@@ -29,3 +29,4 @@ void InitGame();
 void EnterUciMode();
 int EnterInteractiveMode();
 void InitHash();
+Move Search(int maxDepth, int seconds, bool async);

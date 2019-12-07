@@ -100,3 +100,10 @@ typedef struct  {
 	char Depth;
 	int Key2;
 }HashTableEntry;
+
+
+typedef struct {
+	int MaxDepth;
+	int Seconds;
+	Move BestMove;
+} TopSearchParams;

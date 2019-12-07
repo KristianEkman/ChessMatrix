@@ -1,16 +1,16 @@
+Utvärdera ELO
+	UCI time limit
+	UCI read fen
 
-skicka info via uci
-	- search leafs
-	- best line
+Sortera capture moves
 	
 Test ta bort hashning? Ger den något?
-
-Spela matcher i demo-läge. 64bit (13% snabbare)
-
 
 Jobba på bättre pruning
 
 time control
+	prioritera att sluta när ett sökdjup är klart
+
 
 killer-heuristic
 

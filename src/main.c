@@ -18,6 +18,7 @@
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
 const int MOVESIZE = sizeof(Move);
+bool Stopped;
 
 int _behind[] = { -8, 8 };
 int sideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCanCastleLong | BlackCanCastleShort };
@@ -26,7 +27,7 @@ int SearchedLeafs = 0;
 
 
 void computerMove() {
-	Move move = BestMoveAtDepthDeepening(5);
+	Move move = Search(5, 0, true);
 	MakeMove(move, &mainGame);
 }
 
@@ -82,11 +83,11 @@ void EnterUciMode() {
 		}
 
 		if (startsWith(buf, "go ")) {
-			Move move = BestMoveAtDepthDeepening(6);
-			char sMove[5];
-			MoveToString(move, sMove);
-			printf("bestmove %s\n", sMove);
-			fflush(stdout);
+			Search(6, 0, false);
+		}
+
+		if (streq(buf, "stop")) {
+			Stopped = true;
 		}
 
 		if (streq(buf, "i")) {
@@ -1089,6 +1090,9 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game * game) {
 }
 
 int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game * game) {
+	if (Stopped)
+		return GetScore(game);
+
 	if (!depth) {
 		SearchedLeafs++;
 		if (capture) {
@@ -1242,16 +1246,52 @@ void SetMovesScoreAtDepth(int depth, Move * localMoves, int moveCount) {
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 }
 
-
-
-Move BestMoveAtDepthDeepening(int maxDepth) {
+void TimeLimitWatch(int * secs) {
 	clock_t start = clock();
+	clock_t now = clock();
+	int s = *secs;
 
+	while (now - start < (s * CLOCKS_PER_SEC))
+	{
+		Sleep(100);
+		now = clock();
+	}
+
+	Stopped = true;
+	ExitThread(0);
+}
+
+Move Search(int maxDepth, int seconds, bool async) {
+	TopSearchParams params;
+	params.MaxDepth = maxDepth;
+	params.Seconds = seconds;
+
+	if (seconds > 0) {
+		int secs = params.Seconds;
+		CreateThread(NULL, 0, TimeLimitWatch, &secs, 0, NULL);
+	}
+
+	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
+	if (async)
+	{
+		WaitForSingleObject(handle, INFINITE);
+		return params.BestMove;
+	}
+
+	
+}
+
+void BestMoveDeepening(TopSearchParams * params) {
+	int maxDepth = params->MaxDepth;
+	clock_t start = clock();
+	Stopped = false;
+	SearchedLeafs = 0;
 	ClearHashTable();
 	CreateMoves(&mainGame, 0);
 	int moveCount = mainGame.MovesBufferLength;
-	Move * localMoves = malloc(moveCount * MOVESIZE);
-	memcpy(localMoves, mainGame.MovesBuffer, moveCount * MOVESIZE);
+	
+	Move * localMoves = malloc(moveCount * sizeof(Move));
+	memcpy(localMoves, mainGame.MovesBuffer, moveCount * sizeof(Move));
 
 	int depth = 1;
 	do
@@ -1260,20 +1300,26 @@ Move BestMoveAtDepthDeepening(int maxDepth) {
 		SortMoves(localMoves, moveCount, &mainGame);		
 
 		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
-			break; //Ä check mate is found, no need to search further.
+			break; //A check mate is found, no need to search further.
 		depth++;
-	} while (depth <= maxDepth); // todo: continue until time ends
+	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
-	int score = GetScore(&mainGame);
+	int score = localMoves[0].ScoreAtDepth;
 
 	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
+	fflush(stdout);
+
+	char sMove[5];
+	MoveToString(localMoves[0], sMove);
+	printf("bestmove %s\n", sMove);
 	fflush(stdout);
 
 	//pv, bestline. hur?
 
 	// run this on thread and write it to stdout when ready
-	return localMoves[0];
+	params->BestMove = localMoves[0];
+	ExitThread(0);
 }
