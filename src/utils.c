@@ -53,6 +53,17 @@ bool startsWith(char a[], char b[])
 	return false;
 }
 
+bool contains(char a[], char b[]) {
+	return strstr(a, b) != NULL;	
+}
+
+int indexOf(char * a, char * b) {
+	char * p = strstr(a, b);
+	if (p == NULL) return -1;
+	return p -  a;
+}
+
+
 void stdout_wl(char* text) {
 	printf("%s\n", text);
 	fflush(stdout);

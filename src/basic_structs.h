@@ -104,6 +104,6 @@ typedef struct  {
 
 typedef struct {
 	int MaxDepth;
-	int Seconds;
+	int Milliseconds;
 	Move BestMove;
 } TopSearchParams;

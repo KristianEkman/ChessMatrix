@@ -29,4 +29,5 @@ void InitGame();
 void EnterUciMode();
 int EnterInteractiveMode();
 void InitHash();
-Move Search(int maxDepth, int seconds, bool async);
+Move Search(int maxDepth, int milliseconds, bool async);
+void TimeLimitWatch(void* pms);

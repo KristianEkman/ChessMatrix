@@ -645,15 +645,25 @@ void BestMoveByWhite3() {
 	AssertBestMove(__func__, fen, "d3c4");
 }
 
+void indexOfTest() {
+	char* s2 = "Kristian Ekman";
+	Assert(indexOf(s2, "Ekman") == 9, "index of failed");
+}
+
+void containsNotTest() {
+	char* s2 = "Kristian Ekman";
+	AssertNot(contains(s2, "annika"), "containsNotTest failed");
+}
+
 void _runTests() {
+	BestMoveTest();
 	printf("\nPress any key to continue.");
 	int c = _getch();
 	system("@cls||clear");
 }
 
-void runTests() {
+void runAllTests() {
 	_failedAsserts = 0;
-	
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();

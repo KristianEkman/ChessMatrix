@@ -1,5 +1,5 @@
 #pragma once
 
-extern void runTests();
+extern void runAllTests();
 int Perft(int depth);
 
