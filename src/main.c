@@ -26,8 +26,9 @@ int sideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCan
 int SearchedLeafs = 0;
 
 
+
 void computerMove() {
-	Move move = Search(5, 0, true);
+	Move move = Search(5, 0, false);
 	MakeMove(move, &mainGame);
 }
 
@@ -60,12 +61,12 @@ void EnterUciMode() {
 	fgets(buf, 1024, stdin);
 	while (!streq(buf, "quit\n"))
 	{
-		if (streq(buf, "uci")) {
+		if (startsWith(buf, "uci")) {
 			stdout_wl("id name CChess");
 			stdout_wl("id author Kristian Ekman");
 			stdout_wl("uciok");
 		}
-		else if (streq(buf, "isready")) {
+		else if (startsWith(buf, "isready")) {
 			stdout_wl("readyok");
 		}
 		else if (startsWith(buf, "position ")) {
@@ -96,17 +97,15 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-			}			
+			}
 		}
-		//position fen rnbqk2r/ppppppbp/5np1/8/2PP4/4P3/PP3PPP/RNBQKNNR w KQkq - 1 1 moves b1c3 b7b5
 		else if (startsWith(buf, "go movetime ")) {
-			//12
-			char * sTime = strtok(&buf[12], " ");
+			char* sTime = strtok(&buf[12], " ");
 			int time = 0;
 			int r = sscanf(sTime, "%d", &time);
 			Search(100, time, true);
 		}
-		else if (streq(buf, "stop")) {
+		else if (startsWith(buf, "stop")) {
 			Stopped = true;
 		}
 		else if (streq(buf, "i\n")) {
@@ -136,7 +135,7 @@ int EnterInteractiveMode() {
 			computerMove();
 			break;
 		case 't':
-			
+
 			runAllTests();
 			break;
 		case 'q':
@@ -764,6 +763,7 @@ void CreateCaptureMoves(Game* game) {
 			}
 		}
 	}
+	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
 }
 
 PieceType parsePieceType(char c) {
@@ -1268,7 +1268,7 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 void TimeLimitWatch(void* args) {
 	clock_t start = clock();
 	clock_t now = clock();
-	int * pms = (int*)args;
+	int* pms = (int*)args;
 	int ms = *pms;
 
 	while (now - start < ((ms / 1000) * CLOCKS_PER_SEC))
@@ -1291,7 +1291,7 @@ Move Search(int maxDepth, int millis, bool async) {
 	}
 
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
-	if (async)
+	if (!async)
 	{
 		WaitForSingleObject(handle, INFINITE);
 		return params.BestMove;

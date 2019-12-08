@@ -1,9 +1,15 @@
-Utvärdera ELO
-	UCI time limit
-	UCI read fen
-
-Sortera capture moves
+Hur utvärderas strength?
+	- Alla tester grönt, kortast tid.
+	Tid just nu: 84s
+	****   BestMoveByWhite1   ****
+		INFO nodes 108515410 nps 2025901 score cp -15 depth 8
+		bestmove d2d4
+		108515.41k leafs in 53.57s
+		2025.75k leafs/s
+		Best Move: d2d4 score -15
 	
+NULL move
+
 Test ta bort hashning? Ger den något?
 
 Jobba på bättre pruning

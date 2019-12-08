@@ -558,27 +558,27 @@ void BestMoveTest() {
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	ReadFen(startFen);
 	clock_t start = clock();
-	Move bestMove = Search(50, 5, true);
+	Move bestMove = Search(30, 1000, false);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("\nFrom:%u  To:%u  Leafs:%u", bestMove.From, bestMove.To, SearchedLeafs);
-	printf("\n%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
+	printf("From:%u  To:%u  Leafs:%u\n", bestMove.From, bestMove.To, SearchedLeafs);
+	printf("%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
 }
 
-void AssertBestMove(char * testName, char * fen, char * expected) {
-	printf("\n\n****   %s   ****", testName);
+void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
+	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	SearchedLeafs = 0;
 	clock_t start = clock();
-	Move bestMove = Search(6, 0 , true);
+	Move bestMove = Search(depth, 0 , false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("\n%.2fk leafs in %.2fs", (float)SearchedLeafs / 1000, secs);
-	printf("\n%.2fk leafs/s", SearchedLeafs / (1000 * secs));
+	printf("%.2fk leafs in %.2fs\n", (float)SearchedLeafs / 1000, secs);
+	printf("%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
 	char sMove[6];
 	MoveToString(bestMove, sMove);
-	printf("\nBest Move: %s score %d", sMove, bestMove.ScoreAtDepth);
+	printf("Best Move: %s score %d\n", sMove, bestMove.ScoreAtDepth);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 	/*printf("\nEntries:    %d", HashTableEntries);
 	printf("\nMatches:    %d", HashTableMatches);
@@ -586,63 +586,63 @@ void AssertBestMove(char * testName, char * fen, char * expected) {
 }
 
 void BestMoveTestBlackCaptureBishop() {
-	AssertBestMove(__func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
+	AssertBestMove(5, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
 }
 
 void TestWhiteMateIn2() {
 	char * fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
 	//BestMoveDeepening(__func__, fen, "d5-d7"); possible, c6-b7 also mate in 2
-	AssertBestMove(__func__, fen, "c6c7");
+	AssertBestMove(5, __func__, fen, "c6c7");
 
 }
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
-	AssertBestMove(__func__, fen, "f4h4");
+	AssertBestMove(5, __func__, fen, "f4h4");
 
 }
 
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
-	AssertBestMove(__func__, fen, "d2d4");
+	AssertBestMove(7, __func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
 	char * fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
-	AssertBestMove(__func__, fen, "a4c3");
+	AssertBestMove(7, __func__, fen, "a4c3");
 }
 
 void BestMoveByBlack3() {
 	char * fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
-	AssertBestMove(__func__, fen, "d2e2");
+	AssertBestMove(7, __func__, fen, "d2e2");
 }
 
 void BestMoveByWhite2() {
 	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
 	//requires atlest depth 6 to be found
-	AssertBestMove(__func__, fen, "d4f5");
+	AssertBestMove(6, __func__, fen, "d4f5");
 }
 
 void BestMoveByBlack1() {
 	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
-	AssertBestMove(__func__, fen, "g7g5");
+	AssertBestMove(5, __func__, fen, "g7g5");
 }
 
 void BestMoveByBlack4() {
 	char * fen = "r1b2r2/2q2pk1/2pb3p/pp2pNpn/4Pn2/P1NB2BP/1PP1QPP1/R4RK1 b - - 0 1";
-	AssertBestMove(__func__, fen, "c8f5");
+	AssertBestMove(5, __func__, fen, "c8f5");
 }
 
 
 void BestMoveByBlack5() {
 	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
-	AssertBestMove(__func__, fen, "b7e4");
+	AssertBestMove(5, __func__, fen, "b7e4");
 }
 
 void BestMoveByWhite3() {
 	char * fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
-	AssertBestMove(__func__, fen, "d3c4");
+	AssertBestMove(5, __func__, fen, "d3c4");
 }
 
 void indexOfTest() {
@@ -664,7 +664,7 @@ void _runTests() {
 
 void runAllTests() {
 	_failedAsserts = 0;
-	TimedTest(50000000, HashTablePerformance);
+	/*TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -678,14 +678,12 @@ void runAllTests() {
 	EnPassantFromFenTest();
 	BlackCastlingRightsAfterKingMove();
 	WhiteCastlingRightsAfterKingMove();
-
-
 	EnPassantAfterMove();
 	MaterialBlackPawnCapture();
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();
+	EnPassantMaterial();*/
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
@@ -693,6 +691,7 @@ void runAllTests() {
 	
 	BestMoveTest();
 
+	clock_t start = clock();
 	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
@@ -706,7 +705,10 @@ void runAllTests() {
 	//Requires depth 7, takes a minute
 	//BestMoveByBlack3();
 	//BestMoveByBlack2();
-	
+
+	clock_t end = clock();
+	float secs =(float) (end - start) / CLOCKS_PER_SEC;
+	printf("n\Time: %.2fs\n", secs);	
 
 	if (_failedAsserts == 0)
 		printGreen("\nSuccess! Tests are good!");	
