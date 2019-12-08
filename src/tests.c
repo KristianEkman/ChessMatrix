@@ -168,8 +168,8 @@ int Perft(depth) {
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
-	Move * localMoves = malloc(count * MOVESIZE);
-	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	Move * localMoves = malloc(count * sizeof(Move));
+	memcpy(localMoves, mainGame.MovesBuffer, count * sizeof(Move));
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
@@ -231,8 +231,8 @@ void PerftSaveHash(depth) {
 	if (mainGame.MovesBufferLength == 0)
 		return;
 	int count = mainGame.MovesBufferLength;
-	Move * localMoves = malloc(count * MOVESIZE);
-	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	Move * localMoves = malloc(count * sizeof(Move));
+	memcpy(localMoves, mainGame.MovesBuffer, count * sizeof(Move));
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
@@ -256,8 +256,8 @@ int PerftHashDb(int depth) {
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
-	Move * localMoves = malloc(count * MOVESIZE);
-	memcpy(localMoves, mainGame.MovesBuffer, count * MOVESIZE);
+	Move * localMoves = malloc(count * sizeof(Move));
+	memcpy(localMoves, mainGame.MovesBuffer, count * sizeof(Move));
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];

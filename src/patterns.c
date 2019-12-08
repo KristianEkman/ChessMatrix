@@ -1,3 +1,4 @@
+#include "basic_structs.h"
 
 char PieceTypeSquarePatterns[6][64][9] =
 { 
@@ -609,5 +610,9 @@ short PawnCapturePattern[2] = { 3, 5 };
 short PawnPattern[2] = { 2, 4 };
 short EnpassantRankPattern[2] = { 5, 2 };
 char CastlesOffset[2] = { 0, 56 };
+int SideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCanCastleLong | BlackCanCastleShort };
+int Behind[] = { -8, 8 };
+
+
 
 

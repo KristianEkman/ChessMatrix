@@ -17,15 +17,8 @@
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
-const int MOVESIZE = sizeof(Move);
 bool Stopped;
-
-int _behind[] = { -8, 8 };
-int sideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCanCastleLong | BlackCanCastleShort };
-
 int SearchedLeafs = 0;
-
-
 
 void computerMove() {
 	Move move = Search(5, 0, false);
@@ -299,7 +292,7 @@ void MakeMove(Move move, Game* game) {
 		break;
 	case KingMove:
 		game->KingSquares[side01] = t;
-		game->State &= ~sideCastlingRights[side01]; //sets castling rights bits for current player.
+		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
 
 		KingPositionScore(move, game);
 		break;
@@ -364,7 +357,7 @@ void MakeMove(Move move, Game* game) {
 		break;
 	case EnPassantCapture:
 	{
-		char behind = t + _behind[side01];
+		char behind = t + Behind[side01];
 		game->Squares[behind] = NOPIECE;
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
 		game->PositionScore -= PositionValueMatrix[PAWN][captColor][behind];
@@ -421,7 +414,7 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevP
 		game->Squares[0 + CastlesOffset[otherSide01]] = ROOK | otherSide;
 		break;
 	case EnPassantCapture:
-		game->Squares[move.To + _behind[otherSide01]] = PAWN | game->Side;
+		game->Squares[move.To + Behind[otherSide01]] = PAWN | game->Side;
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][PAWN];
 		break;
 	default:
@@ -963,7 +956,7 @@ int ValidMoves(Move* moves) {
 	if (mainGame.MovesBufferLength == 0)
 		return 0;
 
-	memcpy(moves, mainGame.MovesBuffer, mainGame.MovesBufferLength * MOVESIZE);
+	memcpy(moves, mainGame.MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	return mainGame.MovesBufferLength;
 }
 
@@ -1130,8 +1123,8 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game* game) {
 			return 0;//stale mate
 	}
 
-	Move* localMoves = malloc(moveCount * MOVESIZE);
-	memcpy(localMoves, game->MovesBuffer, moveCount * MOVESIZE);
+	Move* localMoves = malloc(moveCount * sizeof(Move));
+	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	if (game->Side == BLACK) { //maximizing
 		bestVal = alpha;
@@ -1180,7 +1173,7 @@ Game* CopyMainGame(int threadNo) {
 	threadGames[threadNo].KingSquares[1] = mainGame.KingSquares[1];
 	threadGames[threadNo].Material[0] = mainGame.Material[0];
 	threadGames[threadNo].Material[1] = mainGame.Material[1];
-	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * MOVESIZE);
+	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
 
