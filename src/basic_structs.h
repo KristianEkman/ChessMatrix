@@ -77,8 +77,6 @@ typedef struct {
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
-	PerftResult PerftResult;
-	int _perftCount;
 	int PositionScore;
 	unsigned long long Hash;
 	unsigned long long PositionHistory[256];

@@ -12,6 +12,8 @@
 #pragma region TestsHelpers
 
 int _failedAsserts = 0;
+PerftResult perftResult;
+
 
 void printColor(char * msg, int color) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -88,8 +90,8 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 
 void printPerftResults() {
 	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n",
-		mainGame.PerftResult.Captures, mainGame.PerftResult.Castles, mainGame.PerftResult.CheckMates, mainGame.PerftResult.Checks,
-		mainGame.PerftResult.Enpassants, mainGame.PerftResult.Promotions);
+		perftResult.Captures, perftResult.Castles, perftResult.CheckMates, perftResult.Checks,
+		perftResult.Enpassants, perftResult.Promotions);
 }
 
 typedef struct {
@@ -156,9 +158,6 @@ void HashTablePerformance(int iterations) {
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
-
-
-
 int Perft(depth) {
 	if (depth == 0)
 	{
@@ -177,15 +176,15 @@ int Perft(depth) {
 		PieceType capture = mainGame.Squares[move.To];
 		if (depth == 1) {
 			if (capture != NOPIECE)
-				mainGame.PerftResult.Captures++;
+				perftResult.Captures++;
 			if (move.MoveInfo == EnPassantCapture)
-				mainGame.PerftResult.Captures++;
+				perftResult.Captures++;
 			if (move.MoveInfo == CastleLong || move.MoveInfo == CastleShort)
-				mainGame.PerftResult.Castles++;
+				perftResult.Castles++;
 			if (move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight)
-				mainGame.PerftResult.Promotions++;
+				perftResult.Promotions++;
 			if (move.MoveInfo == EnPassantCapture)
-				mainGame.PerftResult.Enpassants++;
+				perftResult.Enpassants++;
 		}
 
 		GameState prevGameState = mainGame.State;
@@ -283,16 +282,16 @@ int PerftTest(char * fen, int depth) {
 	for (size_t i = 0; i < 2; i++)
 	{
 		clock_t start = clock();
-		mainGame.PerftResult.Captures = 0;
-		mainGame.PerftResult.Castles = 0;
-		mainGame.PerftResult.CheckMates = 0;
-		mainGame.PerftResult.Checks = 0;
-		mainGame.PerftResult.Enpassants = 0;
-		mainGame.PerftResult.Promotions = 0;
+		perftResult.Captures = 0;
+		perftResult.Castles = 0;
+		perftResult.CheckMates = 0;
+		perftResult.Checks = 0;
+		perftResult.Enpassants = 0;
+		perftResult.Promotions = 0;
 		short startScore = TotalMaterial(&mainGame);
 		perftCount = Perft(depth);
 		AssertAreEqualInts(startScore, TotalMaterial(&mainGame), "Game material missmatch");
-		//printPerftResults();
+		//printPerftResults(perftResult);
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 		//printf("%.2fs\n", secs);
@@ -361,10 +360,10 @@ void PerfTestPosition2() {
 	printf("\n");printf(__func__);
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	PerftTest(fen, 4);
-	AssertAreEqualInts(757163, mainGame.PerftResult.Captures, "Captures missmatch");
-	AssertAreEqualInts(128013, mainGame.PerftResult.Castles, "Castles missmatch");
-	AssertAreEqualInts(1929, mainGame.PerftResult.Enpassants, "En passants missmatch");
-	AssertAreEqualInts(15172, mainGame.PerftResult.Promotions, "Promotion missmatch");
+	AssertAreEqualInts(757163, perftResult.Captures, "Captures missmatch");
+	AssertAreEqualInts(128013, perftResult.Castles, "Castles missmatch");
+	AssertAreEqualInts(1929, perftResult.Enpassants, "En passants missmatch");
+	AssertAreEqualInts(15172, perftResult.Promotions, "Promotion missmatch");
 }
 
 void PerftTestStart() {
@@ -663,8 +662,8 @@ void _runTests() {
 }
 
 void runAllTests() {
-	_failedAsserts = 0;
-	/*TimedTest(50000000, HashTablePerformance);
+	/*_failedAsserts = 0;
+	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -689,7 +688,7 @@ void runAllTests() {
 	PositionScoreKnights();
 	PositionScoreCastling();*/
 	
-	BestMoveTest();
+	//BestMoveTest();
 
 	clock_t start = clock();
 	BestMoveTestBlackCaptureBishop();
