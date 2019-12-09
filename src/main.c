@@ -39,14 +39,8 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
-
-	if (argc == 2 && argv[1] == "/i") {
-		return EnterInteractiveMode();
-	}
-	else {
-		EnterUciMode();
-		return 0;
-	}
+	EnterUciMode();
+	return 0;
 }
 
 void EnterUciMode() {
@@ -433,7 +427,6 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevP
 	game->Side ^= 24;
 	game->PositionHistoryLength--;
 }
-
 
 bool SquareAttacked(int square, char attackedBy, Game* game) {
 	for (int i = 0; i < 64; i++)
@@ -1192,7 +1185,6 @@ DWORD WINAPI DoNothingThread(int* prm) {
 }
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
-	//ThreadParams params = *prm;
 	do
 	{
 		Game* game = CopyMainGame(prm->threadID);
@@ -1211,18 +1203,14 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			score = dbScore;
 		}
 		else {
-			int alpha = move.ScoreAtDepth - prm->window;
-			int beta = move.ScoreAtDepth + prm->window;
+			int alpha = - 9000;
+			int beta = 9000;
 			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
 			if (score < alpha || score > beta) {
-				prm->window = 9000;
 				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 				continue;
 			}
 		}
-
-		/*if (prm->depth > 5)
-			prm->window = ASPIRATION_WINDOW_SIZE;*/
 
 		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
@@ -1256,7 +1244,6 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 			params[i].moves = localMoves;
 			params[i].moveIndex = i;
 			params[i].moveCount = moveCount;
-			params[i].window = 9000;
 
 			threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		}
