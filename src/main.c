@@ -92,11 +92,18 @@ void EnterUciMode() {
 				}
 			}
 		}
-		else if (startsWith(buf, "go movetime ")) {
-			char* sTime = strtok(&buf[12], " ");
-			int time = 0;
-			int r = sscanf(sTime, "%d", &time);
-			Search(100, time, true);
+		else if (startsWith(buf, "go ")) {
+			if (contains(buf, " movetime ")) {
+				int idx = indexOf(buf, " movetime ");
+				idx += 10;
+				char* sTime = strtok(&buf[idx], " ");
+				int time = 0;
+				int r = sscanf(sTime, "%d", &time);
+				Search(100, time, true);
+			}
+			// else search with time control
+			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
+			// I end game?
 		}
 		else if (startsWith(buf, "stop")) {
 			Stopped = true;
