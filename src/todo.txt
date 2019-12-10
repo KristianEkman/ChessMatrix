@@ -17,7 +17,7 @@ Refactor main
 
 NULL move
 
-konfigurarbar hash storlek.
+konfigurerbar hash storlek.
 	
 
 Test ta bort hashning? Ger den något?
@@ -25,23 +25,11 @@ Test ta bort hashning? Ger den något?
 time control
 	prioritera att sluta när ett sökdjup är klart
 
-
 killer-heuristic
 
 sorting using MVV-LVA
 
-UCI protokoll
-	FEN
-	stop (en extra tråd?)
-
 Fler testafall.
-
-
-Tidsbegränsning
-
-Rensning av drag.
-
-illegal moves db
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?

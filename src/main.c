@@ -93,13 +93,16 @@ void EnterUciMode() {
 				char* sTime = strtok(&buf[idx], " ");
 				int time = 0;
 				int r = sscanf(sTime, "%d", &time);
-				Search(100, time, true);
+				Search(30, time, true);
 			}
 			// else search with time control
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
+			else {
+				Search(30, 8000, true);
+			}
 		}
-		else if (startsWith(buf, "stop")) {
+		else if (streq(buf, "stop\n")) {
 			Stopped = true;
 		}
 		else if (streq(buf, "i\n")) {
@@ -1252,12 +1255,10 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 }
 
-void TimeLimitWatch(void* args) {
+DWORD WINAPI TimeLimitWatch(int* args) {
+	int ms = *args;
 	clock_t start = clock();
 	clock_t now = clock();
-	int* pms = (int*)args;
-	int ms = *pms;
-
 	while (now - start < ((ms / 1000) * CLOCKS_PER_SEC))
 	{
 		Sleep(100);
@@ -1266,6 +1267,7 @@ void TimeLimitWatch(void* args) {
 
 	Stopped = true;
 	ExitThread(0);
+	return 0;
 }
 
 Move Search(int maxDepth, int millis, bool async) {
@@ -1285,7 +1287,7 @@ Move Search(int maxDepth, int millis, bool async) {
 	}
 }
 
-void BestMoveDeepening(TopSearchParams* params) {
+DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	int maxDepth = params->MaxDepth;
 	clock_t start = clock();
 	SearchedLeafs = 0;
@@ -1297,14 +1299,21 @@ void BestMoveDeepening(TopSearchParams* params) {
 	memcpy(localMoves, mainGame.MovesBuffer, moveCount * sizeof(Move));
 
 	int depth = 1;
+	char bestMove[5];
 	do
 	{
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
 		SortMoves(localMoves, moveCount, &mainGame);
+		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
+			params->BestMove = localMoves[0];
+			MoveToString(localMoves[0], bestMove);
+			//printf("INFO depth %d - %s\n", depth, bestMove);
+			//pv, bestline. hur?
+			depth++;
+		}
 
 		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
 			break; //A check mate is found, no need to search further.
-		depth++;
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
 
@@ -1312,17 +1321,12 @@ void BestMoveDeepening(TopSearchParams* params) {
 	int nps = SearchedLeafs / secs; // todo
 	int score = localMoves[0].ScoreAtDepth;
 
-	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
+	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth - 1);
 	fflush(stdout);
 
-	char sMove[5];
-	MoveToString(localMoves[0], sMove);
-	printf("bestmove %s\n", sMove);
+	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
-
-	//pv, bestline. hur?
-
-	// run this on thread and write it to stdout when ready
-	params->BestMove = localMoves[0];
+	
 	ExitThread(0);
+	return 0;
 }
