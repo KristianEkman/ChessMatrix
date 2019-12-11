@@ -23,7 +23,8 @@ konfigurerbar hash storlek.
 Test ta bort hashning? Ger den något?
 
 time control
-	prioritera att sluta när ett sökdjup är klart
+	Prioritera att sluta när ett sökdjup är klart. Är man nära den schemalagda tiden.
+	Om man bara hittar ett mkt sämre drag. Sök dubbla tiden.
 
 killer-heuristic
 

@@ -1300,20 +1300,21 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 
 	int depth = 1;
 	char bestMove[5];
+	int bestScore;
 	do
 	{
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
 		SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
 			params->BestMove = localMoves[0];
+			bestScore = localMoves[0].ScoreAtDepth;
 			MoveToString(localMoves[0], bestMove);
 			//printf("INFO depth %d - %s\n", depth, bestMove);
 			//pv, bestline. hur?
 			depth++;
+			if ((mainGame.Side == WHITE && bestScore < -7000) || (mainGame.Side == BLACK && bestScore > 7000))
+				break; //A check mate is found, no need to search further.
 		}
-
-		if ((mainGame.Side == WHITE && localMoves[0].ScoreAtDepth < -7000) || (mainGame.Side == BLACK && localMoves[0].ScoreAtDepth > 7000))
-			break; //A check mate is found, no need to search further.
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
 
