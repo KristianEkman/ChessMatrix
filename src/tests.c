@@ -633,7 +633,6 @@ void BestMoveByBlack4() {
 	AssertBestMove(5, __func__, fen, "c8f5");
 }
 
-
 void BestMoveByBlack5() {
 	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
 	AssertBestMove(5, __func__, fen, "b7e4");
@@ -642,6 +641,11 @@ void BestMoveByBlack5() {
 void BestMoveByWhite3() {
 	char * fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
 	AssertBestMove(5, __func__, fen, "d3c4");
+}
+
+void BestMoveByWhite4() {
+	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
+	AssertBestMove(5, __func__, fen, "b1d2");
 }
 
 void indexOfTest() {
@@ -697,6 +701,7 @@ void runAllTests() {
 	BestMoveByWhite1();
 	BestMoveByWhite2();
 	BestMoveByWhite3();
+	BestMoveByWhite4();
 	BestMoveByBlack1();
 	BestMoveByBlack4();
 	BestMoveByBlack5();

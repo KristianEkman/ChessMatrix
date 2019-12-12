@@ -1032,7 +1032,7 @@ void SwitchSignOfWhitePositionValue() {
 }
 
 int GetScore(Game* game) {
-	if (game->PositionHistory[game->PositionHistoryLength - 2] == game->Hash)
+	if (game->PositionHistoryLength > 3 && game->PositionHistory[game->PositionHistoryLength - 2] == game->Hash)
 		return 0; // Three fold repetition.
 
 	// todo 50 move rule.
