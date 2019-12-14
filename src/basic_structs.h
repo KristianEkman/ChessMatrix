@@ -38,8 +38,7 @@ typedef struct {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
-	int ScoreAtDepth; //14 bits
-	char filler;
+	short ScoreAtDepth; //14 bits
 	//could shrink
 } Move;
 
@@ -77,7 +76,7 @@ typedef struct {
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
-	int PositionScore;
+	short PositionScore;
 	unsigned long long Hash;
 	unsigned long long PositionHistory[256];
 	int PositionHistoryLength;

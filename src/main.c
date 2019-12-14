@@ -378,7 +378,7 @@ void MakeMove(Move move, Game* game) {
 
 }
 
-void UnMakeMove(Move move, PieceType capture, GameState prevGameState, int prevPositionScore, Game* game, unsigned long long prevHash) {
+void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short prevPositionScore, Game* game, unsigned long long prevHash) {
 
 	game->Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
 
@@ -514,7 +514,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	move.From = fromSquare;
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
-	int prevPosScore = game->PositionScore;
+	short prevPosScore = game->PositionScore;
 	unsigned long long prevHash = game->Hash;
 
 	MakeMove(move, game);
@@ -1031,7 +1031,7 @@ void SwitchSignOfWhitePositionValue() {
 	}
 }
 
-int GetScore(Game* game) {
+short GetScore(Game* game) {
 	if (game->PositionHistoryLength > 3 && game->PositionHistory[game->PositionHistoryLength - 2] == game->Hash)
 		return 0; // Three fold repetition.
 
@@ -1051,13 +1051,13 @@ short GetBestScore(Game* game, int depth) {
 	return GetScore(game);
 }
 
-int AlphaBetaQuite(int alpha, int beta, int depth, Game* game) {
+short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 	if (!depth) {
 		SearchedLeafs++;
 		return GetScore(game);
 	}
 
-	int bestVal = 0;
+	short bestVal = 0;
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
@@ -1104,7 +1104,7 @@ int AlphaBetaQuite(int alpha, int beta, int depth, Game* game) {
 	return bestVal;
 }
 
-int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game* game) {
+short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game) {
 	if (Stopped)
 		return GetScore(game);
 
@@ -1115,7 +1115,7 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game* game) {
 		}
 		return GetScore(game);
 	}
-	int bestVal = 0;
+	short bestVal = 0;
 	CreateMoves(game, depth);
 	int moveCount = game->MovesBufferLength;
 
@@ -1155,10 +1155,10 @@ int AlphaBeta(int alpha, int beta, int depth, PieceType capture, Game* game) {
 			Move childMove = localMoves[i];
 			PieceType capture = game->Squares[childMove.To];
 			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
+			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
+			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
 			bestVal = min(bestVal, childValue);
 			addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
@@ -1199,7 +1199,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 
 		MakeMove(move, game);
 		bool empty = FALSE;
-		int score;
+		short score;
 		short dbScore = getScoreFromHash(game->Hash, &empty, prm->depth);
 		if (!empty)
 		{
@@ -1271,18 +1271,22 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 }
 
 Move Search(int maxDepth, int millis, bool async) {
+
 	TopSearchParams params;
 	params.MaxDepth = maxDepth;
 	params.Milliseconds = millis;
 	Stopped = false;
+	HANDLE timeLimitThread = 0;
 	if (millis > 0) {
-		CreateThread(NULL, 0, TimeLimitWatch, &millis, 0, NULL);
+		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &millis, 0, NULL);
 	}
 
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
 	if (!async)
 	{
 		WaitForSingleObject(handle, INFINITE);
+		if (timeLimitThread != 0)
+			TerminateThread(timeLimitThread, 0);
 		return params.BestMove;
 	}
 }
@@ -1313,14 +1317,17 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 			//pv, bestline. hur?
 			depth++;
 			if ((mainGame.Side == WHITE && bestScore < -7000) || (mainGame.Side == BLACK && bestScore > 7000))
+			{
+				Stopped = true;
 				break; //A check mate is found, no need to search further.
+			}
 		}
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
-	int score = localMoves[0].ScoreAtDepth;
+	short score = localMoves[0].ScoreAtDepth;
 
 	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth - 1);
 	fflush(stdout);
