@@ -577,7 +577,19 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
 	char sMove[6];
 	MoveToString(bestMove, sMove);
-	printf("Best Move: %s score %d\n", sMove, bestMove.ScoreAtDepth);
+	AssertAreEqual(expected, sMove, "Not the expected move");
+	/*printf("\nEntries:    %d", HashTableEntries);
+	printf("\nMatches:    %d", HashTableMatches);
+	printf("\nFull count: %d", HashTableFullCount);*/
+}
+
+void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
+	printf("\n\n****   %s  (timed) ****\n", testName);
+	ReadFen(fen);
+	SearchedLeafs = 0;
+	Move bestMove = Search(30, secs * 1000, false);
+	char sMove[6];
+	MoveToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 	/*printf("\nEntries:    %d", HashTableEntries);
 	printf("\nMatches:    %d", HashTableMatches);
@@ -586,18 +598,19 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 
 void BestMoveTestBlackCaptureBishop() {
 	AssertBestMove(5, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
+	AssertBestMoveTimed(10, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
+
 }
 
 void TestWhiteMateIn2() {
 	char * fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
-	//BestMoveDeepening(__func__, fen, "d5-d7"); possible, c6-b7 also mate in 2
 	AssertBestMove(5, __func__, fen, "c6c7");
-
+	AssertBestMoveTimed(1, __func__, fen, "c6c7");
 }
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
-	AssertBestMove(5, __func__, fen, "f4h4");
+	AssertBestMove(6, __func__, fen, "f4h4");
 
 }
 
@@ -666,7 +679,7 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*_failedAsserts = 0;
+	_failedAsserts = 0;
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
@@ -686,13 +699,13 @@ void runAllTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();*/
+	EnPassantMaterial();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/
 	
-	//BestMoveTest();
+	BestMoveTest();
 
 	clock_t start = clock();
 	BestMoveTestBlackCaptureBishop();
@@ -712,12 +725,12 @@ void runAllTests() {
 
 	clock_t end = clock();
 	float secs =(float) (end - start) / CLOCKS_PER_SEC;
-	printf("n\Time: %.2fs\n", secs);	
+	printf("Time: %.2fs\n", secs);	
 
 	if (_failedAsserts == 0)
-		printGreen("\nSuccess! Tests are good!");	
+		printGreen("Success! Tests are good!\n");	
 
-	printf("\nPress any key to continue.");
+	printf("Press any key to continue.\n");
 	int c = _getch();
 	system("@cls||clear");
 }
