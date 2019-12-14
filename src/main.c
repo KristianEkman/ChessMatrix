@@ -14,6 +14,7 @@
 #include "evaluation.h"
 #include "sort.h"
 #include "hashTable.h"
+#include "bestMovesTable.h"
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
@@ -39,6 +40,7 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
+	InitBestMovesTable();
 	EnterUciMode();
 	return 0;
 }
@@ -1129,7 +1131,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	if (game->Side == BLACK) { //maximizing
+	if (game->Side == BLACK) { //maximizing, black
 		bestVal = alpha;
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1141,14 +1143,17 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 
 			MakeMove(childMove, game);
 			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
-			bestVal = max(bestVal, childValue);
+			if (childValue > bestVal) {
+				bestVal = childValue;
+				AddBestMovesEntry(prevHash, childMove.From, childMove.To);
+			}
 			addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			if (bestVal >= beta)
 				break;
 		}
 	}
-	else { //minimizing
+	else { //minimizing, white
 		bestVal = beta;
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1159,7 +1164,10 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
 			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
-			bestVal = min(bestVal, childValue);
+			if (childValue < bestVal) {
+				bestVal = childValue;
+				AddBestMovesEntry(prevHash, childMove.From, childMove.To);
+			}
 			addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			if (bestVal <= alpha)
@@ -1291,6 +1299,37 @@ Move Search(int maxDepth, int millis, bool async) {
 	}
 }
 
+PrintBestLine(char * pv, char * bestMove) {
+	strcpy(pv+=4, bestMove);
+	strcpy(pv++, " ");
+
+	PlayerMove bestPlayerMove = MakePlayerMove(bestMove);
+	int index = 0;
+	PlayerMove moves[100];
+	int movesCount = 0;
+	while (true)
+	{
+		Move move = GetBestMove(mainGame.Hash);
+		if (move.MoveInfo == NotAMove)
+			break;
+		char sMove[5];
+		MoveToString(move, sMove);
+		PlayerMove plMove = MakePlayerMove(sMove);
+		
+		if (plMove.Invalid)
+			break;
+		moves[movesCount++] = plMove;
+		strcpy(pv+=4, sMove);
+		strcpy(pv++, " ");
+	}
+	strcpy(pv, "\0");
+
+	for (int i = movesCount - 1; i >= 0; i--)
+		UnMakePlayerMove(moves[i]);
+	
+	UnMakePlayerMove(bestPlayerMove);
+}
+
 DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	int maxDepth = params->MaxDepth;
 	clock_t start = clock();
@@ -1328,8 +1367,10 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
 	short score = localMoves[0].ScoreAtDepth;
+	char pv[1000];
+	PrintBestLine(pv, bestMove);
 
-	printf("INFO nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth - 1);
+	printf("info nodes %d nps %d score cp %d depth %d pv %s\n", SearchedLeafs, nps, score, depth, pv);
 	fflush(stdout);
 
 	printf("bestmove %s\n", bestMove);

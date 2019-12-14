@@ -557,7 +557,7 @@ void BestMoveTest() {
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	ReadFen(startFen);
 	clock_t start = clock();
-	Move bestMove = Search(30, 1000, false);
+	Move bestMove = Search(3, 0, false);
 	clock_t stop = clock();
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -718,6 +718,7 @@ void runAllTests() {
 	BestMoveByBlack1();
 	BestMoveByBlack4();
 	BestMoveByBlack5();
+
 
 	//Requires depth 7, takes a minute
 	//BestMoveByBlack3();

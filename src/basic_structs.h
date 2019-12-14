@@ -29,6 +29,7 @@ typedef enum {
 	CastleLong = 8,
 	EnPassant = 9,
 	EnPassantCapture = 10,
+	NotAMove = 255
 	//Bishop or Knight
 	//Queen
 	//

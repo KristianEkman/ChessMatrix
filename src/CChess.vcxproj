@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashTable.h" />
+    <ClInclude Include="bestMovesTable.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="basic_structs.h" />

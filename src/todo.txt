@@ -8,9 +8,16 @@ Hur utvärderas strength?
 		2025.75k leafs/s
 		Best Move: d2d4 score -15
 
+En BestMoves Table per tråd?
+	Hur många trådar?
 
-		
-PieceList, CreateMove, SquareAttacket
+Order 
+	pvMoves
+	small capture attackers first
+	quite search ej begränsad
+
+
+PieceList: CreateMove, SquareAttacket
 
 Fifty move rule.
 Material draw?
