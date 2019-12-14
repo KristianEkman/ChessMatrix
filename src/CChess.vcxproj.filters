@@ -36,6 +36,9 @@
     <ClCompile Include="hashTable.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="bestMovesTable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patterns.h">

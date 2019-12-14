@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bestMovesTable.c" />
     <ClCompile Include="evaluation.c" />
     <ClCompile Include="hashTable.c" />
     <ClCompile Include="main.c" />

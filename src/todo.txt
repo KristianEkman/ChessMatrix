@@ -8,6 +8,10 @@ Hur utvärderas strength?
 		2025.75k leafs/s
 		Best Move: d2d4 score -15
 
+
+		
+PieceList, CreateMove, SquareAttacket
+
 Fifty move rule.
 Material draw?
 
