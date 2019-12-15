@@ -8,14 +8,15 @@ typedef struct {
 
 typedef struct
 {
-	BestMovesTableEntry pEntries[32000000];
+	BestMovesTableEntry * pEntries;
 	int NumberOfEntries;
 } BestMovesTable;
 
-void ClearTable();
+void ClearTable(BestMovesTable * bmTable);
 
-void InitBestMovesTable();
+void InitBestMovesTable(BestMovesTable* bmTable, int sizeMb);
 
-void AddBestMovesEntry(unsigned long long hash, char from, char to);
+void AddBestMovesEntry(BestMovesTable* bmTable, unsigned long long hash, char from, char to);
 
-Move GetBestMove(unsigned long long hash);
+Move GetBestMove(BestMovesTable* bmTable, unsigned long long hash);
+

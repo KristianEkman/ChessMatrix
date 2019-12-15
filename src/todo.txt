@@ -11,7 +11,7 @@ Hur utvärderas strength?
 En BestMoves Table per tråd?
 	Hur många trådar?
 
-Order 
+Order för bättre cutoff
 	pvMoves
 	small capture attackers first
 	quite search ej begränsad

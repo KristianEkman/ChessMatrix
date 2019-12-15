@@ -1,7 +1,7 @@
 #pragma once
 #include "basic_structs.h"
 
-#define SEARCH_THREADS 7
+#define SEARCH_THREADS 4
 #define ASPIRATION_WINDOW_SIZE 10
 
 void PrintGame();

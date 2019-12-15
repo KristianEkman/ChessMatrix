@@ -13,8 +13,6 @@
 
 int _failedAsserts = 0;
 PerftResult perftResult;
-
-
 void printColor(char * msg, int color) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;

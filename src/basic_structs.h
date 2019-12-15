@@ -28,7 +28,7 @@ typedef enum {
 	CastleShort = 7,
 	CastleLong = 8,
 	EnPassant = 9,
-	EnPassantCapture = 10,
+	EnPassantCapture = 10, //First 4 bits
 	NotAMove = 255
 	//Bishop or Knight
 	//Queen
@@ -40,7 +40,7 @@ typedef struct {
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
 	short ScoreAtDepth; //14 bits
-	//could shrink
+	short OrderScore;
 } Move;
 
 typedef enum  {
@@ -81,6 +81,7 @@ typedef struct {
 	unsigned long long Hash;
 	unsigned long long PositionHistory[256];
 	int PositionHistoryLength;
+	int ThreadIndex;
 } Game;
 
 typedef struct {

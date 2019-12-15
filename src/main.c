@@ -18,6 +18,9 @@
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
+BestMovesTable bmTables[SEARCH_THREADS];
+const int TBL_SIZE_MB = 512;
+
 bool Stopped;
 int SearchedLeafs = 0;
 
@@ -40,7 +43,10 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
-	InitBestMovesTable();
+	for (int i = 0; i < SEARCH_THREADS; i++)
+		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
+	printf("initialized\n");
+
 	EnterUciMode();
 	return 0;
 }
@@ -503,6 +509,7 @@ bool SquareAttacked(int square, char attackedBy, Game* game) {
 }
 
 void SortMoves(Move* moves, int moveCount, Game* game) {
+	
 	if (game->Side == WHITE)
 		QuickSort(moves, 0, moveCount - 1);
 	else
@@ -525,6 +532,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	if (legal)
 	{
 		move.ScoreAtDepth = GetBestScore(game, depth);
+		move.OrderScore = move.ScoreAtDepth;
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
@@ -965,22 +973,31 @@ int ValidMoves(Move* moves) {
 	return mainGame.MovesBufferLength;
 }
 
-PlayerMove MakePlayerMove(char* sMove) {
+int ValidMovesOnThread(Game * game, Move* moves) {
+	CreateMoves(game, 0);
+	if (game->MovesBufferLength == 0)
+		return 0;
+
+	memcpy(moves, game->MovesBuffer, game->MovesBufferLength * sizeof(Move));
+	return game->MovesBufferLength;
+}
+
+PlayerMove MakePlayerMoveOnThread(Game * game, char* sMove) {
 	Move move = parseMove(sMove, 0);
 	Move moves[100];
-	int length = ValidMoves(moves);
+	int length = ValidMovesOnThread(game, moves);
 	PlayerMove playerMove;
 	for (int i = 0; i < length; i++)
 	{
 		if (moves[i].From == move.From && moves[i].To == move.To) {
 			playerMove.Move = moves[i];
-			playerMove.Capture = mainGame.Squares[move.To];
-			playerMove.PreviousGameState = mainGame.State;
+			playerMove.Capture = game->Squares[move.To];
+			playerMove.PreviousGameState = game->State;
 			playerMove.Invalid = false;
-			playerMove.PreviousPositionScore = mainGame.PositionScore;
-			playerMove.PreviousHash = mainGame.Hash;
+			playerMove.PreviousPositionScore = game->PositionScore;
+			playerMove.PreviousHash = game->Hash;
 
-			MakeMove(moves[i], &mainGame);
+			MakeMove(moves[i], game);
 			return playerMove;
 		}
 	}
@@ -988,9 +1005,18 @@ PlayerMove MakePlayerMove(char* sMove) {
 	return playerMove;
 }
 
+PlayerMove MakePlayerMove(char* sMove) {
+	return MakePlayerMoveOnThread(&mainGame, sMove);
+}
+
 void UnMakePlayerMove(PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &mainGame, playerMove.PreviousHash);
 }
+
+void UnMakePlayerMoveOnThread(Game * game, PlayerMove playerMove) {
+	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
+}
+
 
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
@@ -1145,7 +1171,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
 			if (childValue > bestVal) {
 				bestVal = childValue;
-				AddBestMovesEntry(prevHash, childMove.From, childMove.To);
+				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
@@ -1166,7 +1192,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
 			if (childValue < bestVal) {
 				bestVal = childValue;
-				AddBestMovesEntry(prevHash, childMove.From, childMove.To);
+				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
@@ -1184,6 +1210,8 @@ Game* CopyMainGame(int threadNo) {
 	threadGames[threadNo].KingSquares[1] = mainGame.KingSquares[1];
 	threadGames[threadNo].Material[0] = mainGame.Material[0];
 	threadGames[threadNo].Material[1] = mainGame.Material[1];
+	threadGames[threadNo].ThreadIndex = threadNo;
+
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
@@ -1228,8 +1256,15 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
 		if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
+		{
+			ExitThread(0);
 			return 0; //a check mate is found, no need to search further.
+		}
 		prm->moveIndex += SEARCH_THREADS;
+		
+		if (prm->depth > 2) {
+			PrintBestLine(prm->threadID, move, prm->depth);
+		}
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
 	return 0;
@@ -1299,35 +1334,42 @@ Move Search(int maxDepth, int millis, bool async) {
 	}
 }
 
-PrintBestLine(char * pv, char * bestMove) {
-	strcpy(pv+=4, bestMove);
-	strcpy(pv++, " ");
+PrintBestLine(int threadIndex, Move move, int depth) {
+	char buffer[1000];
+	char* pv = &buffer;
+	char sMove[5];
+	MoveToString(move, sMove);
+	strcpy(pv, sMove);
+	pv += 4;
+	strcpy(pv, " ");
+	pv++;
+	Game* game = &threadGames[threadIndex];
 
-	PlayerMove bestPlayerMove = MakePlayerMove(bestMove);
+	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
 	PlayerMove moves[100];
 	int movesCount = 0;
 	while (true)
 	{
-		Move move = GetBestMove(mainGame.Hash);
+		Move move = GetBestMove(&bmTables[threadIndex], game->Hash);
 		if (move.MoveInfo == NotAMove)
 			break;
 		char sMove[5];
 		MoveToString(move, sMove);
-		PlayerMove plMove = MakePlayerMove(sMove);
+		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 		
 		if (plMove.Invalid)
 			break;
 		moves[movesCount++] = plMove;
-		strcpy(pv+=4, sMove);
-		strcpy(pv++, " ");
+		strcpy(pv, sMove); pv += 4;
+		strcpy(pv, " "); pv++;
 	}
 	strcpy(pv, "\0");
 
 	for (int i = movesCount - 1; i >= 0; i--)
-		UnMakePlayerMove(moves[i]);
-	
-	UnMakePlayerMove(bestPlayerMove);
+		UnMakePlayerMoveOnThread(game, moves[i]);	
+	UnMakePlayerMoveOnThread(game, bestPlayerMove);
+	printf("info depth %d score cp %d pv %s\n",depth + 1, move.ScoreAtDepth ,buffer);
 }
 
 DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
@@ -1366,11 +1408,9 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
-	short score = localMoves[0].ScoreAtDepth;
-	char pv[1000];
-	PrintBestLine(pv, bestMove);
+	short score = localMoves[0].ScoreAtDepth;	
 
-	printf("info nodes %d nps %d score cp %d depth %d pv %s\n", SearchedLeafs, nps, score, depth, pv);
+	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
 	fflush(stdout);
 
 	printf("bestmove %s\n", bestMove);
