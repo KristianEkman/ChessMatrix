@@ -8,16 +8,14 @@ Hur utvärderas strength?
 		2025.75k leafs/s
 		Best Move: d2d4 score -15
 
-En BestMoves Table per tråd?
-	Hur många trådar?
+NULL Move
 
-Order för bättre cutoff
-	pvMoves
-	small capture attackers first
-	quite search ej begränsad
+PieceList: CreateMove, SquareAttacked
 
+konfigurerbar, hash size
 
-PieceList: CreateMove, SquareAttacket
+quite search ej begränsad
+
 
 Fifty move rule.
 Material draw?
@@ -26,7 +24,6 @@ Refactor main
 	Flytta ut globala variabler.
 	Flytta ut search, movegen, uci, evaluation
 
-NULL move
 
 konfigurerbar hash storlek.
 	

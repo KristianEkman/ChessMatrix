@@ -19,10 +19,9 @@
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
-const int TBL_SIZE_MB = 256;
+const int TBL_SIZE_MB = 32;
 
 bool Stopped;
-int SearchedLeafs = 0;
 
 void computerMove() {
 	Move move = Search(5, 0, false);
@@ -954,7 +953,7 @@ void WriteFen(char* fenBuffer) {
 
 	char noFile = 'a' - 1;
 	char enPassantFile = (mainGame.State & 15) + noFile;
-	if (enPassantFile == noFile) //todo, should be between a and h. rank 6 for white 3 for black
+	if (enPassantFile == noFile)
 		fenBuffer[index++] = '-';
 	else
 	{
@@ -1081,7 +1080,7 @@ short GetBestScore(Game* game, int depth) {
 
 short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 	if (!depth) {
-		SearchedLeafs++;
+		game->LeafsCount++;
 		return GetScore(game);
 	}
 
@@ -1137,10 +1136,10 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		return GetScore(game);
 
 	if (!depth) {
-		SearchedLeafs++;
 		if (capture) {
 			return AlphaBetaQuite(alpha, beta, 3, game);
 		}
+		game->LeafsCount++; // todo: move this after if block.
 		return GetScore(game);
 	}
 	short bestVal = 0;
@@ -1262,7 +1261,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		}
 		prm->moveIndex += SEARCH_THREADS;
 		
-		if (prm->depth > 2) {
+		if (prm->depth > 4) {
 			PrintBestLine(prm->threadID, move, prm->depth);
 		}
 	} while (prm->moveIndex < prm->moveCount);
@@ -1375,7 +1374,6 @@ PrintBestLine(int threadIndex, Move move, int depth) {
 DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	int maxDepth = params->MaxDepth;
 	clock_t start = clock();
-	SearchedLeafs = 0;
 	ClearHashTable();
 	CreateMoves(&mainGame, 0);
 	int moveCount = mainGame.MovesBufferLength;
@@ -1405,12 +1403,15 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 		}
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
+	int totLeafs = 0;
+	for (int i = 0; i < SEARCH_THREADS; i++)
+		totLeafs += threadGames[i].LeafsCount;
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	int nps = SearchedLeafs / secs; // todo
+	int nps = totLeafs / secs; // todo
 	short score = localMoves[0].ScoreAtDepth;	
 
-	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
+	printf("info nodes %d nps %d score cp %d depth %d\n", totLeafs, nps, score, depth);
 	fflush(stdout);
 
 	printf("bestmove %s\n", bestMove);
