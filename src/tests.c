@@ -631,12 +631,12 @@ void BestMoveByBlack3() {
 void BestMoveByWhite2() {
 	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
 	//requires atlest depth 6 to be found
-	AssertBestMove(6, __func__, fen, "d4f5");
+	AssertBestMove(7, __func__, fen, "d4f5");
 }
 
 void BestMoveByBlack1() {
 	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
-	AssertBestMove(5, __func__, fen, "g7g5");
+	AssertBestMove(6, __func__, fen, "g7g5");
 }
 
 void BestMoveByBlack4() {
@@ -677,6 +677,13 @@ void _runTests() {
 }
 
 void runAllTests() {
+	/*BestMoveByWhite1();
+	if (_failedAsserts == 0)
+		printGreen("Success! Tests are good!\n");
+	printf("Press any key to continue.\n");
+	int c = _getch();
+	return;*/
+
 	_failedAsserts = 0;
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
@@ -730,6 +737,6 @@ void runAllTests() {
 		printGreen("Success! Tests are good!\n");	
 
 	printf("Press any key to continue.\n");
-	int c = _getch();
+	_getch();
 	system("@cls||clear");
 }

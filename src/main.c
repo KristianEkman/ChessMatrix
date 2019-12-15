@@ -1078,11 +1078,10 @@ short GetBestScore(Game* game, int depth) {
 	return GetScore(game);
 }
 
-short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
-	if (!depth) {
-		game->LeafsCount++;
-		return GetScore(game);
-	}
+short AlphaBetaQuite(short alpha, short beta, Game* game) {
+	
+	int score = GetScore(game);
+	
 
 	short bestVal = 0;
 	CreateCaptureMoves(game);
@@ -1093,6 +1092,9 @@ short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
 		bestVal = alpha;
+		if (score >= beta)
+			return beta;
+
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1102,7 +1104,7 @@ short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBetaQuite(bestVal, beta, depth - 1, game);
+			int childValue = AlphaBetaQuite(bestVal, beta, game);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
@@ -1111,6 +1113,9 @@ short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 	}
 	else { //minimizing
 		bestVal = beta;
+		if (score <= alpha)
+			return alpha;
+
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1120,7 +1125,7 @@ short AlphaBetaQuite(short alpha, short beta, int depth, Game* game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBetaQuite(alpha, bestVal, depth - 1, game);
+			int childValue = AlphaBetaQuite(alpha, bestVal, game);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
@@ -1137,7 +1142,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 
 	if (!depth) {
 		if (capture) {
-			return AlphaBetaQuite(alpha, beta, 3, game);
+			return AlphaBetaQuite(alpha, beta, game);
 		}
 		game->LeafsCount++; // todo: move this after if block.
 		return GetScore(game);
@@ -1407,6 +1412,7 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		totLeafs += threadGames[i].LeafsCount;
 
+	SearchedLeafs = totLeafs;
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = totLeafs / secs; // todo
 	short score = localMoves[0].ScoreAtDepth;	

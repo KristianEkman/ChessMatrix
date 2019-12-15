@@ -25,8 +25,7 @@ Refactor main
 	Flytta ut search, movegen, uci, evaluation
 
 
-konfigurerbar hash storlek.
-	
+konfigurerbar hash storlek.	
 
 Test ta bort hashning? Ger den något?
 
@@ -35,8 +34,6 @@ time control
 	Om man bara hittar ett mkt sämre drag. Sök dubbla tiden.
 
 killer-heuristic
-
-sorting using MVV-LVA
 
 Fler testafall.
 
