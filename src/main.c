@@ -19,7 +19,7 @@
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
-const int TBL_SIZE_MB = 512;
+const int TBL_SIZE_MB = 256;
 
 bool Stopped;
 int SearchedLeafs = 0;
