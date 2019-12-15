@@ -1081,8 +1081,6 @@ short GetBestScore(Game* game, int depth) {
 short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	
 	int score = GetScore(game);
-	
-
 	short bestVal = 0;
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
@@ -1246,7 +1244,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			score = dbScore;
 		}
 		else {
-			int alpha = - 9000;
+			int alpha = -9000;
 			int beta = 9000;
 			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
 			if (score < alpha || score > beta) {
@@ -1255,7 +1253,8 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			}
 		}
 
-		(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
+		if (!Stopped)
+			(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
@@ -1266,9 +1265,11 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		}
 		prm->moveIndex += SEARCH_THREADS;
 		
-		if (prm->depth > 4) {
-			PrintBestLine(prm->threadID, move, prm->depth);
+		if (prm->depth > 3 && !Stopped) {
+			//bara skriva ut best line om det är det.
+			//PrintBestLine(prm->threadID, move, prm->depth);
 		}
+		// todo: tråden är klar här, hur ska resultatet skickas till parent? Det kan ju vara bättre.
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
 	return 0;
@@ -1298,6 +1299,8 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 			threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		}
 		//todo: error handling
+		//todo: inte skyffla resultatet vi localmoves.
+		//Kan den här funktionen returnera besta drag, poäng, trådindex?
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 }

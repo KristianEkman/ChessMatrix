@@ -8,16 +8,18 @@ Hur utvärderas strength?
 		2025.75k leafs/s
 		Best Move: d2d4 score -15
 
+Bara skriva ut best move om det är det.
+
 NULL Move
 
 PieceList: CreateMove, SquareAttacked
 
+Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
+
 konfigurerbar, hash size
 
-quite search ej begränsad
-
-
 Fifty move rule.
+
 Material draw?
 
 Refactor main
