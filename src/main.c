@@ -1228,6 +1228,7 @@ DWORD WINAPI DoNothingThread(int* prm) {
 }
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
+	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
 	do
 	{
 		Game* game = CopyMainGame(prm->threadID);
@@ -1267,12 +1268,6 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			return 0; //a check mate is found, no need to search further.
 		}
 		prm->moveIndex += SEARCH_THREADS;
-		
-		if (prm->depth > 3 && !Stopped) {
-			//bara skriva ut best line om det är det.
-			//PrintBestLine(prm->threadID, move, prm->depth);
-		}
-		// todo: tråden är klar här, hur ska resultatet skickas till parent? Det kan ju vara bättre.
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
 	return 0;
@@ -1287,20 +1282,24 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 	//när en tråd är klar, starta nästa
 	//när alla trådar är klara returnera
 	HANDLE threadHandles[SEARCH_THREADS];
-	ThreadParams params[SEARCH_THREADS];
+
+	ThreadParams* tps = malloc(sizeof(ThreadParams) * SEARCH_THREADS);
+
+	//ThreadParams params[SEARCH_THREADS];
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
 		if (i > moveCount - 1) //in case more threads than moves
 			threadHandles[i] = CreateThread(NULL, 0, DoNothingThread, NULL, 0, NULL);
 		else {
-			params[i].threadID = i;
-			params[i].depth = depth;
-			params[i].moves = localMoves;
-			params[i].moveIndex = i;
-			params[i].moveCount = moveCount;
+			tps->threadID = i;
+			tps->depth = depth;
+			tps->moves = localMoves;
+			tps->moveIndex = i;
+			tps->moveCount = moveCount;
+			threadHandles[i] = CreateThread(NULL, 0, SearchThread, tps, 0, NULL);
+			tps++;
 
-			threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		}
 		//todo: error handling
 
@@ -1314,6 +1313,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	int ms = *args;
 	clock_t start = clock();
 	clock_t now = clock();
+	printf("TimeLimitWatch %d\n", ms);
 	while (now - start < ((ms / 1000) * CLOCKS_PER_SEC))
 	{
 		Sleep(100);
@@ -1325,10 +1325,12 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	return 0;
 }
 
-Move Search(int maxDepth, int millis, bool async) {
+int _millis;
+Move Search(int maxDepth, int  millis, bool async) {
 	HANDLE timeLimitThread = 0;
+	_millis = millis;
 	if (millis > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &millis, 0, NULL);
+		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &_millis, 0, NULL);
 	}
 	
 	Stopped = false;
@@ -1337,20 +1339,20 @@ Move Search(int maxDepth, int millis, bool async) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		ClearTable(&bmTables[i]);	
 	
-	TopSearchParams params;
-	params.MaxDepth = maxDepth;
-	params.Milliseconds = millis;
+	TopSearchParams * params = malloc(sizeof(TopSearchParams));
+	params->MaxDepth = maxDepth;
+	params->Milliseconds = millis;
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
 	if (!async)
 	{
 		WaitForSingleObject(handle, INFINITE);
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
-		return params.BestMove;
-	} 
+		return params->BestMove;
+	}
 }
 
-PrintBestLine(Move move, int depth) {
+int PrintBestLine(Move move, int depth) {
 	char buffer[1000];
 	char* pv = &buffer;
 	char sMove[5];
@@ -1386,6 +1388,7 @@ PrintBestLine(Move move, int depth) {
 		UnMakePlayerMoveOnThread(game, moves[i]);	
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	printf("info depth %d score cp %d pv %s\n",depth + 1, move.ScoreAtDepth ,buffer);
+	return 0;
 }
 
 DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
@@ -1404,7 +1407,7 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 	do
 	{
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
-		SortMoves(localMoves, moveCount, &mainGame);
+		//SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
 			params->BestMove = localMoves[0];
 			bestScore = localMoves[0].ScoreAtDepth;
