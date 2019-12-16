@@ -1084,7 +1084,10 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
+	{
+		SearchedLeafs++;
 		return GetScore(game);
+	}
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
@@ -1141,7 +1144,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		if (capture) {
 			return AlphaBetaQuite(alpha, beta, game);
 		}
-		game->LeafsCount++; // todo: move this after if block.
+		SearchedLeafs++;
 		return GetScore(game);
 	}
 	short bestVal = 0;
@@ -1323,16 +1326,20 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 }
 
 Move Search(int maxDepth, int millis, bool async) {
-
-	TopSearchParams params;
-	params.MaxDepth = maxDepth;
-	params.Milliseconds = millis;
-	Stopped = false;
 	HANDLE timeLimitThread = 0;
 	if (millis > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &millis, 0, NULL);
 	}
-
+	
+	Stopped = false;
+	SearchedLeafs = 0;
+	
+	for (int i = 0; i < SEARCH_THREADS; i++)
+		ClearTable(&bmTables[i]);	
+	
+	TopSearchParams params;
+	params.MaxDepth = maxDepth;
+	params.Milliseconds = millis;
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
 	if (!async)
 	{
@@ -1340,7 +1347,7 @@ Move Search(int maxDepth, int millis, bool async) {
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
 		return params.BestMove;
-	}
+	} 
 }
 
 PrintBestLine(Move move, int depth) {
@@ -1413,16 +1420,12 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 		}
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
-	int totLeafs = 0;
-	for (int i = 0; i < SEARCH_THREADS; i++)
-		totLeafs += threadGames[i].LeafsCount;
-
-	SearchedLeafs = totLeafs;
+	
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	int nps = totLeafs / secs; // todo
+	int nps = SearchedLeafs / secs; // todo
 	short score = localMoves[0].ScoreAtDepth;	
 
-	printf("info nodes %d nps %d score cp %d depth %d\n", totLeafs, nps, score, depth);
+	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
 	fflush(stdout);
 
 	printf("bestmove %s\n", bestMove);

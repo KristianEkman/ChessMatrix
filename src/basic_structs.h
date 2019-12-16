@@ -82,7 +82,6 @@ typedef struct {
 	unsigned long long PositionHistory[256];
 	int PositionHistoryLength;
 	int ThreadIndex;
-	int LeafsCount;
 } Game;
 
 typedef struct {
