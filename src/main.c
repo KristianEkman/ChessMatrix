@@ -1093,7 +1093,10 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	if (game->Side == BLACK) { //maximizing
 		bestVal = alpha;
 		if (score >= beta)
+		{
+			free(localMoves);
 			return beta;
+		}
 
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1114,7 +1117,10 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	else { //minimizing
 		bestVal = beta;
 		if (score <= alpha)
+		{
+			free(localMoves);
 			return alpha;
+		}
 
 		for (int i = 0; i < moveCount; i++)
 		{
