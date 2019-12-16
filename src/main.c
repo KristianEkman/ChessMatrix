@@ -531,7 +531,6 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	if (legal)
 	{
 		move.ScoreAtDepth = GetBestScore(game, depth);
-		move.OrderScore = move.ScoreAtDepth;
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
@@ -1230,6 +1229,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 	{
 		Game* game = CopyMainGame(prm->threadID);
 		Move move = prm->moves[prm->moveIndex];
+		prm->moves[prm->moveIndex].ThreadIndex = prm->threadID;
 		PieceType capt = game->Squares[move.To];
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
@@ -1247,7 +1247,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			int alpha = -9000;
 			int beta = 9000;
 			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
-			if (score < alpha || score > beta) {
+			if (score < alpha || score > beta) { // todo: varför?
 				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 				continue;
 			}
@@ -1275,6 +1275,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 	return 0;
 }
 
+
 void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 
 	int moveIndex = 0;
@@ -1299,10 +1300,11 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 			threadHandles[i] = CreateThread(NULL, 0, SearchThread, &params[i], 0, NULL);
 		}
 		//todo: error handling
-		//todo: inte skyffla resultatet vi localmoves.
-		//Kan den här funktionen returnera besta drag, poäng, trådindex?
+
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
+	SortMoves(localMoves, moveCount, &threadGames[localMoves[0].ThreadIndex]);
+	PrintBestLine(localMoves[0], depth);
 }
 
 DWORD WINAPI TimeLimitWatch(int* args) {
@@ -1341,7 +1343,7 @@ Move Search(int maxDepth, int millis, bool async) {
 	}
 }
 
-PrintBestLine(int threadIndex, Move move, int depth) {
+PrintBestLine(Move move, int depth) {
 	char buffer[1000];
 	char* pv = &buffer;
 	char sMove[5];
@@ -1350,7 +1352,7 @@ PrintBestLine(int threadIndex, Move move, int depth) {
 	pv += 4;
 	strcpy(pv, " ");
 	pv++;
-	Game* game = &threadGames[threadIndex];
+	Game* game = &threadGames[move.ThreadIndex];
 
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
@@ -1358,11 +1360,11 @@ PrintBestLine(int threadIndex, Move move, int depth) {
 	int movesCount = 0;
 	while (true)
 	{
-		Move move = GetBestMove(&bmTables[threadIndex], game->Hash);
-		if (move.MoveInfo == NotAMove)
+		Move bMove = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
+		if (bMove.MoveInfo == NotAMove)
 			break;
 		char sMove[5];
-		MoveToString(move, sMove);
+		MoveToString(bMove, sMove);
 		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 		
 		if (plMove.Invalid)

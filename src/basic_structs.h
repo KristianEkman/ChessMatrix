@@ -40,7 +40,7 @@ typedef struct {
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
 	short ScoreAtDepth; //14 bits
-	short OrderScore;
+	char ThreadIndex;
 } Move;
 
 typedef enum  {
