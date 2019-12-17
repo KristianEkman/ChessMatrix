@@ -1230,6 +1230,7 @@ Game* CopyMainGame(int threadNo) {
 }
 
 DWORD WINAPI DoNothingThread(int* prm) {
+	Sleep(50);
 	ExitThread(0);
 }
 
@@ -1332,6 +1333,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 }
 
 int _millis;
+TopSearchParams params;
 Move Search(int maxDepth, int  millis, bool async) {
 	HANDLE timeLimitThread = 0;
 	_millis = millis;
@@ -1345,16 +1347,15 @@ Move Search(int maxDepth, int  millis, bool async) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		ClearTable(&bmTables[i]);	
 	
-	TopSearchParams * params = malloc(sizeof(TopSearchParams));
-	params->MaxDepth = maxDepth;
-	params->Milliseconds = millis;
-	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, &params, 0, NULL);
+	params.MaxDepth = maxDepth;
+	params.Milliseconds = millis;
+	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
 		WaitForSingleObject(handle, INFINITE);
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
-		return params->BestMove;
+		return params.BestMove;
 	}
 }
 
@@ -1397,8 +1398,8 @@ int PrintBestLine(Move move, int depth) {
 	return 0;
 }
 
-DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
-	int maxDepth = params->MaxDepth;
+DWORD WINAPI  BestMoveDeepening(void* v) {
+	int maxDepth = params.MaxDepth;
 	clock_t start = clock();
 	ClearHashTable();
 	CreateMoves(&mainGame, 0);
@@ -1415,7 +1416,7 @@ DWORD WINAPI  BestMoveDeepening(TopSearchParams* params) {
 		SetMovesScoreAtDepth(depth, localMoves, moveCount);
 		//SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
-			params->BestMove = localMoves[0];
+			params.BestMove = localMoves[0];
 			bestScore = localMoves[0].ScoreAtDepth;
 			MoveToString(localMoves[0], bestMove);
 			//printf("INFO depth %d - %s\n", depth, bestMove);
