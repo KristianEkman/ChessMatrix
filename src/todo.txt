@@ -8,8 +8,6 @@ Hur utvärderas strength?
 		2025.75k leafs/s
 		Best Move: d2d4 score -15
 
-Bara skriva ut best move om det är det.
-
 NULL Move
 
 PieceList: CreateMove, SquareAttacked

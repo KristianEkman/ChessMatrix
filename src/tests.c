@@ -595,8 +595,8 @@ void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 }
 
 void BestMoveTestBlackCaptureBishop() {
-	AssertBestMove(5, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
-	AssertBestMoveTimed(10, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
+	AssertBestMove(4, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
+	AssertBestMoveTimed(5, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
 
 }
 
@@ -615,22 +615,22 @@ void BlackMatesIn5Deeping() {
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
-	AssertBestMove(7, __func__, fen, "d2d4");
+	AssertBestMove(6, __func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
 	char * fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
-	AssertBestMove(7, __func__, fen, "a4c3");
+	AssertBestMove(6, __func__, fen, "a4c3");
 }
 
 void BestMoveByBlack3() {
 	char * fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
-	AssertBestMove(7, __func__, fen, "d2e2");
+	AssertBestMove(6, __func__, fen, "d2e2");
 }
 
 void BestMoveByWhite2() {
 	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
-	//requires atlest depth 6 to be found
+	//requires atlest depth 7 to be found
 	AssertBestMove(7, __func__, fen, "d4f5");
 }
 
@@ -734,7 +734,9 @@ void runAllTests() {
 	printf("Time: %.2fs\n", secs);	
 
 	if (_failedAsserts == 0)
-		printGreen("Success! Tests are good!\n");	
+		printGreen("Success! Tests are good!\n");
+	else
+		printRed("There are failed tests.\n");
 
 	printf("Press any key to continue.\n");
 	_getch();
