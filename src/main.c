@@ -1066,7 +1066,10 @@ short GetScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
+
 short GetBestScore(Game* game, int depth) {
+	// todo: Should hash db be checked first?
+	// When evaluation gets more complicated it will probably improve performance. 
 	if (depth == 0)
 		return GetScore(game);
 	bool empty = false;
@@ -1234,6 +1237,9 @@ DWORD WINAPI DoNothingThread(int* prm) {
 	ExitThread(0);
 }
 
+// Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
+// When finished takes next root move until they are no more.
+// Sets the score on the root move pointer. They are all common for all threads.
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
 	do
@@ -1402,6 +1408,7 @@ int PrintBestLine(Move move, int depth) {
 }
 
 // Starting point of one thread that evaluates best score for every 7th root move. (If there are 7 threads)
+// Increasing depth until given max depth.
 DWORD WINAPI  BestMoveDeepening(void* v) {
 	int maxDepth = params.MaxDepth;
 	clock_t start = clock();
