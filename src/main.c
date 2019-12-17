@@ -438,6 +438,27 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short pre
 	game->PositionHistoryLength--;
 }
 
+void MakeNullMove(Game* game) {
+	int side01 = game->Side >> 4;
+	unsigned long long hash = ZobritsEnpassantFile[game->State & 15];
+	//resetting en passant
+	game->State &= ~15;
+
+	hash ^= ZobritsSides[side01];
+	game->Hash ^= hash;
+	game->Side ^= 24;
+	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+}
+
+void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prevHash) {
+	int otherSide = game->Side ^ 24;
+	int otherSide01 = otherSide >> 4;
+	game->State = prevGameState;
+	game->Hash = prevHash;
+	game->Side ^= 24;
+	game->PositionHistoryLength--;
+}
+
 bool SquareAttacked(int square, char attackedBy, Game* game) {
 	for (int i = 0; i < 64; i++)
 	{
@@ -1145,7 +1166,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	return bestVal;
 }
 
-short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game) {
+short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull) {
 	if (Stopped)
 		return GetScore(game);
 
@@ -1156,6 +1177,21 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		SearchedLeafs++;
 		return GetScore(game);
 	}
+
+	if (doNull, game->Material[game->Side >> 4] > 500 ) { //depthIn > 4, not in check, 
+		GameState prevState = game->State;
+		unsigned long long prevHash = game->Hash;
+		MakeNullMove(game);
+
+		// hur ska den här logiken vara med alpha och beta? // Byter ju aldrig plats.
+		// om vit skicka in beta annars alpha eller tvärt om.
+		int childValue = AlphaBeta(beta, beta - 1, depth, capture, game, false);
+
+		//hantera return om det är vit eller svart som spelar.
+
+		UnMakeNullMove(prevState, game, prevHash);
+	}
+
 	short bestVal = 0;
 	CreateMoves(game, depth);
 	int moveCount = game->MovesBufferLength;
@@ -1181,7 +1217,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true);
 			if (childValue > bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
@@ -1202,7 +1238,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
-			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
+			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true);
 			if (childValue < bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
