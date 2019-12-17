@@ -1315,7 +1315,7 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 	SortMoves(localMoves, moveCount, &threadGames[localMoves[0].ThreadIndex]);
 	PrintBestLine(localMoves[0], depth);
 }
-
+// Background thread that sets Stopped flag after specified time in ms.
 DWORD WINAPI TimeLimitWatch(int* args) {
 	int ms = *args;
 	clock_t start = clock();
@@ -1332,6 +1332,9 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	return 0;
 }
 
+// Starting point of a search for best move.
+// Continues until time millis is reached or depth is reached.
+// When async is set the result is printed to stdout. Not returned.
 int _millis;
 TopSearchParams params;
 Move Search(int maxDepth, int  millis, bool async) {
@@ -1398,6 +1401,7 @@ int PrintBestLine(Move move, int depth) {
 	return 0;
 }
 
+// Starting point of one thread that evaluates best score for every 7th root move. (If there are 7 threads)
 DWORD WINAPI  BestMoveDeepening(void* v) {
 	int maxDepth = params.MaxDepth;
 	clock_t start = clock();
