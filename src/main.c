@@ -45,7 +45,9 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
 	printf("initialized\n");
-
+	
+	runAllTests();
+	
 	EnterUciMode();
 	return 0;
 }
@@ -192,6 +194,7 @@ void InitGame() {
 	mainGame.Material[1] = 0;
 	mainGame.PositionHistoryLength = 0;
 	InitHash();
+	InitScores();
 }
 
 char PieceChar(PieceType pieceType) {
@@ -529,7 +532,7 @@ bool SquareAttacked(int square, char attackedBy, Game* game) {
 }
 
 void SortMoves(Move* moves, int moveCount, Game* game) {
-	
+
 	if (game->Side == WHITE)
 		QuickSort(moves, 0, moveCount - 1);
 	else
@@ -992,7 +995,7 @@ int ValidMoves(Move* moves) {
 	return mainGame.MovesBufferLength;
 }
 
-int ValidMovesOnThread(Game * game, Move* moves) {
+int ValidMovesOnThread(Game* game, Move* moves) {
 	CreateMoves(game, 0);
 	if (game->MovesBufferLength == 0)
 		return 0;
@@ -1001,7 +1004,7 @@ int ValidMovesOnThread(Game * game, Move* moves) {
 	return game->MovesBufferLength;
 }
 
-PlayerMove MakePlayerMoveOnThread(Game * game, char* sMove) {
+PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	Move move = parseMove(sMove, 0);
 	Move moves[100];
 	int length = ValidMovesOnThread(game, moves);
@@ -1032,7 +1035,7 @@ void UnMakePlayerMove(PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &mainGame, playerMove.PreviousHash);
 }
 
-void UnMakePlayerMoveOnThread(Game * game, PlayerMove playerMove) {
+void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
 }
 
@@ -1102,7 +1105,7 @@ short GetBestScore(Game* game, int depth) {
 }
 
 short AlphaBetaQuite(short alpha, short beta, Game* game) {
-	
+
 	int score = GetScore(game);
 	short bestVal = 0;
 	CreateCaptureMoves(game);
@@ -1178,17 +1181,30 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		return GetScore(game);
 	}
 
-	if (doNull, game->Material[game->Side >> 4] > 500 ) { //depthIn > 4, not in check, 
+	int side01 = game->Side >> 4;
+	int otherSide = game->Side ^ 24;
+	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
+
+	if (doNull && !incheck && game->PositionHistoryLength && game->Material[side01] > 500 && depth >= 4) {
 		GameState prevState = game->State;
 		unsigned long long prevHash = game->Hash;
 		MakeNullMove(game);
+		// kolla matt värde istf ischeck
 
-		// hur ska den här logiken vara med alpha och beta? // Byter ju aldrig plats.
-		// om vit skicka in beta annars alpha eller tvärt om.
-		int childValue = AlphaBeta(beta, beta - 1, depth, capture, game, false);
-
-		//hantera return om det är vit eller svart som spelar.
-
+		if (game->Side == WHITE) {
+			int scr = AlphaBeta(beta, beta - 1, depth - 4, capture, game, false);
+			if (scr <= beta || scr < -8000 || scr > 8000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return beta;
+			}
+		}
+		else {
+			int scr = AlphaBeta(alpha, alpha - 1, depth - 4, capture, game, false);
+			if (scr >= alpha || scr < -8000 || scr > 8000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return alpha;
+			}
+		}
 		UnMakeNullMove(prevState, game, prevHash);
 	}
 
@@ -1299,7 +1315,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else {
 			int alpha = -9000;
 			int beta = 9000;
-			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
+			score = AlphaBeta(alpha, beta, prm->depth, capt, game, false);
 			if (score < alpha || score > beta) { // todo: varför?
 				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 				continue;
@@ -1385,13 +1401,13 @@ Move Search(int maxDepth, int  millis, bool async) {
 	if (millis > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &_millis, 0, NULL);
 	}
-	
+
 	Stopped = false;
 	SearchedLeafs = 0;
-	
+
 	for (int i = 0; i < SEARCH_THREADS; i++)
-		ClearTable(&bmTables[i]);	
-	
+		ClearTable(&bmTables[i]);
+
 	params.MaxDepth = maxDepth;
 	params.Milliseconds = millis;
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
@@ -1427,7 +1443,7 @@ int PrintBestLine(Move move, int depth) {
 		char sMove[5];
 		MoveToString(bMove, sMove);
 		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
-		
+
 		if (plMove.Invalid)
 			break;
 		moves[movesCount++] = plMove;
@@ -1437,9 +1453,9 @@ int PrintBestLine(Move move, int depth) {
 	strcpy(pv, "\0");
 
 	for (int i = movesCount - 1; i >= 0; i--)
-		UnMakePlayerMoveOnThread(game, moves[i]);	
+		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	printf("info depth %d score cp %d pv %s\n",depth + 1, move.ScoreAtDepth ,buffer);
+	printf("info depth %d score cp %d pv %s\n", depth + 1, move.ScoreAtDepth, buffer);
 	return 0;
 }
 
@@ -1477,17 +1493,17 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
-	
+
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
-	short score = localMoves[0].ScoreAtDepth;	
+	short score = localMoves[0].ScoreAtDepth;
 
 	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
 	fflush(stdout);
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
-	
+
 	ExitThread(0);
 	return 0;
 }

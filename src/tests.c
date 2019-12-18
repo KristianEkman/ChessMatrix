@@ -615,7 +615,8 @@ void BlackMatesIn5Deeping() {
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
-	AssertBestMove(6, __func__, fen, "d2d4");
+	//AssertBestMove(6, __func__, fen, "d2d4");
+	AssertBestMoveTimed(20, __func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
@@ -677,12 +678,12 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*BestMoveByWhite1();
+	BestMoveByWhite1();
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
+	return;
 
 	_failedAsserts = 0;
 	/*TimedTest(50000000, HashTablePerformance);
