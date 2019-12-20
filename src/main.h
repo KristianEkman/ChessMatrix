@@ -14,7 +14,7 @@ Move parseMove(char * sMove, MoveInfo info);
 Game mainGame;
 short TotalMaterial(Game * game);
 int SearchedLeafs;
-DWORD WINAPI BestMoveDeepening(TopSearchParams * params);
+DWORD WINAPI BestMoveDeepening(void * params);
 short GetScore(Game * game);
 short GetBestScore(Game * game, int depth);
 void CreateMoves(Game * game, int depth);
@@ -23,6 +23,8 @@ void UnMakeMove(Move move,PieceType capture,GameState prevGameState, short prevP
 
 void SwitchSignOfWhitePositionValue();
 void InitGame();
+void InitScores();
+
 void EnterUciMode();
 int EnterInteractiveMode();
 void InitHash();

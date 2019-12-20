@@ -191,6 +191,7 @@ void InitGame() {
 	mainGame.Material[0] = 0;
 	mainGame.Material[1] = 0;
 	mainGame.PositionHistoryLength = 0;
+	InitScores();
 	InitHash();
 }
 
