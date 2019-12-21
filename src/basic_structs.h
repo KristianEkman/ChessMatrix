@@ -86,7 +86,7 @@ typedef struct {
 
 typedef struct {
 	int threadID;
-	Move * moves;
+	Move *moves;
 	int moveCount;
 	int moveIndex;
 	int depth;

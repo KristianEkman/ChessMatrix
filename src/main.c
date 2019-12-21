@@ -108,7 +108,7 @@ void EnterUciMode() {
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
 			else {
-				Search(30, 8000, true);
+				Search(30, 15000, true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
@@ -193,6 +193,7 @@ void InitGame() {
 	mainGame.Material[0] = 0;
 	mainGame.Material[1] = 0;
 	mainGame.PositionHistoryLength = 0;
+	InitScores();
 	InitHash();
 	InitScores();
 }
@@ -1455,7 +1456,8 @@ int PrintBestLine(Move move, int depth) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	printf("info depth %d score cp %d pv %s\n", depth + 1, move.ScoreAtDepth, buffer);
+	printf("info depth %d score cp %d nodes %d pv %s\n", depth + 1, move.ScoreAtDepth, SearchedLeafs, buffer);
+	fflush(stdout);
 	return 0;
 }
 

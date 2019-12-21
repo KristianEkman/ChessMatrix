@@ -1,12 +1,3 @@
-Hur utvärderas strength?
-	- Alla tester grönt, kortast tid.
-	Tid just nu: 84s
-	****   BestMoveByWhite1   ****
-		INFO nodes 108515410 nps 2025901 score cp -15 depth 8
-		bestmove d2d4
-		108515.41k leafs in 53.57s
-		2025.75k leafs/s
-		Best Move: d2d4 score -15
 
 NULL Move
 
@@ -24,18 +15,12 @@ Refactor main
 	Flytta ut globala variabler.
 	Flytta ut search, movegen, uci, evaluation
 
-
-konfigurerbar hash storlek.	
-
 Test ta bort hashning? Ger den något?
 
 time control
 	Prioritera att sluta när ett sökdjup är klart. Är man nära den schemalagda tiden.
 	Om man bara hittar ett mkt sämre drag. Sök dubbla tiden.
 
-killer-heuristic
-
-Fler testafall.
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
@@ -56,3 +41,8 @@ Eval:
 	
 Opening Book
 	Opening Score, early queen, minor piece count.
+
+
+killer-heuristic
+
+Fler testafall.
