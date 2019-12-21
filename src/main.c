@@ -45,9 +45,9 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
 	printf("initialized\n");
-	
+
 	runAllTests();
-	
+
 	EnterUciMode();
 	return 0;
 }
@@ -555,7 +555,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
 	{
-		move.ScoreAtDepth = GetBestScore(game, depth);
+		move.ScoreAtDepth = GetScore(game); //GetBestScore(game, depth); //Note: 120s to 150s on the tests. Ordering get messed by get best score.
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
@@ -1191,19 +1191,20 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		unsigned long long prevHash = game->Hash;
 		MakeNullMove(game);
 		// kolla matt värde istf ischeck
-
+		//båda: 69s, black 75s, white 69s
 		if (game->Side == WHITE) {
-			int scr = AlphaBeta(beta, beta - 1, depth - 4, capture, game, false);
-			if (scr <= beta || scr < -8000 || scr > 8000) {
-				UnMakeNullMove(prevState, game, prevHash);
-				return beta;
-			}
-		}
-		else {
-			int scr = AlphaBeta(alpha, alpha - 1, depth - 4, capture, game, false);
-			if (scr >= alpha || scr < -8000 || scr > 8000) {
+			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
+			if (nullScr <= alpha && nullScr > -8000 && nullScr < 8000) {
 				UnMakeNullMove(prevState, game, prevHash);
 				return alpha;
+			}
+		}
+		if (game->Side == BLACK)
+		{
+			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
+			if (nullScr >= beta && nullScr > -8000 && nullScr < 8000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return beta;
 			}
 		}
 		UnMakeNullMove(prevState, game, prevHash);
