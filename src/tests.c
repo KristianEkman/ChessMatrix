@@ -60,12 +60,10 @@ void AssertNot(int result, char * msg) {
 void AssertAreEqual(char * s1, char * s2, char * msg) {
 	if (strcmp(s1, s2))
 	{
-		printf("\n");
 		printRed(msg);
 		printf("\n");
-		printRed(s1);
-		printf("\n");
-		printRed(s2);
+		printf("Expected: %s\n", s1);
+		printf("Actual:   %s\n", s2);
 		_failedAsserts++;
 	}
 }
