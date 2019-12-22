@@ -1071,12 +1071,12 @@ short GetScore(Game* game) {
 short GetBestScore(Game* game, int depth) {
 	// todo: Should hash db be checked first?
 	// When evaluation gets more complicated it will probably improve performance. 
-	if (depth == 0)
-		return GetScore(game);
+	//if (depth == 0)
+	/*	return GetScore(game);
 	bool empty = false;
 	short dbScore = getScoreFromHash(game->Hash, &empty, depth);
 	if (!empty)
-		return dbScore;
+		return dbScore;*/
 
 	return GetScore(game);
 }
@@ -1241,6 +1241,7 @@ DWORD WINAPI DoNothingThread(int* prm) {
 // Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
 // Sets the score on the root move pointer. They are all common for all threads.
+
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
 	do
@@ -1256,21 +1257,17 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		MakeMove(move, game);
 		bool empty = FALSE;
 		short score;
-		short dbScore = getScoreFromHash(game->Hash, &empty, prm->depth);
+		/*short dbScore = getScoreFromHash(game->Hash, &empty, prm->depth);
 		if (!empty)
 		{
 			score = dbScore;
 		}
-		else {
-			int alpha = -9000;
-			int beta = 9000;
-			score = AlphaBeta(alpha, beta, prm->depth, capt, game);
-			if (score < alpha || score > beta) { // todo: varför?
-				UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
-				continue;
-			}
-		}
+		else {*/
+		int alpha = -9000; //blacks best
+		int beta = 9000; //whites best
 
+		score = AlphaBeta(alpha, beta, prm->depth, capt, game);
+		
 		if (!Stopped)
 			(&prm->moves[prm->moveIndex])->ScoreAtDepth = score;
 
