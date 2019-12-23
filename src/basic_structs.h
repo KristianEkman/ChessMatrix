@@ -86,11 +86,15 @@ typedef struct {
 
 typedef struct {
 	int threadID;
-	Move *moves;
 	int moveCount;
 	int moveIndex;
 	int depth;
 } ThreadParams;
+
+typedef struct {
+	Move moves[100];
+	int Length;
+} GlobalRootMoves;
 
 
 typedef struct  {
