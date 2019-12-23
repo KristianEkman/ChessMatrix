@@ -1284,14 +1284,13 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 	return 0;
 }
 
-
-void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
+void SetMovesScoreAtDepth(int depth, Move* rootMoves, int moveCount) {
 
 	int moveIndex = 0;
-	//starta en tråd per drag
-	//starta inte fler trådar än 8 (kärnor)
-	//när en tråd är klar, starta nästa
-	//när alla trådar är klara returnera
+	//Startar alla trådar för angivet djup.
+	//En tråd per root move. när den är klar tar den nästa lediga root move.
+	//När alla trådar är klara sorteras root moves oc det bästa skrivs ut.
+
 	HANDLE threadHandles[SEARCH_THREADS];
 
 	ThreadParams* tps = malloc(sizeof(ThreadParams) * SEARCH_THREADS);
@@ -1306,7 +1305,7 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 		else {
 			tps->threadID = i;
 			tps->depth = depth;
-			tps->moves = localMoves;
+			tps->moves = rootMoves;
 			tps->moveIndex = i;
 			tps->moveCount = moveCount;
 			threadHandles[i] = CreateThread(NULL, 0, SearchThread, tps, 0, NULL);
@@ -1317,8 +1316,8 @@ void SetMovesScoreAtDepth(int depth, Move* localMoves, int moveCount) {
 
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(localMoves, moveCount, &threadGames[localMoves[0].ThreadIndex]);
-	PrintBestLine(localMoves[0], depth);
+	SortMoves(rootMoves, moveCount, &threadGames[rootMoves[0].ThreadIndex]);
+	PrintBestLine(rootMoves[0], depth);
 }
 // Background thread that sets Stopped flag after specified time in ms.
 DWORD WINAPI TimeLimitWatch(int* args) {
@@ -1416,20 +1415,20 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	CreateMoves(&mainGame, 0);
 	int moveCount = mainGame.MovesBufferLength;
 
-	Move* localMoves = malloc(moveCount * sizeof(Move));
-	memcpy(localMoves, mainGame.MovesBuffer, moveCount * sizeof(Move));
+	Move* rootMoves = malloc(moveCount * sizeof(Move));
+	memcpy(rootMoves, mainGame.MovesBuffer, moveCount * sizeof(Move));
 
 	int depth = 1;
 	char bestMove[5];
 	int bestScore;
 	do
 	{
-		SetMovesScoreAtDepth(depth, localMoves, moveCount);
+		SetMovesScoreAtDepth(depth, rootMoves, moveCount);
 		//SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
-			g_topSearchParams.BestMove = localMoves[0];
-			bestScore = localMoves[0].ScoreAtDepth;
-			MoveToString(localMoves[0], bestMove);
+			g_topSearchParams.BestMove = rootMoves[0];
+			bestScore = rootMoves[0].ScoreAtDepth;
+			MoveToString(rootMoves[0], bestMove);
 			//printf("INFO depth %d - %s\n", depth, bestMove);
 			//pv, bestline. hur?
 			depth++;
@@ -1444,7 +1443,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	int nps = SearchedLeafs / secs; // todo
-	short score = localMoves[0].ScoreAtDepth;
+	short score = rootMoves[0].ScoreAtDepth;
 
 	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
 	fflush(stdout);
