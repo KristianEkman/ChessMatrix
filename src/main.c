@@ -1326,7 +1326,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
-	while (now - start < ((ms / 1000) * CLOCKS_PER_SEC))
+	while (now - start < ((ms / (float)1000) * CLOCKS_PER_SEC))
 	{
 		Sleep(100);
 		now = clock();
