@@ -613,8 +613,8 @@ void BlackMatesIn5Deeping() {
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
-	AssertBestMove(6, __func__, fen, "d2d4");
-	AssertBestMoveTimed(10, __func__, fen, "d2d4");
+	AssertBestMove(7, __func__, fen, "d2d4");
+	//AssertBestMoveTimed(10, __func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
@@ -645,7 +645,7 @@ void BestMoveByBlack4() {
 
 void BestMoveByBlack5() {
 	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
-	AssertBestMoveTimed(30, __func__, fen, "b7e4");
+	AssertBestMove(6, __func__, fen, "b7e4");
 }
 
 void BestMoveByWhite3() {
@@ -656,6 +656,12 @@ void BestMoveByWhite3() {
 void BestMoveByWhite4() {
 	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
 	AssertBestMove(5, __func__, fen, "b1d2");
+}
+
+//rr6/p1p2p1p/3bpk2/6p1/3Pp3/2P1P1P1/PP3PNP/2KR3R w - - 2 18 
+void DeepTest() {
+	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
+	AssertBestMove(7, __func__, fen, "b1d2");
 }
 
 void indexOfTest() {
@@ -676,7 +682,7 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*BestMoveByWhite1();
+	/*DeepTest();
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
@@ -684,7 +690,7 @@ void runAllTests() {
 	return;*/
 
 	_failedAsserts = 0;
-	/*TimedTest(50000000, HashTablePerformance);
+	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -703,7 +709,7 @@ void runAllTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();*/
+	EnPassantMaterial();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
@@ -712,14 +718,14 @@ void runAllTests() {
 	BestMoveTest();
 
 	clock_t start = clock();
-	/*BestMoveTestBlackCaptureBishop();
+	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
 	BestMoveByWhite3();
 	BestMoveByWhite4();
 	BestMoveByBlack1();
-	BestMoveByBlack4()*/;
+	BestMoveByBlack4();
 	BestMoveByBlack5();
 
 

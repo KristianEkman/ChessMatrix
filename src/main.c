@@ -46,9 +46,7 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
 	printf("initialized\n");
-
-	runAllTests();
-
+	
 	EnterUciMode();
 	return 0;
 }
@@ -109,7 +107,7 @@ void EnterUciMode() {
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
 			else {
-				Search(30, 40000, true);
+				Search(30, 20000, true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
@@ -1185,33 +1183,37 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 
 	int side01 = game->Side >> 4;
 	int otherSide = game->Side ^ 24;
-	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
 
-	if (doNull && !incheck && game->PositionHistoryLength && game->Material[side01] > 500 && depth >= 4) {
-		GameState prevState = game->State;
-		unsigned long long prevHash = game->Hash;
-		MakeNullMove(game);
-		// kolla matt värde istf ischeck
-		//båda: 69s, black 75s, white 69s
-		if (game->Side == WHITE) {
-			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
-			if (nullScr <= alpha && nullScr > -8000 && nullScr < 8000) {
-				UnMakeNullMove(prevState, game, prevHash);
-				return alpha;
+	//NULL move check
+	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
+	int r = 3;
+	if ((game->Side == WHITE && game->Material[side01] < -500 )|| // todo: check for pieces when piece list works
+		(game->Side == BLACK && game->Material[side01] > 500)) 
+	{
+		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
+			GameState prevState = game->State;
+			unsigned long long prevHash = game->Hash;
+			MakeNullMove(game);
+			if (game->Side == BLACK) {
+				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, capture, game, false);
+				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
+					UnMakeNullMove(prevState, game, prevHash);
+					return alpha;
+				}
 			}
-		}
-		if (game->Side == BLACK)
-		{
-			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
-			if (nullScr >= beta && nullScr > -8000 && nullScr < 8000) {
-				UnMakeNullMove(prevState, game, prevHash);
-				return beta;
+			if (game->Side == WHITE)
+			{
+				int nullScore = AlphaBeta(beta - 1, beta, depth - r, capture, game, false);
+				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
+					UnMakeNullMove(prevState, game, prevHash);
+					return beta;
+				}
 			}
+			UnMakeNullMove(prevState, game, prevHash);
 		}
-		UnMakeNullMove(prevState, game, prevHash);
 	}
 
-	short bestVal = 0;
+	//Move generation
 	CreateMoves(game, depth);
 	int moveCount = game->MovesBufferLength;
 
@@ -1225,6 +1227,8 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
+	// alpha beta pruning
+	short bestVal = 0;
 	if (game->Side == BLACK) { //maximizing, black
 		bestVal = alpha;
 		for (int i = 0; i < moveCount; i++)
@@ -1319,7 +1323,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else {*/
 		int alpha = -9000; //blacks best
 		int beta = 9000; //whites best
-		score = AlphaBeta(alpha, beta, prm->depth, capt, game);
+		score = AlphaBeta(alpha, beta, prm->depth, capt, game, true);
 		
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;

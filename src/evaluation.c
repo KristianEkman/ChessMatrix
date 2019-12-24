@@ -201,6 +201,9 @@ short GetEval(Game* game) {
 		case KNIGHT: {
 			//outposts, protected by a pawn?
 		}
+		case PAWN: {
+			//double pawns
+		}
 		default:
 			break;
 		}
