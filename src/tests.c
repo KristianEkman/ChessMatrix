@@ -614,6 +614,7 @@ void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	//requires atlest depth 6 to be found
 	AssertBestMove(6, __func__, fen, "d2d4");
+	AssertBestMoveTimed(10, __func__, fen, "d2d4");
 }
 
 void BestMoveByBlack2() {
@@ -626,11 +627,11 @@ void BestMoveByBlack3() {
 	AssertBestMove(6, __func__, fen, "d2e2");
 }
 
-void BestMoveByWhite2() {
-	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
-	//requires atlest depth 7 to be found
-	AssertBestMove(7, __func__, fen, "d4f5");
-}
+//void BestMoveByWhite2() {
+//	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
+//	//requires atlest depth 7 to be found
+//	AssertBestMove(7, __func__, fen, "d4f5");
+//}
 
 void BestMoveByBlack1() {
 	char * fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
@@ -644,7 +645,7 @@ void BestMoveByBlack4() {
 
 void BestMoveByBlack5() {
 	char * fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
-	AssertBestMove(5, __func__, fen, "b7e4");
+	AssertBestMoveTimed(30, __func__, fen, "b7e4");
 }
 
 void BestMoveByWhite3() {
@@ -711,15 +712,14 @@ void runAllTests() {
 	BestMoveTest();
 
 	clock_t start = clock();
-	BestMoveTestBlackCaptureBishop();
+	/*BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
-	BestMoveByWhite2();
 	BestMoveByWhite3();
 	BestMoveByWhite4();
 	BestMoveByBlack1();
-	BestMoveByBlack4();
+	BestMoveByBlack4()*/;
 	BestMoveByBlack5();
 
 
