@@ -107,7 +107,7 @@ void EnterUciMode() {
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
 			else {
-				Search(30, 15000, true);
+				Search(30, 40000, true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
@@ -1316,8 +1316,10 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]);
-	PrintBestLine(g_rootMoves.moves[0], depth);
+	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
+	
+	if (!Stopped)
+		PrintBestLine(g_rootMoves.moves[0], depth);
 
 	//free(tps);
 }
