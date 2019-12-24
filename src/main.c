@@ -47,6 +47,8 @@ int main(int argc, char* argv[]) {
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
 	printf("initialized\n");
 
+	runAllTests();
+
 	EnterUciMode();
 	return 0;
 }
@@ -194,6 +196,7 @@ void InitGame() {
 	mainGame.PositionHistoryLength = 0;
 	InitScores();
 	InitHash();
+	InitScores();
 }
 
 char PieceChar(PieceType pieceType) {
@@ -440,6 +443,27 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short pre
 	game->PositionHistoryLength--;
 }
 
+void MakeNullMove(Game* game) {
+	int side01 = game->Side >> 4;
+	unsigned long long hash = ZobritsEnpassantFile[game->State & 15];
+	//resetting en passant
+	game->State &= ~15;
+
+	hash ^= ZobritsSides[side01];
+	game->Hash ^= hash;
+	game->Side ^= 24;
+	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+}
+
+void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prevHash) {
+	int otherSide = game->Side ^ 24;
+	int otherSide01 = otherSide >> 4;
+	game->State = prevGameState;
+	game->Hash = prevHash;
+	game->Side ^= 24;
+	game->PositionHistoryLength--;
+}
+
 bool SquareAttacked(int square, char attackedBy, Game* game) {
 	for (int i = 0; i < 64; i++)
 	{
@@ -532,7 +556,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
 	{
-		move.ScoreAtDepth = GetBestScore(game, depth);
+		move.ScoreAtDepth = GetScore(game); //GetBestScore(game, depth); //Note: 120s to 150s on the tests. Ordering get messed by get best score.
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
@@ -1147,7 +1171,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	return bestVal;
 }
 
-short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game) {
+short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull) {
 	if (Stopped)
 		return GetScore(game);
 
@@ -1158,6 +1182,35 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		SearchedLeafs++;
 		return GetScore(game);
 	}
+
+	int side01 = game->Side >> 4;
+	int otherSide = game->Side ^ 24;
+	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
+
+	if (doNull && !incheck && game->PositionHistoryLength && game->Material[side01] > 500 && depth >= 4) {
+		GameState prevState = game->State;
+		unsigned long long prevHash = game->Hash;
+		MakeNullMove(game);
+		// kolla matt värde istf ischeck
+		//båda: 69s, black 75s, white 69s
+		if (game->Side == WHITE) {
+			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
+			if (nullScr <= alpha && nullScr > -8000 && nullScr < 8000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return alpha;
+			}
+		}
+		if (game->Side == BLACK)
+		{
+			int nullScr = AlphaBeta(alpha, beta, depth - 4, capture, game, false);
+			if (nullScr >= beta && nullScr > -8000 && nullScr < 8000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return beta;
+			}
+		}
+		UnMakeNullMove(prevState, game, prevHash);
+	}
+
 	short bestVal = 0;
 	CreateMoves(game, depth);
 	int moveCount = game->MovesBufferLength;
@@ -1183,7 +1236,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true);
 			if (childValue > bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
@@ -1204,7 +1257,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
-			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game);
+			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true);
 			if (childValue < bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
@@ -1266,7 +1319,6 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else {*/
 		int alpha = -9000; //blacks best
 		int beta = 9000; //whites best
-
 		score = AlphaBeta(alpha, beta, prm->depth, capt, game);
 		
 		if (!Stopped)
