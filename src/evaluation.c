@@ -128,7 +128,7 @@ short OpenFile(int square, Game* game) {
 	for	(int i = 0; i < 8; i++)
 	{
 		file += 8;
-		if ((game->Squares[i] & PAWN))
+		if ((game->Squares[file] & PAWN)) //smi open
 			open -= 15;
 	}
 	return open;
@@ -153,7 +153,6 @@ short GetEval(Game* game) {
 		{
 		case ROOK:
 		{
-			// todo: open files
 			score += neg * OpenFile(i, game);
 
 			// connected rooks, no king between
