@@ -8,6 +8,7 @@
 #include "basic_structs.h"
 #include "utils.h"
 #include "hashTable.h"
+#include "evaluation.h"
 
 #pragma region TestsHelpers
 
@@ -548,6 +549,13 @@ void PositionScoreCastling() {
 	AssertAreEqualInts(-15, mainGame.PositionScore, "Position Score Missmatch");
 }
 
+void TestEvalOpenFile() {
+	printf("\n");printf(__func__);
+	char* startFen = "r3kb1r/ppp1nppp/5n2/8/8/4BN2/PPP2PPP/RN1R2K1 b kq - 0 12";
+	ReadFen(startFen);
+	int score = GetEval(&mainGame);
+}
+
 void BestMoveTest() {
 	printf("\n");printf(__func__);printf("\n");
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
@@ -612,8 +620,8 @@ void BlackMatesIn5Deeping() {
 
 void BestMoveByWhite1() {
 	char * fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
-	//requires atlest depth 6 to be found
-	AssertBestMove(7, __func__, fen, "d2d4");
+	AssertBestMove(7, __func__, fen, "d2d4"); //to realy find the advantage of this move it takes about 10 - 15 moves deep.
+
 	//AssertBestMoveTimed(10, __func__, fen, "d2d4");
 }
 
@@ -682,7 +690,8 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*DeepTest();
+	//DeepTest();
+	/*TestEvalOpenFile();
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
@@ -690,7 +699,7 @@ void runAllTests() {
 	return;*/
 
 	_failedAsserts = 0;
-	TimedTest(50000000, HashTablePerformance);
+	/*TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -709,7 +718,7 @@ void runAllTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();
+	EnPassantMaterial();*/
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
