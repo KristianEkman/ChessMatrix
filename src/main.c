@@ -279,28 +279,24 @@ void MakeMove(Move move, Game* game) {
 	case PromotionQueen:
 		game->Squares[t] = QUEEN | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
-		game->PositionScore += PositionValueMatrix[QUEEN][side01][t];
 		hash ^= ZobritsPieceTypesSquares[QUEEN | game->Side][t];
 
 		break;
 	case PromotionRook:
 		game->Squares[t] = ROOK | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
-		game->PositionScore += PositionValueMatrix[ROOK][side01][t];
 		hash ^= ZobritsPieceTypesSquares[ROOK | game->Side][t];
 
 		break;
 	case PromotionBishop:
 		game->Squares[t] = BISHOP | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
-		game->PositionScore += PositionValueMatrix[BISHOP][side01][t];
 		hash ^= ZobritsPieceTypesSquares[BISHOP | game->Side][t];
 
 		break;
 	case PromotionKnight:
 		game->Squares[move.To] = KNIGHT | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
-		game->PositionScore += PositionValueMatrix[KNIGHT][side01][t];
 		hash ^= ZobritsPieceTypesSquares[KNIGHT | game->Side][t];
 
 		break;
@@ -342,8 +338,6 @@ void MakeMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
 
-		game->PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
-		game->PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -358,8 +352,6 @@ void MakeMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 
-		game->PositionScore -= PositionValueMatrix[ROOK][side01][rookFr];
-		game->PositionScore += PositionValueMatrix[ROOK][side01][rookTo];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -374,7 +366,6 @@ void MakeMove(Move move, Game* game) {
 		char behind = t + Behind[side01];
 		game->Squares[behind] = NOPIECE;
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
-		game->PositionScore -= PositionValueMatrix[PAWN][captColor][behind];
 		hash ^= ZobritsPieceTypesSquares[PAWN | captColor][behind];
 	}
 	break;

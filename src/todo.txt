@@ -1,9 +1,16 @@
 
-NULL Move
+Eval: 
+	För mycket poäng för position? Dela matriser med x?
+	Open rook file --performance ??
+	Connected rooks.
+	Bad bishops -- performance ??
+	Outposts -- performance ??
+	Double pawns
 
-PieceList: CreateMove, SquareAttacked
-
-Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
+Slå på hash table.
+	
+Opening Book
+	Opening Score, early queen, minor piece count.
 
 konfigurerbar, hash size
 
@@ -11,16 +18,10 @@ Fifty move rule.
 
 Material draw?
 
-Refactor main
-	Flytta ut globala variabler.
-	Flytta ut search, movegen, uci, evaluation
-
-Test ta bort hashning? Ger den något?
-
 time control
-	Prioritera att sluta när ett sökdjup är klart. Är man nära den schemalagda tiden.
-	Om man bara hittar ett mkt sämre drag. Sök dubbla tiden.
-
+	1. Sök 40:e del av tiden kvar.
+		Vid klart djup. Om mer än senaste sökdjupet tog lång tid, Stoppa.
+	2. 
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
@@ -31,18 +32,18 @@ Mer pruning
 	Futilty pruning
 	Razoring
 
-Eval: 
-	För mycket poäng för position? Dela matriser med x?
 
-	Open rook file --performance ??
-	Bad bishops -- performance ??
-	Outposts -- performance ??
-	
-	
-Opening Book
-	Opening Score, early queen, minor piece count.
+Refactor main
+	Flytta ut globala variabler.
+	Flytta ut search, movegen, uci, evaluation
 
 
 killer-heuristic
 
 Fler testafall.
+
+PieceList: CreateMove, SquareAttacked
+
+Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
+
+NULL Move
