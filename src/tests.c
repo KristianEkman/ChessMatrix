@@ -699,7 +699,7 @@ void runAllTests() {
 	return;*/
 
 	_failedAsserts = 0;
-	/*TimedTest(50000000, HashTablePerformance);
+	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
@@ -718,7 +718,7 @@ void runAllTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();*/
+	EnPassantMaterial();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
