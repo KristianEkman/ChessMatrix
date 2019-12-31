@@ -21,6 +21,8 @@ Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
 const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
+short g_alpha = -9000;
+short g_beta = 9000;
 
 bool Stopped;
 
@@ -237,8 +239,8 @@ void PrintGame() {
 }
 
 void KingPositionScore(Move move, Game* game) {
-	//aproximation that endgame starts att 1900.
-	int endGame = game->Material[1] - game->Material[0] < 1900 ? 1 : 0;
+	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
+	int endGame = game->Material[1] - game->Material[0] < 1800 ? 1 : 0;
 	game->PositionScore += KingPositionValueMatrix[endGame][game->Side >> 4][move.To];
 	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side >> 4][move.From];
 }
@@ -1210,7 +1212,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 
 	if (moveCount == 0) {
 		if (SquareAttacked(game->KingSquares[game->Side >> 4], game->Side ^ 24, game))
-			return game->Side == WHITE ? 8000 : -8000;//mate
+			return game->Side == WHITE ? 8000 + depth : -8000 - depth;//mate
 		else
 			return 0;//stale mate
 	}
@@ -1312,20 +1314,24 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			score = dbScore;
 		}
 		else {*/
-		int alpha = -9000; //blacks best
-		int beta = 9000; //whites best
-		score = AlphaBeta(alpha, beta, prm->depth, capt, game, true);
+		
+
+		score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true);
 		
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
-
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
-		if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
-		{
-			ExitThread(0);
-			return 0; //a check mate is found, no need to search further.
-		}
+		if (game->Side == BLACK)
+			g_beta = min(g_beta, score);
+		else
+			g_alpha = max(g_alpha, score);
+
+		//if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
+		//{
+		//	ExitThread(0);
+		//	return 0; //a check mate is found, no need to search further.
+		//}
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
@@ -1345,6 +1351,9 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
+
+	g_alpha = -9000;
+	g_beta = 9000;
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
