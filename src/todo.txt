@@ -1,13 +1,16 @@
 
 Eval: 
-	För mycket poäng för position? Dela matriser med x?
+	Castling points
 	Open rook file --performance ??
-	Connected rooks.
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 	Double pawns
 
-Slå på hash table.
+Registrera djup.
+
+Välja drag längst bort från matt - kanske int avbryta såfort den hittar matt.
+
+Slå på hash table for score. (Behövs det).
 	
 Opening Book
 	Opening Score, early queen, minor piece count.
@@ -29,6 +32,7 @@ Hash table.
 	- Dubbelkolla init.
 
 Mer pruning
+	Aspiration window
 	Futilty pruning
 	Razoring
 
@@ -45,5 +49,3 @@ Fler testafall.
 PieceList: CreateMove, SquareAttacked
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
-
-NULL Move

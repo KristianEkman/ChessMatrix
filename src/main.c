@@ -41,7 +41,7 @@ void manualMove() {
 
 int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
-	//AdjustPositionImportance();
+	AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
@@ -194,7 +194,6 @@ void InitGame() {
 	mainGame.Material[0] = 0;
 	mainGame.Material[1] = 0;
 	mainGame.PositionHistoryLength = 0;
-	InitScores();
 	InitHash();
 	InitScores();
 }
@@ -340,6 +339,7 @@ void MakeMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
 
+		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -354,6 +354,7 @@ void MakeMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 
+		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -1044,7 +1045,6 @@ void AdjustPositionImportance() {
 		{
 			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 2;
 			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 2;
-
 		}
 	}
 
