@@ -21,8 +21,6 @@ Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
 const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
-short g_alpha = -9000;
-short g_beta = 9000;
 
 bool Stopped;
 
@@ -1295,6 +1293,8 @@ DWORD WINAPI DoNothingThread(int* prm) {
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
+	short g_alpha = -9000;
+	short g_beta = 9000;
 	do
 	{
 		Game* game = &(threadGames[prm->threadID]);
@@ -1352,8 +1352,8 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
 
-	g_alpha = -9000;
-	g_beta = 9000;
+	/*g_alpha = -9000;
+	g_beta = 9000;*/
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
