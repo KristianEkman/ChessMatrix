@@ -103,6 +103,9 @@ void EnterUciMode() {
 				int r = sscanf(sTime, "%d", &time);
 				Search(30, time, true);
 			}
+			else if (contains(buf, " infinite")) {
+				Search(30, 0, true);
+			}
 			// else search with time control
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
