@@ -108,13 +108,14 @@ void HashTableRoundTrip() {
 	short expected = 3000;
 	addHashScore(hash, expected, 1);
 	bool empty = FALSE;
-	short score = getScoreFromHash(hash, &empty, 1);
+	int depth = 0;
+	short score = getScoreFromHash(hash, &empty, &depth);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	unsigned long long hash2 = hash + 1;
 	short expected2 = 4000;
 	addHashScore(hash2, expected2, 1);
-	short score2 = getScoreFromHash(hash2, &empty, 1);
+	short score2 = getScoreFromHash(hash2, &empty, &depth);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	score = getScoreFromHash(hash, &empty, 1);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
@@ -127,15 +128,16 @@ void HashTableDepthTest() {
 
 	addHashScore(hash, 3000, 2);
 	bool empty = FALSE;
-	short score = getScoreFromHash(hash, &empty, 1);
+	int depth = 0;
+	short score = getScoreFromHash(hash, &empty, &depth);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
 	addHashScore(hash, 4000, 1); //smaller depth
-	short score2 = getScoreFromHash(hash, &empty, 1);
+	short score2 = getScoreFromHash(hash, &empty, &depth);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
 	addHashScore(hash, 5000, 3); //smaller depth
-	score = getScoreFromHash(hash, &empty, 1);
+	score = getScoreFromHash(hash, &empty, &depth);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
@@ -151,7 +153,8 @@ void HashTablePerformance(int iterations) {
 		hash++;
 		addHashScore(hash, expected, 1);
 		bool empty = FALSE;
-		short score = getScoreFromHash(hash, &empty, 1);
+		int depth = 0;
+		short score = getScoreFromHash(hash, &empty, &depth);
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }

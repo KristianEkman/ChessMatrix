@@ -15,7 +15,7 @@ unsigned long long ZobritsEnpassantFile[9];
 //int HashTableMatches;
 
 void addHashScore(unsigned long long hash, short score, char depth);
-short getScoreFromHash(unsigned long long hash, bool * empty, int depth);
+short getScoreFromHash(unsigned long long hash, bool * empty, int * depth);
 
 void GenerateZobritsKeys();
 void ClearHashTable();

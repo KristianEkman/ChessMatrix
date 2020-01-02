@@ -39,7 +39,7 @@ void manualMove() {
 
 int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
-	AdjustPositionImportance();
+	//AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
@@ -1098,16 +1098,16 @@ short GetBestScore(Game* game, int depth) {
 	return GetScore(game);
 }
 
-short AlphaBetaQuite(short alpha, short beta, Game* game) {
+short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
-	int score = GetScore(game);
+	int score = moveScore;
 	short bestVal = 0;
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 	{
 		SearchedLeafs++;
-		return GetScore(game);
+		return moveScore;
 	}
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
@@ -1128,7 +1128,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBetaQuite(bestVal, beta, game);
+			int childValue = AlphaBetaQuite(bestVal, beta, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
@@ -1152,7 +1152,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBetaQuite(alpha, bestVal, game);
+			int childValue = AlphaBetaQuite(alpha, bestVal, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
@@ -1163,17 +1163,24 @@ short AlphaBetaQuite(short alpha, short beta, Game* game) {
 	return bestVal;
 }
 
-short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull) {
+short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull, short moveScore) {
 	if (Stopped)
-		return GetScore(game);
+		return moveScore;
 
 	if (!depth) {
 		if (capture) {
-			return AlphaBetaQuite(alpha, beta, game);
+			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return GetScore(game);
+		return moveScore;
 	}
+
+	/*short score;
+	int dbDepth = 0;
+	bool empty;
+	short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
+	if (!empty && dbDepth > depth)
+		return dbScore;*/
 
 	int side01 = game->Side >> 4;
 	int otherSide = game->Side ^ 24;
@@ -1189,7 +1196,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 			MakeNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, capture, game, false);
+				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, capture, game, false, moveScore);
 				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
@@ -1197,7 +1204,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			}
 			if (game->Side == WHITE)
 			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, capture, game, false);
+				int nullScore = AlphaBeta(beta - 1, beta, depth - r, capture, game, false, moveScore);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return beta;
@@ -1234,12 +1241,12 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 
 			MakeMove(childMove, game);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true, childMove.ScoreAtDepth);
 			if (childValue > bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
-			addHashScore(game->Hash, bestVal, depth);
+			//addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			if (bestVal >= beta)
 				break;
@@ -1255,12 +1262,12 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			MakeMove(childMove, game);
-			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true);
+			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true, childMove.ScoreAtDepth);
 			if (childValue < bestVal) {
 				bestVal = childValue;
 				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
-			addHashScore(game->Hash, bestVal, depth);
+			//addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
 			if (bestVal <= alpha)
 				break;
@@ -1296,8 +1303,7 @@ DWORD WINAPI DoNothingThread(int* prm) {
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
-	short g_alpha = -9000;
-	short g_beta = 9000;
+	
 	do
 	{
 		Game* game = &(threadGames[prm->threadID]);
@@ -1309,26 +1315,29 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		unsigned long long prevHash = game->Hash;
 
 		MakeMove(move, game);
-		bool empty = FALSE;
+		/*bool empty = FALSE;
 		short score;
-		/*short dbScore = getScoreFromHash(game->Hash, &empty, prm->depth);
-		if (!empty)
+		int dbDepth = 0;
+		short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
+		if (!empty && dbDepth > prm->depth)
 		{
 			score = dbScore;
 		}
 		else {*/
-		
+			short g_alpha = -9000;
+			short g_beta = 9000;
+			int score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true, move.ScoreAtDepth);
+			//addHashScore(game->Hash, score, prm->depth);
+		//}
 
-		score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true);
-		
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
 
-		if (game->Side == BLACK)
+		/*if (game->Side == BLACK)
 			g_beta = min(g_beta, score);
 		else
-			g_alpha = max(g_alpha, score);
+			g_alpha = max(g_alpha, score);*/
 
 		//if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
 		//{

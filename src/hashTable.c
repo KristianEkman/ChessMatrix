@@ -30,7 +30,7 @@ void addHashScore(unsigned long long hash, short score, char depth) {
 		if (entry[i].Key2 == key2 && depth > entry[i].Depth) {
 			
 			entry[i].Score = score;
-			entry[i].Key2 = (int)(hash >> 28);
+			entry[i].Key2 = key2;
 			entry->Depth = depth;
 			return;
 		}
@@ -38,7 +38,7 @@ void addHashScore(unsigned long long hash, short score, char depth) {
 	//HashTableFullCount++;
 }
 
-short getScoreFromHash(unsigned long long hash, bool * empty, int depth) {
+short getScoreFromHash(unsigned long long hash, bool * empty, int * depth) {
 	/**empty = true;
 	return 0;*/
 	int idx = (int)(hash & IndexLength);
@@ -46,9 +46,11 @@ short getScoreFromHash(unsigned long long hash, bool * empty, int depth) {
 	int key2 = (int)(hash >> 28);
 	for (int i = 0; i < SlotCount; i++)
 	{
-		if (entry[i].Depth >= depth && entry[i].Key2 == key2)
+		if (entry[i].Key2 == key2)
 		{
 			//HashTableMatches++;
+			*depth = entry[i].Depth;
+			*empty = false;
 			return entry[i].Score;
 		}
 	}
