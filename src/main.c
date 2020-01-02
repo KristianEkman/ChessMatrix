@@ -1070,8 +1070,8 @@ void SwitchSignOfWhitePositionValue() {
 
 	for (int i = 0; i < 64; i++)
 	{
-		KingPositionValueMatrix[0][1][i] = -KingPositionValueMatrix[0][1][i];
-		KingPositionValueMatrix[1][1][i] = -KingPositionValueMatrix[1][1][i];
+		KingPositionValueMatrix[0][0][i] = -KingPositionValueMatrix[0][0][i];
+		KingPositionValueMatrix[1][0][i] = -KingPositionValueMatrix[1][0][i];
 	}
 }
 
@@ -1080,7 +1080,7 @@ short GetScore(Game* game) {
 		return 0; // Three fold repetition.
 
 	// todo 50 move rule.
-	return game->Material[0] + game->Material[1] + game->PositionScore;
+	return game->Material[0] + game->Material[1] + game->PositionScore;// +GetEval(game);
 }
 
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
@@ -1157,7 +1157,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return moveScore + GetEval(game);
+		return moveScore; // GetEval(game);
 	}
 
 	/*short score;

@@ -725,10 +725,10 @@ void runAllTests() {
 	return;*/
 
 	_failedAsserts = 0;
-	/*TimedTest(50000000, HashTablePerformance);
-	PerftHashDbTest();
+	TimedTest(50000000, HashTablePerformance);
+	/*PerftHashDbTest();
 	HashTableRoundTrip();
-	HashTableDepthTest();
+	HashTableDepthTest();*/
 	PerftTestStart();
 	PerfTestPosition2();
 	PerftSaveHashTest();
@@ -744,7 +744,7 @@ void runAllTests() {
 	MaterialWhiteQueenCapture();
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
-	EnPassantMaterial();*/
+	EnPassantMaterial();
 	OpenFileTest();SemiOpenFileTest();
 	DoublePawnsTest();
 
@@ -756,7 +756,7 @@ void runAllTests() {
 
 	clock_t start = clock();
 
-	/*BestMoveTestBlackCaptureBishop();
+	BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
@@ -764,7 +764,7 @@ void runAllTests() {
 	BestMoveByWhite4();
 	BestMoveByBlack1();
 	BestMoveByBlack4();
-	BestMoveByBlack5();*/
+	BestMoveByBlack5();
 
 
 	//Requires depth 7, takes a minute
