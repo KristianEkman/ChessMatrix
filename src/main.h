@@ -16,7 +16,6 @@ short TotalMaterial(Game * game);
 int SearchedLeafs;
 DWORD WINAPI BestMoveDeepening(void * params);
 short GetScore(Game * game);
-short GetBestScore(Game * game, int depth);
 void CreateMoves(Game * game, int depth);
 void MakeMove(Move move, Game * mainGame);
 void UnMakeMove(Move move,PieceType capture,GameState prevGameState, short prevPositionScore, Game * game, unsigned long long prevHash);

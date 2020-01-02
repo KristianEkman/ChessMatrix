@@ -1,10 +1,11 @@
 
 Eval: 
-	Castling points
-	Open rook file --performance ??
+	Tempo
+		Not move queen
+		Not move piece twice
+
 	Bad bishops -- performance ??
 	Outposts -- performance ??
-	Double pawns
 
 Registrera djup.
 

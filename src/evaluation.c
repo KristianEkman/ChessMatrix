@@ -1,4 +1,5 @@
 #include "basic_structs.h"
+#include "evaluation.h"
 //white, black, (flipped, starts at A1)
 
 //[type][side][square]
@@ -143,7 +144,7 @@ short KingPositionValueMatrix[2][2][64] = {
 short CastlingPoints[2] = {-40, 40};
 
 
-short OpenFile(int square, Game* game) {
+short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
 	short open = 30;
 	for	(int i = 0; i < 8; i++)
@@ -153,6 +154,18 @@ short OpenFile(int square, Game* game) {
 			open -= 15;
 	}
 	return open;
+}
+
+short DoublePawns(int square, Game* game, PieceType pawn) {
+	int file = square % 8;
+	short score = -9; //Always one pawn
+	for (int i = 0; i < 8; i++)
+	{
+		file += 8;
+		if ((game->Squares[file] == pawn)) //smi open
+			score += 9;
+	}
+	return score;
 }
 
 short GetEval(Game* game) {
@@ -174,7 +187,7 @@ short GetEval(Game* game) {
 		{
 		case ROOK:
 		{
-			score += neg * OpenFile(i, game);
+			score += neg * OpenRookFile(i, game);
 
 			// connected rooks, no king between
 		}
@@ -188,7 +201,7 @@ short GetEval(Game* game) {
 			//outposts, protected by a pawn?
 		}
 		case PAWN: {
-			//double pawns
+			score -= neg * DoublePawns(i, game, pieceType);
 		}
 		default:
 			break;

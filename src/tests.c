@@ -675,6 +675,29 @@ void DeepTest() {
 	AssertBestMove(7, __func__, fen, "b1d2");
 }
 
+void OpenFileTest() {
+	char * fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
+	ReadFen(fen);
+	short score = OpenRookFile(3, &mainGame);
+	AssertAreEqualInts(30, score, "Open file score missmatch");
+}
+
+void SemiOpenFileTest() {
+	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
+	ReadFen(fen);
+	short score = OpenRookFile(3, &mainGame);
+	AssertAreEqualInts(15, score, "Open file score missmatch");
+}
+
+void DoublePawnsTest()
+{
+	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
+	ReadFen(fen);
+	short score = DoublePawns(12, &mainGame, PAWN | WHITE);
+	AssertAreEqualInts(9, score, "Double pawns score missmatch");
+	AssertAreEqualInts(0, DoublePawns(8, &mainGame, PAWN | WHITE), "Double pawns score missmatch");
+}
+
 void indexOfTest() {
 	char* s2 = "Kristian Ekman";
 	Assert(indexOf(s2, "Ekman") == 9, "index of failed");
@@ -722,15 +745,18 @@ void runAllTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();*/
+	OpenFileTest();SemiOpenFileTest();
+	DoublePawnsTest();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/
 	
-	BestMoveTest();
+	//BestMoveTest();
 
 	clock_t start = clock();
-	BestMoveTestBlackCaptureBishop();
+
+	/*BestMoveTestBlackCaptureBishop();
 	TestWhiteMateIn2();
 	BlackMatesIn5Deeping();
 	BestMoveByWhite1();
@@ -738,7 +764,7 @@ void runAllTests() {
 	BestMoveByWhite4();
 	BestMoveByBlack1();
 	BestMoveByBlack4();
-	BestMoveByBlack5();
+	BestMoveByBlack5();*/
 
 
 	//Requires depth 7, takes a minute

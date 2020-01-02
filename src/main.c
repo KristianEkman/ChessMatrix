@@ -549,7 +549,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
 	{
-		move.ScoreAtDepth = GetScore(game); //GetBestScore(game, depth); //Note: 120s to 150s on the tests. Ordering get messed by get best score.
+		move.ScoreAtDepth = GetScore(game);
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
@@ -1080,22 +1080,7 @@ short GetScore(Game* game) {
 		return 0; // Three fold repetition.
 
 	// todo 50 move rule.
-
 	return game->Material[0] + game->Material[1] + game->PositionScore;
-}
-
-
-short GetBestScore(Game* game, int depth) {
-	// todo: Should hash db be checked first?
-	// When evaluation gets more complicated it will probably improve performance. 
-	//if (depth == 0)
-	/*	return GetScore(game);
-	bool empty = false;
-	short dbScore = getScoreFromHash(game->Hash, &empty, depth);
-	if (!empty)
-		return dbScore;*/
-
-	return GetScore(game);
 }
 
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
@@ -1165,14 +1150,14 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull, short moveScore) {
 	if (Stopped)
-		return moveScore;
+		return moveScore; // should not be used;
 
 	if (!depth) {
 		if (capture) {
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return moveScore;
+		return moveScore + GetEval(game);
 	}
 
 	/*short score;

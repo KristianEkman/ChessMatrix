@@ -1,6 +1,6 @@
+#pragma once
 #include "basic_structs.h"
 
-#pragma once
 //[type][side][square]
 short PositionValueMatrix[7][2][64];
 
@@ -10,4 +10,9 @@ short CastlingPoints[2];
 //[middle or end][side][square]
 short KingPositionValueMatrix[2][2][64];
 
+short OpenRookFile(int square, Game* game);
+
+short DoublePawns(int square, Game* game, PieceType pawn);
+
 short GetEval(Game* game);
+
