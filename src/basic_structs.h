@@ -106,11 +106,13 @@ typedef struct  {
 
 typedef struct {
 	int MaxDepth;
-	int Milliseconds;
-	Move BestMove;
+	int MoveTime;
 	int WhiteTimeLeft;
 	int BlackTimeLeft;
 	int BlackIncrement;
 	int WhiteIncrement;
 	bool TimeControl;
+	Move BestMove;
 } TopSearchParams;
+
+TopSearchParams g_topSearchParams;

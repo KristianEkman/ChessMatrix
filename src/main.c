@@ -22,16 +22,15 @@ Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
 const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
-TopSearchParams g_topSearchParams;
 
 bool Stopped;
 
-void computerMove() {
-	Move move = Search(5, 0, false);
+void ComputerMove() {
+	Move move = Search(false);
 	MakeMove(move, &mainGame);
 }
 
-void manualMove() {
+void ManualMove() {
 	printf("\nYour move: ");
 	char sMove[6];
 	scanf_s(" %6c", sMove, 6);
@@ -39,8 +38,19 @@ void manualMove() {
 	MakePlayerMove(sMove);
 }
 
+void DefaultSearch() {
+	g_topSearchParams.BlackIncrement = 0;
+	g_topSearchParams.BlackTimeLeft = 0;
+	g_topSearchParams.MaxDepth = 30;
+	g_topSearchParams.MoveTime = 0;
+	g_topSearchParams.TimeControl = false;
+	g_topSearchParams.WhiteIncrement = 0;
+	g_topSearchParams.BlackIncrement = 0;
+}
+
 int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
+	DefaultSearch();
 	//AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
@@ -97,16 +107,10 @@ void EnterUciMode() {
 			}
 		}
 		else if (startsWith(buf, "go ")) {
-			if (contains(buf, " movetime ")) {
-				int idx = indexOf(buf, " movetime ");
-				idx += 10;
-				char* sTime = strtok(&buf[idx], " ");
-				int time = 0;
-				int r = sscanf(sTime, "%d", &time);
-				Search(30, time, true);
-			}
-			else if (contains(buf, " infinite")) {
-				Search(30, 0, true);
+			DefaultSearch();
+			if (contains(buf, "infinite")) {
+				g_topSearchParams.MaxDepth = 30;
+				Search(true);
 			}
 			// else search with time control
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
@@ -114,7 +118,14 @@ void EnterUciMode() {
 			else {
 				char* token = strtok(buf, " ");
 				while (token != NULL) {
-					if (streq(token, "wtime")) {
+					if (streq(token, "depth")) {
+						char* depth = strtok(NULL, " ");
+						sscanf(depth, "%d", &g_topSearchParams.MaxDepth);
+					}
+					else if (streq(token, "movetime")) {
+						char* movetime = strtok(NULL, " ");
+						sscanf(movetime, "%d", &g_topSearchParams.MoveTime);
+					} else if (streq(token, "wtime")) {
 						char * wtime = strtok(NULL, " ");
 						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);						
 					} else if (streq(token, "btime")) {
@@ -133,7 +144,7 @@ void EnterUciMode() {
 				/*
 				go wtime 900000 btime 900000 winc 0 binc 0
 				*/
-				Search(30, 1000000, true);
+				Search(true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
@@ -160,10 +171,10 @@ int EnterInteractiveMode() {
 		switch (scan)
 		{
 		case 'm':
-			manualMove();
+			ManualMove();
 			break;
 		case 'c':
-			computerMove();
+			ComputerMove();
 			break;
 		case 't':
 
@@ -1417,10 +1428,10 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
 int _millis;
-Move Search(int maxDepth, int  millis, bool async) {
+Move Search(bool async) {
 	HANDLE timeLimitThread = 0;
-	_millis = millis;
-	if (millis > 0) {
+	_millis = g_topSearchParams.MoveTime;
+	if (_millis > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &_millis, 0, NULL);
 	}
 
@@ -1429,10 +1440,7 @@ Move Search(int maxDepth, int  millis, bool async) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		ClearTable(&bmTables[i]);
-
-	g_topSearchParams.MaxDepth = maxDepth;
-	g_topSearchParams.Milliseconds = millis;
-
+	
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
@@ -1517,17 +1525,18 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 				break; //A check mate is found, no need to search further.
 			}
 
-			int myTimeLeft = g_topSearchParams.BlackTimeLeft;
+
+			/*int myTimeLeft = g_topSearchParams.BlackTimeLeft;
 			int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
 			if (mainGame.Side == WHITE) {
 				int myTimeLeft = g_topSearchParams.WhiteTimeLeft;
 				int opponentTimeLeft = g_topSearchParams.BlackTimeLeft;
-			}
+			}*/
 
-			if ( g_topSearchParams.TimeControl && !SearchDeeper(depth, ellapsed, myTimeLeft, opponentTimeLeft, bestScore)) {
+			/*if ( g_topSearchParams.TimeControl && !SearchDeeper(depth, ellapsed, myTimeLeft, opponentTimeLeft, bestScore)) {
 				Stopped = true;
 				break;
-			}
+			}*/
 		}
 
 	} while (depth <= maxDepth && !Stopped);

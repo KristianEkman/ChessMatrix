@@ -28,6 +28,7 @@ void EnterUciMode();
 int EnterInteractiveMode();
 void InitScores();
 void InitHash();
-Move Search(int maxDepth, int milliseconds, bool async);
+Move Search(bool async);
 DWORD WINAPI TimeLimitWatch(int* pms);
 void AdjustPositionImportance();
+void DefaultSearch();
