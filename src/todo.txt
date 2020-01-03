@@ -22,21 +22,29 @@ Fifty move rule.
 
 Material draw?
 
-time control
-	1. Sök 40:e del av tiden kvar.
-		Vid klart djup. Om mer än senaste sökdjupet tog lång tid, Stoppa.
-	2. 
+time control blitz
+	Syfte:
+		- 1. Tiden ska inte ta slut
+		- 2. Tiden ska utnyttjas
+
+	Input:
+		Tid kvar
+		Tid kvar mots
+		score, vem leder och hur stort
+		Uppskattad tidsåtgång för olika djup
+		Antal drag kvar -> 40
+		Ge mer tid om mots har mindre tid kvar.
+			Om man skulle hinna med ett djup till utan att hamna efter.
+		
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
-		- Ta bort räknare från hashdb, slöar ner.
 	- Dubbelkolla init.
 
 Mer pruning
 	Aspiration window
 	Futilty pruning
 	Razoring
-
 
 Refactor main
 	Flytta ut globala variabler.
@@ -47,6 +55,6 @@ killer-heuristic
 
 Fler testafall.
 
-PieceList: CreateMove, SquareAttacked
+PieceList: CreateMove
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.

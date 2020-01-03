@@ -152,6 +152,7 @@
     <ClCompile Include="patterns.c" />
     <ClCompile Include="sort.c" />
     <ClCompile Include="tests.c" />
+    <ClCompile Include="timeControl.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +164,7 @@
     <ClInclude Include="basic_structs.h" />
     <ClInclude Include="sort.h" />
     <ClInclude Include="tests.h" />
+    <ClInclude Include="timeControl.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>

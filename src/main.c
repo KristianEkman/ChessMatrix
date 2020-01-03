@@ -15,12 +15,14 @@
 #include "sort.h"
 #include "hashTable.h"
 #include "bestMovesTable.h"
+#include "timeControl.h"
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
 BestMovesTable bmTables[SEARCH_THREADS];
 const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
+TopSearchParams g_topSearchParams;
 
 bool Stopped;
 
@@ -110,7 +112,28 @@ void EnterUciMode() {
 			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
 			// I end game?
 			else {
-				Search(30, 20000, true);
+				char* token = strtok(buf, " ");
+				while (token != NULL) {
+					if (streq(token, "wtime")) {
+						char * wtime = strtok(NULL, " ");
+						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);						
+					} else if (streq(token, "btime")) {
+						char* btime = strtok(NULL, " ");
+						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
+					} if (streq(token, "winc")) {
+						char* winc = strtok(NULL, " ");
+						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
+					} if (streq(token, "binc")) {
+						char* binc = strtok(NULL, " ");
+						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
+					}
+					token = strtok(NULL, " ");
+				}
+				g_topSearchParams.TimeControl = true;
+				/*
+				go wtime 900000 btime 900000 winc 0 binc 0
+				*/
+				Search(30, 1000000, true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
@@ -1371,9 +1394,6 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
 	
-	if (!Stopped)
-		PrintBestLine(g_rootMoves.moves[0], depth);
-
 	//free(tps);
 }
 // Background thread that sets Stopped flag after specified time in ms.
@@ -1397,7 +1417,6 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
 int _millis;
-TopSearchParams g_topSearchParams;
 Move Search(int maxDepth, int  millis, bool async) {
 	HANDLE timeLimitThread = 0;
 	_millis = millis;
@@ -1413,6 +1432,7 @@ Move Search(int maxDepth, int  millis, bool async) {
 
 	g_topSearchParams.MaxDepth = maxDepth;
 	g_topSearchParams.Milliseconds = millis;
+
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
@@ -1423,7 +1443,7 @@ Move Search(int maxDepth, int  millis, bool async) {
 	}
 }
 
-int PrintBestLine(Move move, int depth) {
+int PrintBestLine(Move move, int depth, float ellapsed) {
 	char buffer[1000];
 	char* pv = &buffer;
 	char sMove[5];
@@ -1458,7 +1478,8 @@ int PrintBestLine(Move move, int depth) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	printf("info depth %d score cp %d nodes %d pv %s\n", depth + 1, move.ScoreAtDepth, SearchedLeafs, buffer);
+	int nps = (float) SearchedLeafs / ellapsed;
+	printf("info depth %d score cp %d nodes %d nps %d pv %s\n", depth, move.ScoreAtDepth, SearchedLeafs, nps ,buffer);
 	fflush(stdout);
 	return 0;
 }
@@ -1488,12 +1509,27 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 			//printf("INFO depth %d - %s\n", depth, bestMove);
 			//pv, bestline. hur?
 			depth++;
+			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
+			PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 			if ((mainGame.Side == WHITE && bestScore < -7000) || (mainGame.Side == BLACK && bestScore > 7000))
 			{
 				Stopped = true;
 				break; //A check mate is found, no need to search further.
 			}
+
+			int myTimeLeft = g_topSearchParams.BlackTimeLeft;
+			int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
+			if (mainGame.Side == WHITE) {
+				int myTimeLeft = g_topSearchParams.WhiteTimeLeft;
+				int opponentTimeLeft = g_topSearchParams.BlackTimeLeft;
+			}
+
+			if ( g_topSearchParams.TimeControl && !SearchDeeper(depth, ellapsed, myTimeLeft, opponentTimeLeft, bestScore)) {
+				Stopped = true;
+				break;
+			}
 		}
+
 	} while (depth <= maxDepth && !Stopped);
 	clock_t stop = clock();
 
