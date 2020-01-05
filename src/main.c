@@ -1164,9 +1164,9 @@ void SwitchSignOfWhitePositionValue() {
 }
 
 bool DrawByRepetition(Game* game) {
-	if (game->PositionHistoryLength < 40)
+	if (game->PositionHistoryLength < 50)
 		return false;
-	int start = game->PositionHistoryLength - 30; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
+	int start = game->PositionHistoryLength - 15; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
 	int end = game->PositionHistoryLength - (int)2;
 	for (size_t i = start; i < end; i++)
 	{
@@ -1265,7 +1265,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 	int dbDepth = 0;
 	bool empty;
 	short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
-	if (!empty && dbDepth > depth)
+	if (!empty && dbDepth > depth + 1)
 		return dbScore;*/
 
 	int side01 = game->Side >> 4;
@@ -1330,7 +1330,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true, childMove.ScoreAtDepth);
 			if (childValue > bestVal) {
 				bestVal = childValue;
-				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
+				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			//addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
@@ -1351,7 +1351,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true, childMove.ScoreAtDepth);
 			if (childValue < bestVal) {
 				bestVal = childValue;
-				AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
+				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			//addHashScore(game->Hash, bestVal, depth);
 			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);

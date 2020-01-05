@@ -107,13 +107,6 @@ void printPerftResults() {
 		perftResult.Enpassants, perftResult.Promotions);
 }
 
-typedef struct {
-	unsigned long long Hash;
-	char Fen[100];
-} HashFen;
-
-HashFen HashFenDb[1000000];
-
 #pragma endregion
 
 void HashKeyTest() {
@@ -227,8 +220,18 @@ int Perft(depth) {
 	return nodeCount;
 }
 
+
+#ifdef _DEBUG
+
 int perftSaveHashCount = 0;
 int collisionCount = 0;
+
+typedef struct {
+	unsigned long long Hash;
+	char Fen[100];
+} HashFen;
+
+HashFen HashFenDb[3000000];
 void PerftSaveHash(depth) {
 	char hasHash = FALSE;
 	char fen[100];
@@ -275,6 +278,32 @@ void PerftSaveHash(depth) {
 	}
 	free(localMoves);
 }
+
+
+void PerftSaveHashTest() {
+	printf("\n");printf(__func__);
+	perftSaveHashCount = 0;
+	collisionCount = 0;
+	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"); //quite complicated position
+	PerftSaveHash(3);
+	printf("\nHash entries: %d\n", perftSaveHashCount);
+	printf("\nCollisions: %d\n", collisionCount);
+}
+
+void EnpassantCollisionsTest() {
+	printf("\n");printf(__func__);
+	perftSaveHashCount = 0;
+	collisionCount = 0;
+	ReadFen("rnbqkbnr/ppp2pp1/3p4/1P2p3/7p/3PP3/P1P2PPP/RNBQKBNR w KQkq - 0 1"); //quite complicated position
+	PerftSaveHash(3);
+	printf("\nHash entries: %d\n", perftSaveHashCount);
+	printf("\nCollisions: %d\n", collisionCount);
+}
+
+//
+
+#endif // _DEBUG
+
 
 int PerftHashDb(int depth) {
 	if (depth == 0)
@@ -334,15 +363,6 @@ int PerftTest(char * fen, int depth) {
 	return perftCount;
 }
 
-void PerftSaveHashTest() {
-	printf("\n");printf(__func__);
-	perftSaveHashCount = 0;
-	collisionCount = 0;
-	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"); //quite complicated position
-	PerftSaveHash(3);
-	printf("\nHash entries: %d\n", perftSaveHashCount);
-	printf("\nCollisions: %d\n", collisionCount);
-}
 
 void PerftHashDbTest() {
 	printf("\n");printf(__func__);
@@ -737,31 +757,35 @@ void runAllTests() {
 	printf("Press any key to continue.\n");
 	int c = _getch();
 	return;*/
-
-	_failedAsserts = 0;
-	HashKeyTest();
-	TimedTest(50000000, HashTablePerformance);
-	PerftHashDbTest();
-	HashTableRoundTrip();
-	HashTableDepthTest();
-	PerftTestStart();
-	PerfTestPosition2();
-	PerftSaveHashTest();
-	FenTest();
-	FenEnppasantTest();
-	ValidMovesPromotionCaptureAndCastling();
-	LongCastling();
-	EnPassantFromFenTest();
-	BlackCastlingRightsAfterKingMove();
-	WhiteCastlingRightsAfterKingMove();
-	EnPassantAfterMove();
-	MaterialBlackPawnCapture();
-	MaterialWhiteQueenCapture();
-	MaterialPromotion();
-	MaterialCaptureAndPromotion();
-	EnPassantMaterial();
-	OpenFileTest();SemiOpenFileTest();
-	DoublePawnsTest();
+//	_failedAsserts = 0;
+//#ifdef _DEBUG
+//	EnpassantCollisionsTest();
+//
+//	PerftSaveHashTest();
+//#endif // _DEBUG
+//
+//	HashKeyTest();
+//	TimedTest(50000000, HashTablePerformance);
+//	PerftHashDbTest();
+//	HashTableRoundTrip();
+//	HashTableDepthTest();
+//	PerftTestStart();
+//	PerfTestPosition2();
+//	FenTest();
+//	FenEnppasantTest();
+//	ValidMovesPromotionCaptureAndCastling();
+//	LongCastling();
+//	EnPassantFromFenTest();
+//	BlackCastlingRightsAfterKingMove();
+//	WhiteCastlingRightsAfterKingMove();
+//	EnPassantAfterMove();
+//	MaterialBlackPawnCapture();
+//	MaterialWhiteQueenCapture();
+//	MaterialPromotion();
+//	MaterialCaptureAndPromotion();
+//	EnPassantMaterial();
+//	OpenFileTest();SemiOpenFileTest();
+//	DoublePawnsTest();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();

@@ -10,7 +10,7 @@ bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, int side) {
 	}
 
 	int normal = myTimeLeft / 30;
-	int bonus = (myTimeLeft - opponentTimeLeft);  //ge inte hela differensen som bonus?
+	int bonus = (myTimeLeft - opponentTimeLeft) / 2;  //ge inte hela differensen som bonus?
 
 	int prevMaxDepth = DepthTimeHistory[moveNo - 1][0];
 	int estimatedNextDepth = ellapsed * 5;
