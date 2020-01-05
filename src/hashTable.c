@@ -14,19 +14,19 @@
 HashTableEntry HashTable[IndexLength + 1][SlotCount];
 void addHashScore(unsigned long long hash, short score, char depth) {
 	//return;
-	int idx = (int)(hash & IndexLength);
+	unsigned int idx = (unsigned int)(hash & IndexLength);
 	HashTableEntry * entry = HashTable[idx];
 	
 	for (int i = 0; i < SlotCount; i++)
 	{
 		if (entry[i].Key2 == 0) { //empty entry, add it
 			entry[i].Score = score;
-			entry[i].Key2 = (int)(hash >> 28);
+			entry[i].Key2 = (unsigned int)(hash >> 28);
 			entry->Depth = depth;
 			//HashTableEntries++;
 			return;
 		}
-		int key2 = (int)(hash >> 28);
+		unsigned int key2 = (unsigned int)(hash >> 28);
 		if (entry[i].Key2 == key2 && depth > entry[i].Depth) {
 			
 			entry[i].Score = score;
@@ -41,9 +41,9 @@ void addHashScore(unsigned long long hash, short score, char depth) {
 short getScoreFromHash(unsigned long long hash, bool * empty, int * depth) {
 	/**empty = true;
 	return 0;*/
-	int idx = (int)(hash & IndexLength);
+	unsigned int idx = (unsigned int)(hash & IndexLength);
 	HashTableEntry * entry = HashTable[idx];
-	int key2 = (int)(hash >> 28);
+	unsigned int key2 = (unsigned int)(hash >> 28);
 	for (int i = 0; i < SlotCount; i++)
 	{
 		if (entry[i].Key2 == key2)
@@ -62,13 +62,17 @@ void GenerateZobritsKeys() {
 	for (int i = 0; i < 23; i++) //only using 16 of these, but King | BLACK is 22 and some are not use. See also PieceType enum.
 		for (int s = 0; s < 64; s++)
 			ZobritsPieceTypesSquares[i][s] = llrand();
+	//Setting nopiece to zeros. Will not affect hash.
+	for (int i = 0; i < 64; i++)
+		ZobritsPieceTypesSquares[0][i] = 0;
+
 	ZobritsSides[0] = llrand();
 	ZobritsSides[1] = llrand();
 	for (int i = 0; i < 4; i++)
 		ZobritsCastlingRights[i] = llrand();
 
 	ZobritsEnpassantFile[0] = 0; //no enpassant file
-	for (int i = 1; i < 8; i++)
+	for (int i = 1; i < 9; i++)
 		ZobritsEnpassantFile[i] = llrand();
 }
 void ClearHashTable() {

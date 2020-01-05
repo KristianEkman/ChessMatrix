@@ -19,20 +19,20 @@ void ClearTable(BestMovesTable * bmTable) {
 }
 
 void InitBestMovesTable(BestMovesTable* bmTable, int sizeMb) {
-	bmTable->NumberOfEntries = ((sizeMb * 0x100000) / sizeof(BestMovesTableEntry)) - 2;
+	bmTable->NumberOfEntries = ((sizeMb * 0x100000) / (unsigned int)sizeof(BestMovesTableEntry)) - 2;
 	bmTable->pEntries = (BestMovesTableEntry*)malloc(bmTable->NumberOfEntries * sizeof(BestMovesTableEntry));
 	ClearTable(bmTable);
 }
 
 void AddBestMovesEntry(BestMovesTable* bmTable, unsigned long long hash, char from, char to) {
-	int index = hash % bmTable->NumberOfEntries;
+	unsigned int index = hash % bmTable->NumberOfEntries;
 	bmTable->pEntries[index].PositionHash = hash;
 	bmTable->pEntries[index].from = from;
 	bmTable->pEntries[index].to = to;
 }
 
 Move GetBestMove(BestMovesTable* bmTable, unsigned long long hash) {
-	int index = hash % bmTable->NumberOfEntries;
+	unsigned int index = hash % bmTable->NumberOfEntries;
 	Move move;
 	move.From = 0;
 	move.To = 0;

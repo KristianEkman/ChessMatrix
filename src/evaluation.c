@@ -147,7 +147,7 @@ short CastlingPoints[2] = {-40, 40};
 short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
 	short open = 30;
-	for	(int i = 0; i < 8; i++)
+	for	(int i = 0; i < 7; i++)
 	{
 		file += 8;
 		if ((game->Squares[file] & PAWN)) //smi open
@@ -159,7 +159,7 @@ short OpenRookFile(int square, Game* game) {
 short DoublePawns(int square, Game* game, PieceType pawn) {
 	int file = square % 8;
 	short score = -9; //Always one pawn
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
 		if ((game->Squares[file] == pawn)) //smi open

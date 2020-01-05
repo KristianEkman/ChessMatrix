@@ -11,7 +11,7 @@ Registrera djup.
 
 Välja drag längst bort från matt - kanske int avbryta såfort den hittar matt.
 
-Slå på hash table for score. (Behövs det).
+Slå på hash table for score. (Behövs det?).
 	
 Opening Book
 	Opening Score, early queen, minor piece count.
@@ -35,7 +35,9 @@ time control blitz
 		Antal drag kvar -> 40
 		Ge mer tid om mots har mindre tid kvar.
 			Om man skulle hinna med ett djup till utan att hamna efter.
-		
+		Ta bort tid om mots ligger före.
+
+	Sätt också en maxtid som alltid avbryter.		
 
 Hash table.
 	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?

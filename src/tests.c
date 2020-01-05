@@ -85,6 +85,22 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 	}
 }
 
+void AssertAreEqualLongs(unsigned long long expected, unsigned long long actual, char* msg) {
+	if (expected != actual)
+	{
+		printf("\n");
+		printRed(msg);
+		printf("\n");
+		char str[24];
+		snprintf(str, 24, "Expected %llu", expected);
+		printRed(str);
+		printf("\n");
+		snprintf(str, 24, "Actual   %llu", actual);
+		printRed(str);
+		_failedAsserts++;
+	}
+}
+
 void printPerftResults() {
 	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n",
 		perftResult.Captures, perftResult.Castles, perftResult.CheckMates, perftResult.Checks,
@@ -100,6 +116,18 @@ HashFen HashFenDb[1000000];
 
 #pragma endregion
 
+void HashKeyTest() {
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+	unsigned long long hash1 = mainGame.Hash;
+ 	PlayerMove pl1 = MakePlayerMove("g1f3");
+	PlayerMove pl2 = MakePlayerMove("g8f6");
+	PlayerMove pl3 = MakePlayerMove("f3g1");
+	PlayerMove pl4 = MakePlayerMove("f6g8");
+	unsigned long long hash2 = mainGame.Hash;
+
+	AssertAreEqualLongs(hash1, hash2, "Hash keys should be equal");
+
+}
 
 void HashTableRoundTrip() {
 	printf("\n");printf(__func__);
@@ -117,7 +145,7 @@ void HashTableRoundTrip() {
 	addHashScore(hash2, expected2, 1);
 	short score2 = getScoreFromHash(hash2, &empty, &depth);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
-	score = getScoreFromHash(hash, &empty, 1);
+	score = getScoreFromHash(hash, &empty, &depth);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
@@ -695,7 +723,7 @@ void containsNotTest() {
 }
 
 void _runTests() {
-	BestMoveTest();
+	//BestMoveTest();
 	printf("\nPress any key to continue.");
 	int c = _getch();
 	system("@cls||clear");
@@ -711,28 +739,29 @@ void runAllTests() {
 	return;*/
 
 	_failedAsserts = 0;
-	//TimedTest(50000000, HashTablePerformance);
-	///*PerftHashDbTest();
-	//HashTableRoundTrip();
-	//HashTableDepthTest();*/
-	//PerftTestStart();
-	//PerfTestPosition2();
-	//PerftSaveHashTest();
-	//FenTest();
-	//FenEnppasantTest();
-	//ValidMovesPromotionCaptureAndCastling();
-	//LongCastling();
-	//EnPassantFromFenTest();
-	//BlackCastlingRightsAfterKingMove();
-	//WhiteCastlingRightsAfterKingMove();
-	//EnPassantAfterMove();
-	//MaterialBlackPawnCapture();
-	//MaterialWhiteQueenCapture();
-	//MaterialPromotion();
-	//MaterialCaptureAndPromotion();
-	//EnPassantMaterial();
-	//OpenFileTest();SemiOpenFileTest();
-	//DoublePawnsTest();
+	HashKeyTest();
+	TimedTest(50000000, HashTablePerformance);
+	PerftHashDbTest();
+	HashTableRoundTrip();
+	HashTableDepthTest();
+	PerftTestStart();
+	PerfTestPosition2();
+	PerftSaveHashTest();
+	FenTest();
+	FenEnppasantTest();
+	ValidMovesPromotionCaptureAndCastling();
+	LongCastling();
+	EnPassantFromFenTest();
+	BlackCastlingRightsAfterKingMove();
+	WhiteCastlingRightsAfterKingMove();
+	EnPassantAfterMove();
+	MaterialBlackPawnCapture();
+	MaterialWhiteQueenCapture();
+	MaterialPromotion();
+	MaterialCaptureAndPromotion();
+	EnPassantMaterial();
+	OpenFileTest();SemiOpenFileTest();
+	DoublePawnsTest();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();

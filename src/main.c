@@ -51,14 +51,15 @@ void DefaultSearch() {
 int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
-	//AdjustPositionImportance();
+	ResetDepthTimes();
+	AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
 	printf("initialized\n");
-	
+
 	EnterUciMode();
 	return 0;
 }
@@ -75,6 +76,9 @@ void EnterUciMode() {
 		}
 		else if (startsWith(buf, "isready")) {
 			stdout_wl("readyok");
+		}
+		else if (startsWith(buf, "ucinewgame")) {
+			ResetDepthTimes();
 		}
 		else if (startsWith(buf, "position ")) {
 			//postion fen | moves
@@ -110,6 +114,7 @@ void EnterUciMode() {
 			DefaultSearch();
 			if (contains(buf, "infinite")) {
 				g_topSearchParams.MaxDepth = 30;
+				g_topSearchParams.TimeControl = false;
 				Search(true);
 			}
 			// else search with time control
@@ -125,10 +130,15 @@ void EnterUciMode() {
 					else if (streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");
 						sscanf(movetime, "%d", &g_topSearchParams.MoveTime);
-					} else if (streq(token, "wtime")) {
-						char * wtime = strtok(NULL, " ");
-						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);						
-					} else if (streq(token, "btime")) {
+					}
+					else if (streq(token, "wtime")) {
+						g_topSearchParams.TimeControl = true;
+						char* wtime = strtok(NULL, " ");
+						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);
+						//go wtime 900000 btime 900000 winc 0 binc 0
+					}
+					else if (streq(token, "btime")) {
+						g_topSearchParams.TimeControl = true;
 						char* btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
 					} if (streq(token, "winc")) {
@@ -140,10 +150,14 @@ void EnterUciMode() {
 					}
 					token = strtok(NULL, " ");
 				}
-				g_topSearchParams.TimeControl = true;
-				/*
-				go wtime 900000 btime 900000 winc 0 binc 0
-				*/
+
+				//Fallback if time control fails
+				/*if (g_topSearchParams.TimeControl)
+				{
+					g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / 30;
+					if (mainGame.Side == BLACK)
+						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 30;
+				}*/
 				Search(true);
 			}
 		}
@@ -185,6 +199,7 @@ int EnterInteractiveMode() {
 		default:
 			break;
 		}
+		PrintGame();
 	}
 
 	return 0;
@@ -270,6 +285,7 @@ void PrintGame() {
 		printf("|\n  ---------------------------------\n");
 	}
 	printf("    a   b   c   d   e   f   g   h  \n");
+	printf("%llu\n", mainGame.Hash);
 }
 
 void KingPositionScore(Move move, Game* game) {
@@ -302,7 +318,8 @@ void MakeMove(Move move, Game* game) {
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
 
-	unsigned long long hash = ZobritsPieceTypesSquares[pieceType][f];
+	unsigned long long hash = mainGame.Hash;
+	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
 
@@ -338,28 +355,49 @@ void MakeMove(Move move, Game* game) {
 		break;
 	case KingMove:
 		game->KingSquares[side01] = t;
+		if (game->Side == WHITE)
+		{
+			if (game->State & WhiteCanCastleLong)
+				hash ^= ZobritsCastlingRights[0];
+			if (game->State & WhiteCanCastleShort)
+				hash ^= ZobritsCastlingRights[1];
+		}
+		else { //black
+			if (game->State & BlackCanCastleLong)
+				hash ^= ZobritsCastlingRights[2];
+			if (game->State & BlackCanCastleShort)
+				hash ^= ZobritsCastlingRights[3];
+		}
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-
+		
 		KingPositionScore(move, game);
 		break;
 	case RookMove:
 		switch (move.From)
 		{
 		case 0:
-			game->State &= ~WhiteCanCastleLong;
-			hash ^= ZobritsCastlingRights[0];
+			if (game->State & WhiteCanCastleLong) {
+				game->State &= ~WhiteCanCastleLong;
+				hash ^= ZobritsCastlingRights[0];
+			}
 			break;
 		case 7:
-			game->State &= ~WhiteCanCastleShort;
-			hash ^= ZobritsCastlingRights[1];
+			if (game->State & WhiteCanCastleShort) {
+				game->State &= ~WhiteCanCastleShort;
+				hash ^= ZobritsCastlingRights[1];
+			}
 			break;
 		case 56:
-			game->State &= ~BlackCanCastleLong;
-			hash ^= ZobritsCastlingRights[2];
+			if (game->State & BlackCanCastleLong) {
+				game->State &= ~BlackCanCastleLong;
+				hash ^= ZobritsCastlingRights[2];
+			}
 			break;
 		case 63:
-			game->State &= ~BlackCanCastleShort;
-			hash ^= ZobritsCastlingRights[3];
+			if (game->State & BlackCanCastleShort) {
+				game->State &= ~BlackCanCastleShort;
+				hash ^= ZobritsCastlingRights[3];
+			}
 			break;
 		default:
 			break;
@@ -378,6 +416,9 @@ void MakeMove(Move move, Game* game) {
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
+		hash ^= ZobritsCastlingRights[side01 * 2];
+		hash ^= ZobritsCastlingRights[side01 * 2 + 1];
 	}
 	break;
 	case CastleLong:
@@ -393,6 +434,9 @@ void MakeMove(Move move, Game* game) {
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
+		hash ^= ZobritsCastlingRights[side01 * 2];
+		hash ^= ZobritsCastlingRights[side01 * 2 + 1];
 	}
 	break;
 	case EnPassant:
@@ -411,7 +455,7 @@ void MakeMove(Move move, Game* game) {
 		break;
 	}
 	hash ^= ZobritsSides[side01];
-	game->Hash ^= hash;
+	game->Hash = hash;
 	game->Side ^= 24;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 
@@ -891,6 +935,16 @@ void InitHash() {
 	for (int i = 0; i < 64; i++)
 		mainGame.Hash ^= ZobritsPieceTypesSquares[mainGame.Squares[i]][i];
 	mainGame.Hash ^= ZobritsSides[mainGame.Side >> 4];
+	if (mainGame.State & WhiteCanCastleLong)
+		mainGame.Hash ^= ZobritsCastlingRights[0];
+	if (mainGame.State & WhiteCanCastleShort)
+		mainGame.Hash ^= ZobritsCastlingRights[1];
+	if (mainGame.State & BlackCanCastleLong)
+		mainGame.Hash ^= ZobritsCastlingRights[2];
+	if (mainGame.State & BlackCanCastleShort)
+		mainGame.Hash ^= ZobritsCastlingRights[3];
+
+	mainGame.Hash ^= ZobritsEnpassantFile[mainGame.State & 15];
 }
 
 void ReadFen(char* fen) {
@@ -1109,10 +1163,23 @@ void SwitchSignOfWhitePositionValue() {
 	}
 }
 
-short GetScore(Game* game) {
-	if (game->PositionHistoryLength > 3 && game->PositionHistory[game->PositionHistoryLength - 2] == game->Hash)
-		return 0; // Three fold repetition.
+bool DrawByRepetition(Game* game) {
+	if (game->PositionHistoryLength < 40)
+		return false;
+	int start = game->PositionHistoryLength - 30; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
+	int end = game->PositionHistoryLength - (int)2;
+	for (size_t i = start; i < end; i++)
+	{
+		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
+			return true;
+	}
+	return false;
+}
 
+short GetScore(Game* game) {
+	int drawRepLengthEnd = 30;
+	if (DrawByRepetition(game))
+		return 0;
 	// todo 50 move rule.
 	return game->Material[0] + game->Material[1] + game->PositionScore;// +GetEval(game);
 }
@@ -1207,8 +1274,8 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 	//NULL move check
 	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
 	int r = 3;
-	if ((game->Side == WHITE && game->Material[side01] < -500 )|| // todo: check for pieces when piece list works
-		(game->Side == BLACK && game->Material[side01] > 500)) 
+	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
+		(game->Side == BLACK && game->Material[side01] > 500))
 	{
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
 			GameState prevState = game->State;
@@ -1322,11 +1389,11 @@ DWORD WINAPI DoNothingThread(int* prm) {
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
-	
+
 	do
 	{
 		Game* game = &(threadGames[prm->threadID]);
-		Move move =  g_rootMoves.moves[prm->moveIndex];
+		Move move = g_rootMoves.moves[prm->moveIndex];
 		g_rootMoves.moves[prm->moveIndex].ThreadIndex = prm->threadID;
 		PieceType capt = game->Squares[move.To];
 		GameState gameState = game->State;
@@ -1343,11 +1410,11 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			score = dbScore;
 		}
 		else {*/
-			short g_alpha = -9000;
-			short g_beta = 9000;
-			int score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true, move.ScoreAtDepth);
-			//addHashScore(game->Hash, score, prm->depth);
-		//}
+		short g_alpha = -9000;
+		short g_beta = 9000;
+		int score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true, move.ScoreAtDepth);
+		//addHashScore(game->Hash, score, prm->depth);
+	//}
 
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
@@ -1358,11 +1425,11 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else
 			g_alpha = max(g_alpha, score);*/
 
-		//if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
-		//{
-		//	ExitThread(0);
-		//	return 0; //a check mate is found, no need to search further.
-		//}
+			//if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
+			//{
+			//	ExitThread(0);
+			//	return 0; //a check mate is found, no need to search further.
+			//}
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
@@ -1404,7 +1471,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
-	
+
 	//free(tps);
 }
 // Background thread that sets Stopped flag after specified time in ms.
@@ -1419,6 +1486,8 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 		now = clock();
 	}
 
+	printf("Search stopped by watcher.\n");
+	fflush(stdout);
 	Stopped = true;
 	ExitThread(0);
 	return 0;
@@ -1440,7 +1509,7 @@ Move Search(bool async) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		ClearTable(&bmTables[i]);
-	
+
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
@@ -1486,8 +1555,8 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	int nps = (float) SearchedLeafs / ellapsed;
-	printf("info depth %d score cp %d nodes %d nps %d pv %s\n", depth, move.ScoreAtDepth, SearchedLeafs, nps ,buffer);
+	int nps = (float)SearchedLeafs / ellapsed;
+	printf("info depth %d score cp %d nodes %d nps %d pv %s\n", depth, move.ScoreAtDepth, SearchedLeafs, nps, buffer);
 	fflush(stdout);
 	return 0;
 }
@@ -1508,6 +1577,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	int bestScore;
 	do
 	{
+		clock_t depStart = clock();
 		SetMovesScoreAtDepth(depth, moveCount);
 		//SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
@@ -1525,18 +1595,13 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 				break; //A check mate is found, no need to search further.
 			}
 
-
-			/*int myTimeLeft = g_topSearchParams.BlackTimeLeft;
-			int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
-			if (mainGame.Side == WHITE) {
-				int myTimeLeft = g_topSearchParams.WhiteTimeLeft;
-				int opponentTimeLeft = g_topSearchParams.BlackTimeLeft;
-			}*/
-
-			/*if ( g_topSearchParams.TimeControl && !SearchDeeper(depth, ellapsed, myTimeLeft, opponentTimeLeft, bestScore)) {
+			float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
+			int moveNo = mainGame.PositionHistoryLength;
+			RegisterDepthTime(moveNo, depth, depthTime * 1000);
+			if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, mainGame.Side)) {
 				Stopped = true;
 				break;
-			}*/
+			}
 		}
 
 	} while (depth <= maxDepth && !Stopped);

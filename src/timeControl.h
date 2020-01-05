@@ -1,5 +1,7 @@
 #pragma once
 
-bool SearchDeeper(int currentDepth, int ellapsed, int myTimeLeft, int opponentTimeLeft, int score);
+bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, int side);
 
-void RegisterTimeDepth(int time, int depth);
+void RegisterDepthTime(int moveNo, int depth, int time);
+
+void ResetDepthTimes();

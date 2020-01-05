@@ -9,7 +9,7 @@ typedef struct {
 typedef struct
 {
 	BestMovesTableEntry * pEntries;
-	int NumberOfEntries;
+	unsigned int NumberOfEntries;
 } BestMovesTable;
 
 void ClearTable(BestMovesTable * bmTable);
