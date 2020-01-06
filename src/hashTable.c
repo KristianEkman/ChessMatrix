@@ -22,16 +22,15 @@ void addHashScore(unsigned long long hash, short score, char depth) {
 		if (entry[i].Key2 == 0) { //empty entry, add it
 			entry[i].Score = score;
 			entry[i].Key2 = (unsigned int)(hash >> 28);
-			entry->Depth = depth;
+			entry[i].Depth = depth;
 			//HashTableEntries++;
 			return;
 		}
 		unsigned int key2 = (unsigned int)(hash >> 28);
-		if (entry[i].Key2 == key2 && depth > entry[i].Depth) {
-			
+		if (entry[i].Key2 == key2 && depth >= entry[i].Depth) {			
 			entry[i].Score = score;
 			entry[i].Key2 = key2;
-			entry->Depth = depth;
+			entry[i].Depth = depth;
 			return;
 		}
 	}
