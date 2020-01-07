@@ -27,7 +27,7 @@ bool Stopped;
 
 void ComputerMove() {
 	Move move = Search(false);
-	MakeMove(move, &mainGame);
+	int captIndex = MakeMove(move, &mainGame);
 }
 
 void ManualMove() {
@@ -48,6 +48,30 @@ void DefaultSearch() {
 	g_topSearchParams.BlackIncrement = 0;
 }
 
+void InitPieceList() {
+	char side[2] = { WHITE, BLACK };
+	for (int s = 0; s < 2; s++)
+	{
+		for (int p = 0; p < 8; p++)
+			mainGame.Pieces[s][p].Type = PAWN | side[s];
+
+		mainGame.Pieces[s][8].Type = ROOK | side[s];
+		mainGame.Pieces[s][9].Type = ROOK | side[s];
+
+		mainGame.Pieces[s][10].Type = KNIGHT | side[s];
+		mainGame.Pieces[s][11].Type = KNIGHT | side[s];
+
+		mainGame.Pieces[s][12].Type = BISHOP | side[s];
+		mainGame.Pieces[s][13].Type = BISHOP | side[s];
+
+		mainGame.Pieces[s][14].Type = QUEEN | side[s];
+		mainGame.Pieces[s][15].Type = KING | side[s];
+
+		for (int p = 0; p < 16; p++)
+			mainGame.Pieces[s][p].Off = true;
+	}
+}
+
 int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
@@ -55,6 +79,7 @@ int main(int argc, char* argv[]) {
 	AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
+	InitPieceList();
 	InitGame();
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
@@ -205,8 +230,20 @@ int EnterInteractiveMode() {
 	return 0;
 }
 
+void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
+	for (int p = 0; p < 16; p++) {
+		Piece* piece = &(mainGame.Pieces[side01][p]);
+		if (piece->Off && piece->Type == pieceType) {
+			piece->SquareIndex = square;
+			piece->Off = false;
+			return;
+		}
+	}
+}
+
 void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	mainGame.Squares[rank * 8 + file] = type | color;
+	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
 
 void InitGame() {
@@ -295,7 +332,68 @@ void KingPositionScore(Move move, Game* game) {
 	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side >> 4][move.From];
 }
 
-void MakeMove(Move move, Game* game) {
+int SetCaptureOff(Game* game, int side, int squareIndex) {
+	for (int i = 0; i < 16; i++)
+	{
+		Piece* capture = &game->Pieces[side][i];
+		if (capture->SquareIndex == squareIndex && !capture->Off) {
+			capture->Off = true;
+			return i;
+		}
+	}
+	printf("Invalid SetCaptureOff parameters\n");
+}
+
+void MovePiece(Game* game, int side01, int from, int to) {
+	for (int i = 0; i < 16; i++)
+	{
+		Piece* capture = &game->Pieces[side01][i];
+		if (capture->SquareIndex == from && !capture->Off) {
+			capture->SquareIndex = to;
+			return;
+		}
+	}
+	printf("Invalid MovePiece parameters\n");
+}
+
+void AssertGame(Game* game) {
+#ifdef _DEBUG
+	for (size_t s = 0; s < 2; s++)
+	{
+		for (size_t p = 0; p < 16; p++)
+		{
+			Piece* piece = &game->Pieces[s][p];
+			PieceType squareType = game->Squares[piece->SquareIndex];
+			
+
+			if (!piece->Off && squareType != piece->Type) {
+				printf("Invalid game");
+
+			}
+		}
+	}
+
+	for (size_t i = 0; i < 64; i++)
+	{
+		PieceType pt = game->Squares[i];
+		int side01 = (pt & 24) >> 4;
+		bool found = false;
+		for (size_t p = 0; p < 16; p++)
+		{
+			Piece* piece = &game->Pieces[side01][p];
+			if (piece->Type == pt && !piece->Off) {
+				found = true;
+			}
+		}
+		if (pt != NOPIECE && !found) {
+			printf("Invalid game. Square piec not found.");
+		}
+	}
+#endif // _DEBUG
+}
+
+
+int MakeMove(Move move, Game* game) {
 	char f = move.From;
 	char t = move.To;
 
@@ -318,6 +416,11 @@ void MakeMove(Move move, Game* game) {
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
 
+	int captIndex = -1;
+	if (captType && move.MoveInfo != EnPassantCapture)
+		captIndex = SetCaptureOff(game, !side01, t);
+	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
+
 	unsigned long long hash = mainGame.Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
@@ -333,24 +436,28 @@ void MakeMove(Move move, Game* game) {
 		game->Squares[t] = QUEEN | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
 		hash ^= ZobritsPieceTypesSquares[QUEEN | game->Side][t];
+		game->Pieces[side01][move.PieceIdx].Type = (QUEEN | game->Side);
 
 		break;
 	case PromotionRook:
 		game->Squares[t] = ROOK | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
 		hash ^= ZobritsPieceTypesSquares[ROOK | game->Side][t];
+		game->Pieces[side01][move.PieceIdx].Type = (ROOK | game->Side);
 
 		break;
 	case PromotionBishop:
 		game->Squares[t] = BISHOP | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
 		hash ^= ZobritsPieceTypesSquares[BISHOP | game->Side][t];
+		game->Pieces[side01][move.PieceIdx].Type = (BISHOP | game->Side);
 
 		break;
 	case PromotionKnight:
 		game->Squares[move.To] = KNIGHT | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
 		hash ^= ZobritsPieceTypesSquares[KNIGHT | game->Side][t];
+		game->Pieces[side01][move.PieceIdx].Type = (KNIGHT | game->Side);
 
 		break;
 	case KingMove:
@@ -369,7 +476,7 @@ void MakeMove(Move move, Game* game) {
 				hash ^= ZobritsCastlingRights[3];
 		}
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-		
+
 		KingPositionScore(move, game);
 		break;
 	case RookMove:
@@ -411,6 +518,7 @@ void MakeMove(Move move, Game* game) {
 		PieceType rook = ROOK | game->Side;
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
+		MovePiece(game, side01, rookFr, rookTo);
 
 		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
@@ -429,6 +537,7 @@ void MakeMove(Move move, Game* game) {
 		PieceType rook = ROOK | game->Side;
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
+		MovePiece(game, side01, rookFr, rookTo);
 
 		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
@@ -447,6 +556,7 @@ void MakeMove(Move move, Game* game) {
 	{
 		char behind = t + Behind[side01];
 		game->Squares[behind] = NOPIECE;
+		captIndex = SetCaptureOff(game, !side01, behind);
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
 		hash ^= ZobritsPieceTypesSquares[PAWN | captColor][behind];
 	}
@@ -454,38 +564,56 @@ void MakeMove(Move move, Game* game) {
 	default:
 		break;
 	}
+
 	hash ^= ZobritsSides[side01];
 	game->Hash = hash;
 	game->Side ^= 24;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
-
+	AssertGame(game);
+	return captIndex;
 }
 
-void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short prevPositionScore, Game* game, unsigned long long prevHash) {
+void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, unsigned long long prevHash) {
 
+	int otherSide = game->Side ^ 24;
+	int otherSide01 = otherSide >> 4;
+
+	PieceType capture = NOPIECE;
+	if (captIndex != -1) {
+		capture = game->Pieces[!otherSide01][captIndex].Type;
+	}
 	game->Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
 
 	game->Squares[move.From] = game->Squares[move.To];
-	game->Squares[move.To] = capture;
-	int otherSide = game->Side ^ 24;
-	int otherSide01 = otherSide >> 4;
+	if(move.MoveInfo != EnPassantCapture)
+		game->Squares[move.To] = capture;
+	
+	game->Pieces[otherSide01][move.PieceIdx].SquareIndex = move.From;
+	if (capture)
+		game->Pieces[!otherSide01][captIndex].Off = false;
+
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][QUEEN + 6];
 		game->Squares[move.From] = PAWN | otherSide;
+		game->Pieces[otherSide01][move.PieceIdx].Type = (PAWN | otherSide);
 		break;
 	case PromotionRook:
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][ROOK + 6];
 		game->Squares[move.From] = PAWN | otherSide;
+		game->Pieces[otherSide01][move.PieceIdx].Type = (PAWN | otherSide);
+
 		break;
 	case PromotionBishop:
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][BISHOP + 6];
 		game->Squares[move.From] = PAWN | otherSide;
+		game->Pieces[otherSide01][move.PieceIdx].Type = (PAWN | otherSide);
 		break;
 	case PromotionKnight:
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][KNIGHT + 6];
 		game->Squares[move.From] = PAWN | otherSide;
+		game->Pieces[otherSide01][move.PieceIdx].Type = (PAWN | otherSide);
 		break;
 	case KingMove:
 		game->KingSquares[otherSide01] = move.From;
@@ -494,14 +622,17 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short pre
 		game->KingSquares[otherSide01] = move.From;
 		game->Squares[5 + CastlesOffset[otherSide01]] = NOPIECE;
 		game->Squares[7 + CastlesOffset[otherSide01]] = ROOK | otherSide;
+		MovePiece(game, otherSide01, 5 + CastlesOffset[otherSide01], 7 + CastlesOffset[otherSide01]);
 		break;
 	case CastleLong:
 		game->KingSquares[otherSide01] = move.From;
 		game->Squares[3 + CastlesOffset[otherSide01]] = NOPIECE;
 		game->Squares[0 + CastlesOffset[otherSide01]] = ROOK | otherSide;
+		MovePiece(game, otherSide01, 3 + CastlesOffset[otherSide01], 0 + CastlesOffset[otherSide01]);
 		break;
 	case EnPassantCapture:
 		game->Squares[move.To + Behind[otherSide01]] = PAWN | game->Side;
+		// captured piece should be put back earlier
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][PAWN];
 		break;
 	default:
@@ -512,6 +643,7 @@ void UnMakeMove(Move move, PieceType capture, GameState prevGameState, short pre
 	game->Hash = prevHash;
 	game->Side ^= 24;
 	game->PositionHistoryLength--;
+	AssertGame(game);
 }
 
 void MakeNullMove(Game* game) {
@@ -612,17 +744,17 @@ void SortMoves(Move* moves, int moveCount, Game* game) {
 		QuickSortDescending(moves, 0, moveCount - 1);
 }
 
-void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int depth) {
-	PieceType capture = game->Squares[toSquare];
+void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int depth, char pieceIdx) {
 	GameState prevGameState = game->State;
 	Move move;
 	move.From = fromSquare;
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
+	move.PieceIdx = pieceIdx;
 	short prevPosScore = game->PositionScore;
 	unsigned long long prevHash = game->Hash;
 
-	MakeMove(move, game);
+	int captIndex = MakeMove(move, game);
 	int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 	bool legal = !SquareAttacked(kingSquare, game->Side, game);
 	if (legal)
@@ -631,237 +763,245 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 		game->MovesBuffer[game->MovesBufferLength++] = move;
 	}
 
-	UnMakeMove(move, capture, prevGameState, prevPosScore, game, prevHash);
+	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
 }
 
 void CreateMoves(Game* game, int depth) {
 	game->MovesBufferLength = 0;
-	for (int i = 0; i < 64; i++)
+	int side01 = game->Side >> 4;
+	for (size_t pi = 0; pi < 16; pi++)
 	{
+		Piece* piece = &game->Pieces[side01][pi];
+		if (piece->Off)
+			continue;
+		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
-		if (pieceType & game->Side) {
-			PieceType pt = pieceType & 7;
-			switch (pt)
+		PieceType pt = pieceType & 7;
+		switch (pt)
+		{
+		case PAWN:
+		{
+			int pat = PawnPattern[game->Side >> 4];
+			int pawnPatLength = PieceTypeSquarePatterns[pat][i][0];
+			for (int pp = 1; pp <= pawnPatLength; pp++)
 			{
-			case PAWN:
+				int toSquare = PieceTypeSquarePatterns[pat][i][pp];
+				if (game->Squares[toSquare] != NOPIECE)
+					break;
+				if (toSquare < 8 || toSquare > 55) {
+					CreateMove(i, toSquare, PromotionQueen, game, depth, pi);
+					CreateMove(i, toSquare, PromotionRook, game, depth, pi);
+					CreateMove(i, toSquare, PromotionBishop, game, depth, pi);
+					CreateMove(i, toSquare, PromotionKnight, game, depth, pi);
+				}
+				else if (pp == 2) {
+					CreateMove(i, toSquare, EnPassant, game, depth, pi);
+				}
+				else {
+					CreateMove(i, toSquare, PlainMove, game, depth, pi);
+				}
+			}
+
+			int captPat = PawnCapturePattern[game->Side >> 4];
+			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
+			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
-				int pat = PawnPattern[game->Side >> 4];
-				int pawnPatLength = PieceTypeSquarePatterns[pat][i][0];
-				for (int pp = 1; pp <= pawnPatLength; pp++)
+				int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
+				//Must be a piece of opposite color.
+				if (game->Squares[toSquare] & (game->Side ^ 24))
 				{
-					int toSquare = PieceTypeSquarePatterns[pat][i][pp];
-					if (game->Squares[toSquare] != NOPIECE)
-						break;
 					if (toSquare < 8 || toSquare > 55) {
-						CreateMove(i, toSquare, PromotionQueen, game, depth);
-						CreateMove(i, toSquare, PromotionRook, game, depth);
-						CreateMove(i, toSquare, PromotionBishop, game, depth);
-						CreateMove(i, toSquare, PromotionKnight, game, depth);
-					}
-					else if (pp == 2) {
-						CreateMove(i, toSquare, EnPassant, game, depth);
+						CreateMove(i, toSquare, PromotionQueen, game, depth, pi);
+						CreateMove(i, toSquare, PromotionRook, game, depth, pi);
+						CreateMove(i, toSquare, PromotionBishop, game, depth, pi);
+						CreateMove(i, toSquare, PromotionKnight, game, depth, pi);
 					}
 					else {
-						CreateMove(i, toSquare, PlainMove, game, depth);
+						CreateMove(i, toSquare, PlainMove, game, depth, pi);
 					}
 				}
-
-				int captPat = PawnCapturePattern[game->Side >> 4];
-				int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
-				for (int pc = 1; pc <= pawnCapPatLength; pc++)
-				{
-					int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
-					//Must be a piece of opposite color.
-					if (game->Squares[toSquare] & (game->Side ^ 24))
-					{
-						if (toSquare < 8 || toSquare > 55) {
-							CreateMove(i, toSquare, PromotionQueen, game, depth);
-							CreateMove(i, toSquare, PromotionRook, game, depth);
-							CreateMove(i, toSquare, PromotionBishop, game, depth);
-							CreateMove(i, toSquare, PromotionKnight, game, depth);
-						}
-						else {
-							CreateMove(i, toSquare, PlainMove, game, depth);
-						}
-					}
-					else {
-						int enpFile = (game->State & 15) - 1;
-						if (enpFile > -1) {
-							int toFile = toSquare & 7;
-							int toRank = toSquare >> 3;
-							if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
-								CreateMove(i, toSquare, EnPassantCapture, game, depth);
-						}
+				else {
+					int enpFile = (game->State & 15) - 1;
+					if (enpFile > -1) {
+						int toFile = toSquare & 7;
+						int toRank = toSquare >> 3;
+						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
+							CreateMove(i, toSquare, EnPassantCapture, game, depth, pi);
 					}
 				}
-				break;
 			}
-			case KNIGHT:
-			{
-				int length = PieceTypeSquarePatterns[0][i][0];
-				for (int p = 1; p <= length; p++)
-				{
-					int toSquare = PieceTypeSquarePatterns[0][i][p];
-					if (!(game->Squares[toSquare] & game->Side)) {
-						CreateMove(i, toSquare, 0, game, depth);
-					}
-				}
-				break;
-			}
-			case KING:
-			{
-				int length = PieceTypeSquarePatterns[1][i][0];
-				for (int p = 1; p <= length; p++)
-				{
-					int toSquare = PieceTypeSquarePatterns[1][i][p];
-					if (!(game->Squares[toSquare] & game->Side)) {
-						CreateMove(i, toSquare, KingMove, game, depth);
-					}
-				}
-
-				int castleBlackOffset = CastlesOffset[game->Side >> 4];
-				if (i == castleBlackOffset + 4) { //King on origin pos
-					if ((game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort)) {
-						if ((game->Squares[castleBlackOffset + 7] & 7) == ROOK &&
-							game->Squares[castleBlackOffset + 5] == NOPIECE &&
-							game->Squares[castleBlackOffset + 6] == NOPIECE)
-						{
-							if (!SquareAttacked(5 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game))
-								CreateMove(i, 6 + castleBlackOffset, CastleShort, game, depth);
-						}
-					}
-					if ((game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong)) {
-						if ((game->Squares[castleBlackOffset] & 7) == ROOK &&
-							game->Squares[castleBlackOffset + 1] == NOPIECE &&
-							game->Squares[castleBlackOffset + 2] == NOPIECE &&
-							game->Squares[castleBlackOffset + 3] == NOPIECE)
-						{
-							if (!SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(3 + castleBlackOffset, game->Side ^ 24, game))
-								CreateMove(i, 2 + castleBlackOffset, CastleLong, game, depth);
-						}
-					}
-				}
-				break;
-			}
-			default:
-			{
-				int pat = pt - 1;
-				int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
-				for (int r = 1; r <= raysCount; r++)
-				{
-					int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
-					for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
-					{
-						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
-						PieceType toPiece = game->Squares[toSquare];
-						MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
-
-						if (toPiece != NOPIECE) {
-							if (!(toPiece & game->Side)) {
-								CreateMove(i, toSquare, moveInfo, game, depth);
-							}
-							break;
-						}
-						else {
-							CreateMove(i, toSquare, moveInfo, game, depth);
-						}
-					}
-				}
-				break;
-			}
-			}
+			break;
 		}
+		case KNIGHT:
+		{
+			int length = PieceTypeSquarePatterns[0][i][0];
+			for (int p = 1; p <= length; p++)
+			{
+				int toSquare = PieceTypeSquarePatterns[0][i][p];
+				if (!(game->Squares[toSquare] & game->Side)) {
+					CreateMove(i, toSquare, 0, game, depth, pi);
+				}
+			}
+			break;
+		}
+		case KING:
+		{
+			int length = PieceTypeSquarePatterns[1][i][0];
+			for (int p = 1; p <= length; p++)
+			{
+				int toSquare = PieceTypeSquarePatterns[1][i][p];
+				if (!(game->Squares[toSquare] & game->Side)) {
+					CreateMove(i, toSquare, KingMove, game, depth, pi);
+				}
+			}
+
+			int castleBlackOffset = CastlesOffset[game->Side >> 4];
+			if (i == castleBlackOffset + 4) { //King on origin pos
+				if ((game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort)) {
+					if ((game->Squares[castleBlackOffset + 7] & 7) == ROOK &&
+						game->Squares[castleBlackOffset + 5] == NOPIECE &&
+						game->Squares[castleBlackOffset + 6] == NOPIECE)
+					{
+						if (!SquareAttacked(5 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game))
+							CreateMove(i, 6 + castleBlackOffset, CastleShort, game, depth, pi);
+					}
+				}
+				if ((game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong)) {
+					if ((game->Squares[castleBlackOffset] & 7) == ROOK &&
+						game->Squares[castleBlackOffset + 1] == NOPIECE &&
+						game->Squares[castleBlackOffset + 2] == NOPIECE &&
+						game->Squares[castleBlackOffset + 3] == NOPIECE)
+					{
+						if (!SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(3 + castleBlackOffset, game->Side ^ 24, game))
+							CreateMove(i, 2 + castleBlackOffset, CastleLong, game, depth, pi);
+					}
+				}
+			}
+			break;
+		}
+		default:
+		{
+			int pat = pt - 1;
+			int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
+			for (int r = 1; r <= raysCount; r++)
+			{
+				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
+				for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
+				{
+					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
+					PieceType toPiece = game->Squares[toSquare];
+					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
+
+					if (toPiece != NOPIECE) {
+						if (!(toPiece & game->Side)) {
+							CreateMove(i, toSquare, moveInfo, game, depth, pi);
+						}
+						break;
+					}
+					else {
+						CreateMove(i, toSquare, moveInfo, game, depth, pi);
+					}
+				}
+			}
+			break;
+		}
+		}
+
 	}
 	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
 }
 
 void CreateCaptureMoves(Game* game) {
 	game->MovesBufferLength = 0;
-	for (int i = 0; i < 64; i++)
+	int side01 = game->Side >> 4;
+	for (size_t pi = 0; pi < 16; pi++)
 	{
+		Piece* piece = game->Pieces[side01];
+		if (piece->Off)
+			continue;
+		int i = piece->SquareIndex;
+
 		PieceType pieceType = game->Squares[i];
-		if (pieceType & game->Side) {
-			PieceType pt = pieceType & 7;
-			char otherSide = game->Side ^ 24;
-			switch (pt)
+		PieceType pt = pieceType & 7;
+		char otherSide = game->Side ^ 24;
+		switch (pt)
+		{
+		case PAWN:
+		{
+			int captPat = PawnCapturePattern[game->Side >> 4];
+			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
+			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
-			case PAWN:
-			{
-				int captPat = PawnCapturePattern[game->Side >> 4];
-				int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
-				for (int pc = 1; pc <= pawnCapPatLength; pc++)
+				int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
+				//Must be a piece of opposite color.
+				if (game->Squares[toSquare] & (game->Side ^ 24))
 				{
-					int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
-					//Must be a piece of opposite color.
-					if (game->Squares[toSquare] & (game->Side ^ 24))
-					{
-						if (toSquare < 8 || toSquare > 55) {
-							CreateMove(i, toSquare, PromotionQueen, game, 0);
-							CreateMove(i, toSquare, PromotionRook, game, 0);
-							CreateMove(i, toSquare, PromotionBishop, game, 0);
-							CreateMove(i, toSquare, PromotionKnight, game, 0);
-						}
-						else {
-							CreateMove(i, toSquare, PlainMove, game, 0);
-						}
+					if (toSquare < 8 || toSquare > 55) {
+						CreateMove(i, toSquare, PromotionQueen, game, 0, pi);
+						CreateMove(i, toSquare, PromotionRook, game, 0, pi);
+						CreateMove(i, toSquare, PromotionBishop, game, 0, pi);
+						CreateMove(i, toSquare, PromotionKnight, game, 0, pi);
 					}
 					else {
-						int enpFile = (game->State & 15) - 1;
-						if (enpFile > -1) {
-							int toFile = toSquare & 7;
-							int toRank = toSquare >> 3;
-							if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
-								CreateMove(i, toSquare, EnPassantCapture, game, 0);
-						}
+						CreateMove(i, toSquare, PlainMove, game, 0, pi);
 					}
 				}
-				break;
+				else {
+					int enpFile = (game->State & 15) - 1;
+					if (enpFile > -1) {
+						int toFile = toSquare & 7;
+						int toRank = toSquare >> 3;
+						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
+							CreateMove(i, toSquare, EnPassantCapture, game, 0, pi);
+					}
+				}
 			}
-			case KNIGHT:
+			break;
+		}
+		case KNIGHT:
+		{
+			int length = PieceTypeSquarePatterns[0][i][0];
+			for (int p = 1; p <= length; p++)
 			{
-				int length = PieceTypeSquarePatterns[0][i][0];
-				for (int p = 1; p <= length; p++)
-				{
-					int toSquare = PieceTypeSquarePatterns[0][i][p];
-					if (game->Squares[toSquare] & otherSide) {
-						CreateMove(i, toSquare, 0, game, 0);
-					}
+				int toSquare = PieceTypeSquarePatterns[0][i][p];
+				if (game->Squares[toSquare] & otherSide) {
+					CreateMove(i, toSquare, 0, game, 0, pi);
 				}
-				break;
 			}
-			case KING:
+			break;
+		}
+		case KING:
+		{
+			int length = PieceTypeSquarePatterns[1][i][0];
+			for (int p = 1; p <= length; p++)
 			{
-				int length = PieceTypeSquarePatterns[1][i][0];
-				for (int p = 1; p <= length; p++)
-				{
-					int toSquare = PieceTypeSquarePatterns[1][i][p];
-					if (game->Squares[toSquare] & otherSide) {
-						CreateMove(i, toSquare, KingMove, game, 0);
-					}
+				int toSquare = PieceTypeSquarePatterns[1][i][p];
+				if (game->Squares[toSquare] & otherSide) {
+					CreateMove(i, toSquare, KingMove, game, 0, pi);
 				}
-				break;
 			}
-			default:
+			break;
+		}
+		default:
+		{
+			int pat = pt - 1;
+			int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
+			for (int r = 1; r <= raysCount; r++)
 			{
-				int pat = pt - 1;
-				int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
-				for (int r = 1; r <= raysCount; r++)
+				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
+				for (int rr = 1; rr <= rayLength; rr++)
 				{
-					int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
-					for (int rr = 1; rr <= rayLength; rr++)
-					{
-						int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
-						PieceType toPiece = game->Squares[toSquare];
-						MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
-						if (toPiece & otherSide) {
-							CreateMove(i, toSquare, moveInfo, game, 0);
-							break;
-						}
+					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
+					PieceType toPiece = game->Squares[toSquare];
+					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
+					if (toPiece & otherSide) {
+						CreateMove(i, toSquare, moveInfo, game, 0, pi);
+						break;
 					}
 				}
-				break;
 			}
-			}
+			break;
+		}
 		}
 	}
 	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
@@ -948,6 +1088,7 @@ void InitHash() {
 }
 
 void ReadFen(char* fen) {
+	InitPieceList();
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
 		mainGame.Squares[i] = NOPIECE;
@@ -967,7 +1108,10 @@ void ReadFen(char* fen) {
 			file = 0;
 		}
 		else {
-			mainGame.Squares[rank * 8 + file] = parsePieceType(c);
+			PieceType pt = parsePieceType(c);
+			InitPiece(file, rank, pt & 7, pt & 24);
+			//mainGame.Squares[rank * 8 + file] = pt;
+
 			file++;
 		}
 	}
@@ -1096,13 +1240,13 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	{
 		if (moves[i].From == move.From && moves[i].To == move.To) {
 			playerMove.Move = moves[i];
-			playerMove.Capture = game->Squares[move.To];
 			playerMove.PreviousGameState = game->State;
 			playerMove.Invalid = false;
 			playerMove.PreviousPositionScore = game->PositionScore;
 			playerMove.PreviousHash = game->Hash;
 
-			MakeMove(moves[i], game);
+			int captIndex = MakeMove(moves[i], game);
+			playerMove.CaptureIndex = captIndex;
 			return playerMove;
 		}
 	}
@@ -1115,11 +1259,11 @@ PlayerMove MakePlayerMove(char* sMove) {
 }
 
 void UnMakePlayerMove(PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &mainGame, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &mainGame, playerMove.PreviousHash);
 }
 
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.Capture, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
 }
 
 
@@ -1208,14 +1352,13 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			PieceType capture = game->Squares[childMove.To];
 			GameState state = game->State;
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 
-			MakeMove(childMove, game);
+			int captIndex = MakeMove(childMove, game);
 			int childValue = AlphaBetaQuite(bestVal, beta, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			bestVal = max(bestVal, childValue);
 			if (bestVal >= beta)
 				break;
@@ -1232,14 +1375,13 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			PieceType capture = game->Squares[childMove.To];
 			GameState state = game->State;
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 
-			MakeMove(childMove, game);
+			int captIndex = MakeMove(childMove, game);
 			int childValue = AlphaBetaQuite(alpha, bestVal, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			bestVal = min(bestVal, childValue);
 			if (bestVal <= alpha)
 				break;
@@ -1249,12 +1391,12 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	return bestVal;
 }
 
-short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* game, bool doNull, short moveScore) {
+short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore) {
 	if (Stopped)
 		return moveScore; // should not be used;
 
 	if (!depth) {
-		if (capture) {
+		if (captIndex > -1) {
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
@@ -1282,7 +1424,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			unsigned long long prevHash = game->Hash;
 			MakeNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, capture, game, false, moveScore);
+				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore);
 				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
@@ -1290,7 +1432,7 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 			}
 			if (game->Side == WHITE)
 			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, capture, game, false, moveScore);
+				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return beta;
@@ -1321,19 +1463,18 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			PieceType capture = game->Squares[childMove.To];
 			GameState state = game->State;
 			int prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 
-			MakeMove(childMove, game);
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, capture, game, true, childMove.ScoreAtDepth);
+			int captIndex = MakeMove(childMove, game);
+			int childValue = AlphaBeta(bestVal, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			if (childValue > bestVal) {
 				bestVal = childValue;
 				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			//addHashScore(game->Hash, bestVal, depth);
-			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (bestVal >= beta)
 				break;
 		}
@@ -1343,18 +1484,17 @@ short AlphaBeta(short alpha, short beta, int depth, PieceType capture, Game* gam
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			PieceType capture = game->Squares[childMove.To];
 			GameState state = game->State;
 			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
-			MakeMove(childMove, game);
-			short childValue = AlphaBeta(alpha, bestVal, depth - 1, capture, game, true, childMove.ScoreAtDepth);
+			int captIndex = MakeMove(childMove, game);
+			short childValue = AlphaBeta(alpha, bestVal, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			if (childValue < bestVal) {
 				bestVal = childValue;
 				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
 			}
 			//addHashScore(game->Hash, bestVal, depth);
-			UnMakeMove(childMove, capture, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (bestVal <= alpha)
 				break;
 		}
@@ -1374,6 +1514,7 @@ Game* CopyMainGame(int threadNo) {
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
+	memcpy(mainGame.Pieces, threadGames[threadNo].Pieces, 32 * sizeof(Piece));
 
 	return &threadGames[threadNo];
 }
@@ -1395,12 +1536,11 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		Game* game = &(threadGames[prm->threadID]);
 		Move move = g_rootMoves.moves[prm->moveIndex];
 		g_rootMoves.moves[prm->moveIndex].ThreadIndex = prm->threadID;
-		PieceType capt = game->Squares[move.To];
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
 		unsigned long long prevHash = game->Hash;
 
-		MakeMove(move, game);
+		int captIndex = MakeMove(move, game);
 		/*bool empty = FALSE;
 		short score;
 		int dbDepth = 0;
@@ -1412,13 +1552,13 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else {*/
 		short g_alpha = -9000;
 		short g_beta = 9000;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, capt, game, true, move.ScoreAtDepth);
+		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth);
 		//addHashScore(game->Hash, score, prm->depth);
 	//}
 
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
-		UnMakeMove(move, capt, gameState, positionScore, game, prevHash);
+		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
 		/*if (game->Side == BLACK)
 			g_beta = min(g_beta, score);

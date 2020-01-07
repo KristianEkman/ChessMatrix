@@ -212,9 +212,9 @@ int Perft(depth) {
 		int prevPositionScore = mainGame.PositionScore;
 		unsigned long long prevHash = mainGame.Hash;
 
-		MakeMove(move, &mainGame);
+		int captIndex = MakeMove(move, &mainGame);
 		nodeCount += Perft(depth - 1);
-		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &mainGame, prevHash);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -267,14 +267,13 @@ void PerftSaveHash(depth) {
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
-		PieceType capture = mainGame.Squares[move.To];
 		GameState prevGameState = mainGame.State;
 		int prevPositionScore = mainGame.PositionScore;
 		unsigned long long prevHash = mainGame.Hash;
 
-		MakeMove(move, &mainGame);
+		int captIndex = MakeMove(move, &mainGame);
 		PerftSaveHash(depth - 1);
-		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &mainGame, prevHash);
 	}
 	free(localMoves);
 }
@@ -318,14 +317,13 @@ int PerftHashDb(int depth) {
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
-		PieceType capture = mainGame.Squares[move.To];
 		GameState prevGameState = mainGame.State;
 		int prevPositionScore = mainGame.PositionScore;
 		unsigned long long prevHash = mainGame.Hash;
 
-		MakeMove(move, &mainGame);
+		int captIndex = MakeMove(move, &mainGame);
 		nodeCount += PerftHashDb(depth - 1);
-		UnMakeMove(move, capture, prevGameState, prevPositionScore, &mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &mainGame, prevHash);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -766,11 +764,11 @@ void runAllTests() {
 //
 //	HashKeyTest();
 //	TimedTest(50000000, HashTablePerformance);
-//	PerftHashDbTest();
-//	HashTableRoundTrip();
-//	HashTableDepthTest();
-//	PerftTestStart();
-//	PerfTestPosition2();
+	PerftHashDbTest();
+	HashTableRoundTrip();
+	HashTableDepthTest();
+	PerftTestStart();
+	PerfTestPosition2();
 //	FenTest();
 //	FenEnppasantTest();
 //	ValidMovesPromotionCaptureAndCastling();

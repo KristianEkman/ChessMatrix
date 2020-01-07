@@ -41,6 +41,7 @@ typedef struct {
 	char MoveInfo; //4 bits, 13-16
 	short ScoreAtDepth; //14 bits
 	char ThreadIndex;
+	char PieceIdx;
 } Move;
 
 typedef enum  {
@@ -60,14 +61,22 @@ typedef struct {
 	int CheckMates;
 } PerftResult;
 
+
+typedef struct Piece {
+	PieceType Type;
+	bool Off;
+	int SquareIndex;
+} Piece;
+
 typedef struct {
 	Move Move;
-	PieceType Capture;
+	int CaptureIndex;
 	GameState PreviousGameState;
 	bool Invalid;
 	int PreviousPositionScore;
 	unsigned long long PreviousHash;
 } PlayerMove;
+
 
 typedef struct {
 	char Side;
@@ -82,6 +91,7 @@ typedef struct {
 	unsigned long long PositionHistory[256];
 	int PositionHistoryLength;
 	int ThreadIndex;
+	Piece Pieces[2][16];
 } Game;
 
 typedef struct {
