@@ -669,26 +669,20 @@ void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prev
 }
 
 bool SquareAttacked(int square, char attackedBy, Game* game) {
-	/*for (size_t pi = 0; pi < 16; pi++)
+	int side01 = attackedBy >> 4;
+	for (size_t pi = 0; pi < 16; pi++)
 	{
-		Piece* piece = &game->Pieces[attackedBy][pi];
+		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
-
-	}*/
-	for (int i = 0; i < 64; i++)
-	{
+		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
-		PieceType color = pieceType & (BLACK | WHITE);
-
-		if (color != attackedBy)
-			continue;
 		PieceType pt = pieceType & 7;
 		switch (pt)
 		{
 		case PAWN:
 		{
-			int captPat = PawnCapturePattern[attackedBy >> 4];
+			int captPat = PawnCapturePattern[side01];
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
@@ -739,7 +733,6 @@ bool SquareAttacked(int square, char attackedBy, Game* game) {
 			break;
 		}
 		}
-
 	}
 	return false;
 }
