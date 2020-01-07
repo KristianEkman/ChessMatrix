@@ -632,6 +632,7 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 		break;
 	case EnPassantCapture:
 		game->Squares[move.To + Behind[otherSide01]] = PAWN | game->Side;
+		game->Squares[move.To] = NOPIECE;
 		// captured piece should be put back earlier
 		game->Material[otherSide01] -= MaterialMatrix[otherSide01][PAWN];
 		break;
