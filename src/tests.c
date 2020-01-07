@@ -332,7 +332,7 @@ int PerftHashDb(int depth) {
 int PerftTest(char * fen, int depth) {
 
 	ReadFen(fen);
-	//PrintGame();
+	//PrintGame(&mainGame);
 	int perftCount = 0;
 	for (size_t i = 0; i < 2; i++)
 	{
@@ -353,7 +353,7 @@ int PerftTest(char * fen, int depth) {
 		//printf("%d moves\n", perftCount);
 		printf("\n%.2fk moves/s\n", perftCount / (1000 * secs));
 
-		//PrintGame();
+		//PrintGame(&mainGame);
 	}
 	char outFen[100];
 	WriteFen(outFen);
@@ -755,33 +755,34 @@ void runAllTests() {
 	printf("Press any key to continue.\n");
 	int c = _getch();
 	return;*/
-//	_failedAsserts = 0;
-//#ifdef _DEBUG
-//	EnpassantCollisionsTest();
-//
-//	PerftSaveHashTest();
-//#endif // _DEBUG
-//
-//	HashKeyTest();
-//	TimedTest(50000000, HashTablePerformance);
-	PerftHashDbTest();
+	_failedAsserts = 0;
+
+#ifdef _DEBUG
+	//EnpassantCollisionsTest();
+
+	//PerftSaveHashTest();
+#endif // _DEBUG
+
+	//HashKeyTest();
+	//TimedTest(50000000, HashTablePerformance);
+	/*PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
 	PerftTestStart();
-	PerfTestPosition2();
-//	FenTest();
-//	FenEnppasantTest();
-//	ValidMovesPromotionCaptureAndCastling();
-//	LongCastling();
-//	EnPassantFromFenTest();
-//	BlackCastlingRightsAfterKingMove();
-//	WhiteCastlingRightsAfterKingMove();
-//	EnPassantAfterMove();
-//	MaterialBlackPawnCapture();
-//	MaterialWhiteQueenCapture();
-//	MaterialPromotion();
-//	MaterialCaptureAndPromotion();
-//	EnPassantMaterial();
+	PerfTestPosition2();*/
+	FenTest();
+	FenEnppasantTest();
+	ValidMovesPromotionCaptureAndCastling();
+	LongCastling();
+	EnPassantFromFenTest();
+	BlackCastlingRightsAfterKingMove();
+	WhiteCastlingRightsAfterKingMove();
+	EnPassantAfterMove();
+	MaterialBlackPawnCapture();
+	MaterialWhiteQueenCapture();
+	MaterialPromotion();
+	MaterialCaptureAndPromotion();
+	EnPassantMaterial();
 //	OpenFileTest();SemiOpenFileTest();
 //	DoublePawnsTest();
 

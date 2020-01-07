@@ -2,7 +2,7 @@
 #include "basic_structs.h"
 #define SEARCH_THREADS 7
 
-void PrintGame();
+void PrintGame(Game * game);
 void ReadFen(char * fen);
 void MoveToString(Move move, char sMove[5]);
 void WriteFen(char * fen);

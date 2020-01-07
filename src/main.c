@@ -201,7 +201,7 @@ int EnterInteractiveMode() {
 	while (scan != 'q')
 	{
 		system("@cls||clear");
-		PrintGame();
+		PrintGame(&mainGame);
 		printf("m: make move\n");
 		printf("c: computer move\n");
 		printf("t: run tests\n");
@@ -224,7 +224,7 @@ int EnterInteractiveMode() {
 		default:
 			break;
 		}
-		PrintGame();
+		PrintGame(&mainGame);
 	}
 
 	return 0;
@@ -307,7 +307,7 @@ char PieceChar(PieceType pieceType) {
 	}
 }
 
-void PrintGame() {
+void PrintGame(Game * game) {
 	printf("  ---------------------------------\n");
 
 	for (int r = 8 - 1; r >= 0; r--)
@@ -315,14 +315,14 @@ void PrintGame() {
 		printf("%d ", r + 1);
 		for (int f = 0; f < 8; f++)
 		{
-			PieceType piece = mainGame.Squares[r * 8 + f];
+			PieceType piece = game->Squares[r * 8 + f];
 			char c = PieceChar(piece);
 			printf("| %c ", c);
 		}
 		printf("|\n  ---------------------------------\n");
 	}
 	printf("    a   b   c   d   e   f   g   h  \n");
-	printf("%llu\n", mainGame.Hash);
+	printf("%llu\n", game->Hash);
 }
 
 void KingPositionScore(Move move, Game* game) {
@@ -341,6 +341,7 @@ int SetCaptureOff(Game* game, int side, int squareIndex) {
 			return i;
 		}
 	}
+	
 	printf("Invalid SetCaptureOff parameters\n");
 }
 
@@ -365,10 +366,8 @@ void AssertGame(Game* game) {
 			Piece* piece = &game->Pieces[s][p];
 			PieceType squareType = game->Squares[piece->SquareIndex];
 			
-
 			if (!piece->Off && squareType != piece->Type) {
-				printf("Invalid game");
-
+				printf("Invalid game\n");
 			}
 		}
 	}
@@ -386,7 +385,7 @@ void AssertGame(Game* game) {
 			}
 		}
 		if (pt != NOPIECE && !found) {
-			printf("Invalid game. Square piec not found.");
+			printf("Invalid game. Square piec not found.\n");
 		}
 	}
 #endif // _DEBUG
@@ -400,10 +399,7 @@ int MakeMove(Move move, Game* game) {
 	PieceType captType = game->Squares[t];
 	int captColor = captType >> 4;
 	int side01 = game->Side >> 4;
-
-	//Capturing
-	game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
-
+	
 	//removing piece from square removes its position score
 	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
 
@@ -418,7 +414,10 @@ int MakeMove(Move move, Game* game) {
 
 	int captIndex = -1;
 	if (captType && move.MoveInfo != EnPassantCapture)
+	{
 		captIndex = SetCaptureOff(game, !side01, t);
+		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
+	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
 
 	unsigned long long hash = mainGame.Hash;
@@ -634,7 +633,6 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 		game->Squares[move.To + Behind[otherSide01]] = PAWN | game->Side;
 		game->Squares[move.To] = NOPIECE;
 		// captured piece should be put back earlier
-		game->Material[otherSide01] -= MaterialMatrix[otherSide01][PAWN];
 		break;
 	default:
 		break;
@@ -917,7 +915,7 @@ void CreateCaptureMoves(Game* game) {
 	int side01 = game->Side >> 4;
 	for (size_t pi = 0; pi < 16; pi++)
 	{
-		Piece* piece = game->Pieces[side01];
+		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
 		int i = piece->SquareIndex;
@@ -1515,6 +1513,13 @@ Game* CopyMainGame(int threadNo) {
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
+	/*for (size_t s = 0; s < 2; s++)
+	{
+		for (size_t p = 0; p < 16; p++)
+		{
+
+		}
+	}*/
 	memcpy(mainGame.Pieces, threadGames[threadNo].Pieces, 32 * sizeof(Piece));
 
 	return &threadGames[threadNo];
