@@ -79,7 +79,6 @@ int main(int argc, char* argv[]) {
 	AdjustPositionImportance();
 	GenerateZobritsKeys();
 	ClearHashTable();
-	InitPieceList();
 	InitGame();
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
@@ -133,6 +132,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
+				AssertGame(&mainGame);
 			}
 		}
 		else if (startsWith(buf, "go ")) {
@@ -247,6 +247,8 @@ void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 }
 
 void InitGame() {
+	InitPieceList();
+
 	for (int i = 0; i < 64; i++)
 		mainGame.Squares[i] = NOPIECE;
 
@@ -307,7 +309,7 @@ char PieceChar(PieceType pieceType) {
 	}
 }
 
-void PrintGame(Game * game) {
+void PrintGame(Game* game) {
 	printf("  ---------------------------------\n");
 
 	for (int r = 8 - 1; r >= 0; r--)
@@ -341,7 +343,7 @@ int SetCaptureOff(Game* game, int side, int squareIndex) {
 			return i;
 		}
 	}
-	
+
 	printf("Invalid SetCaptureOff parameters\n");
 }
 
@@ -365,7 +367,7 @@ void AssertGame(Game* game) {
 		{
 			Piece* piece = &game->Pieces[s][p];
 			PieceType squareType = game->Squares[piece->SquareIndex];
-			
+
 			if (!piece->Off && squareType != piece->Type) {
 				printf("Invalid game\n");
 			}
@@ -399,7 +401,7 @@ int MakeMove(Move move, Game* game) {
 	PieceType captType = game->Squares[t];
 	int captColor = captType >> 4;
 	int side01 = game->Side >> 4;
-	
+
 	//removing piece from square removes its position score
 	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
 
@@ -584,9 +586,9 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 	game->Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
 
 	game->Squares[move.From] = game->Squares[move.To];
-	if(move.MoveInfo != EnPassantCapture)
+	if (move.MoveInfo != EnPassantCapture)
 		game->Squares[move.To] = capture;
-	
+
 	game->Pieces[otherSide01][move.PieceIdx].SquareIndex = move.From;
 	if (capture)
 		game->Pieces[!otherSide01][captIndex].Off = false;
@@ -667,6 +669,13 @@ void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prev
 }
 
 bool SquareAttacked(int square, char attackedBy, Game* game) {
+	/*for (size_t pi = 0; pi < 16; pi++)
+	{
+		Piece* piece = &game->Pieces[attackedBy][pi];
+		if (piece->Off)
+			continue;
+
+	}*/
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pieceType = game->Squares[i];
@@ -1702,7 +1711,8 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	int nps = (float)SearchedLeafs / ellapsed;
-	printf("info depth %d score cp %d nodes %d nps %d pv %s\n", depth, move.ScoreAtDepth, SearchedLeafs, nps, buffer);
+	int time = ellapsed * 1000;
+	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", move.ScoreAtDepth, depth, SearchedLeafs, time, nps, buffer);
 	fflush(stdout);
 	return 0;
 }

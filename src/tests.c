@@ -758,18 +758,18 @@ void runAllTests() {
 	_failedAsserts = 0;
 
 #ifdef _DEBUG
-	//EnpassantCollisionsTest();
+	EnpassantCollisionsTest();
 
-	//PerftSaveHashTest();
+	PerftSaveHashTest();
 #endif // _DEBUG
 
-	//HashKeyTest();
-	//TimedTest(50000000, HashTablePerformance);
-	/*PerftHashDbTest();
+	HashKeyTest();
+	TimedTest(50000000, HashTablePerformance);
+	PerftHashDbTest();
 	HashTableRoundTrip();
 	HashTableDepthTest();
 	PerftTestStart();
-	PerfTestPosition2();*/
+	PerfTestPosition2();
 	FenTest();
 	FenEnppasantTest();
 	ValidMovesPromotionCaptureAndCastling();
@@ -783,8 +783,8 @@ void runAllTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
-//	OpenFileTest();SemiOpenFileTest();
-//	DoublePawnsTest();
+	OpenFileTest();SemiOpenFileTest();
+	DoublePawnsTest();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();

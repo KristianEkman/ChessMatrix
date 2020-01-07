@@ -32,3 +32,4 @@ Move Search(bool async);
 DWORD WINAPI TimeLimitWatch(int* pms);
 void AdjustPositionImportance();
 void DefaultSearch();
+void AssertGame(Game* game);
