@@ -1,17 +1,25 @@
+Timing
+	- Tänka längre om score har sjunkit mkt.
+
+
+Fungerar draw by rep?
+
+Fungerar quite search?
+
+Slå på hash table for score.
+	kolla på vice
 
 Eval: 
+    open file on king
+	push pawns
 	Tempo
 		Not move queen
 		Not move piece twice
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
+	
 
-Registrera djup.
-
-Välja drag längst bort från matt - kanske int avbryta såfort den hittar matt.
-
-Slå på hash table for score. (Behövs det?).
 	
 Opening Book
 	Opening Score, early queen, minor piece count.
@@ -51,12 +59,11 @@ Mer pruning
 Refactor main
 	Flytta ut globala variabler.
 	Flytta ut search, movegen, uci, evaluation
+	Enums for color01
 
 
 killer-heuristic
 
 Fler testafall.
-
-PieceList: CreateMove
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.

@@ -19,8 +19,8 @@
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
-BestMovesTable bmTables[SEARCH_THREADS];
-const int TBL_SIZE_MB = 32;
+//BestMovesTable bmTables[SEARCH_THREADS];
+//const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
 
 bool Stopped;
@@ -80,8 +80,8 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	ClearHashTable();
 	InitGame();
-	for (int i = 0; i < SEARCH_THREADS; i++)
-		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);
+	/*for (int i = 0; i < SEARCH_THREADS; i++)
+		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);*/
 	printf("initialized\n");
 
 	EnterUciMode();
@@ -177,12 +177,12 @@ void EnterUciMode() {
 				}
 
 				//Fallback if time control fails
-				/*if (g_topSearchParams.TimeControl)
+				if (g_topSearchParams.TimeControl)
 				{
-					g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / 30;
+					g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / 20;
 					if (mainGame.Side == BLACK)
-						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 30;
-				}*/
+						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 20;
+				}
 				Search(true);
 			}
 		}
@@ -1628,7 +1628,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
-	while (now - start < ((ms / (float)1000) * CLOCKS_PER_SEC))
+	while (!Stopped && (now - start < (ms / (float)1000) * CLOCKS_PER_SEC))
 	{
 		Sleep(100);
 		now = clock();
@@ -1654,10 +1654,7 @@ Move Search(bool async) {
 
 	Stopped = false;
 	SearchedLeafs = 0;
-
-	for (int i = 0; i < SEARCH_THREADS; i++)
-		ClearTable(&bmTables[i]);
-
+	
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
@@ -1685,7 +1682,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	int movesCount = 0;
 	while (true)
 	{
-		Move bMove = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
+		Move bMove;// = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
 		if (bMove.MoveInfo == NotAMove)
 			break;
 		char sMove[5];
@@ -1715,7 +1712,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 DWORD WINAPI  BestMoveDeepening(void* v) {
 	int maxDepth = g_topSearchParams.MaxDepth;
 	clock_t start = clock();
-	ClearHashTable();
+	//ClearHashTable();
 	CreateMoves(&mainGame, 0);
 	int moveCount = mainGame.MovesBufferLength;
 	g_rootMoves.Length = moveCount;
