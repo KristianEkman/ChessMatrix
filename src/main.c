@@ -1416,6 +1416,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	//NULL move check
 	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
+	if (incheck)
+		depth++;
 	int r = 3;
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
 		(game->Side == BLACK && game->Material[side01] > 500))
