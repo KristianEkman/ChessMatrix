@@ -17,6 +17,7 @@ int SearchedLeafs;
 DWORD WINAPI BestMoveDeepening(void * params);
 short GetScore(Game * game);
 void CreateMoves(Game * game, int depth);
+void RemoveInvalidMoves(Game* game);
 int MakeMove(Move move, Game * mainGame);
 void UnMakeMove(Move move,int captIndex,GameState prevGameState, short prevPositionScore, Game * game, unsigned long long prevHash);
 

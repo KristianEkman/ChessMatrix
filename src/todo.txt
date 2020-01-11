@@ -1,10 +1,15 @@
+Skriva om alpha beta
+
+Kolla legal i alpha beta
+
+Lagra score alpha beta i hash
+
+
 Timing
 	- Tänka längre om score har sjunkit mkt.
 
 
 Fungerar draw by rep?
-
-Fungerar quite search?
 
 Slå på hash table for score.
 	kolla på vice

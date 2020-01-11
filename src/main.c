@@ -756,13 +756,8 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	unsigned long long prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
-	int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-	bool legal = !SquareAttacked(kingSquare, game->Side, game);
-	if (legal)
-	{
-		move.ScoreAtDepth = GetScore(game);
-		game->MovesBuffer[game->MovesBufferLength++] = move;
-	}
+	move.ScoreAtDepth = GetScore(game);
+	game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
 }
@@ -1214,8 +1209,31 @@ void WriteFen(char* fenBuffer) {
 	fenBuffer[index] = '\0';
 }
 
+void RemoveInvalidMoves(Game* game) {
+	int validMovesCount = 0;
+	Move validMoves[100];
+	int kingSquare = game->KingSquares[game->Side >> 4];
+
+	for (size_t m = 0; m < game->MovesBufferLength; m++)
+	{
+		Move move = game->MovesBuffer[m];
+		GameState prevState = game->State;
+		short prevPosScor = game->PositionScore;
+		unsigned long long prevHash = game->Hash;
+		int captIndex = MakeMove(move, game);
+		bool legal = !SquareAttacked(kingSquare, game->Side, game);
+		UnMakeMove(move, captIndex, prevState,prevPosScor, game, prevHash);
+		if (legal)
+			validMoves[validMovesCount++] = move;
+	}
+	memcpy(game->MovesBuffer, validMoves, validMovesCount);
+	game->MovesBufferLength = validMovesCount;
+}
+
 int ValidMoves(Move* moves) {
 	CreateMoves(&mainGame, 0);
+	RemoveInvalidMoves(&mainGame);
+
 	if (mainGame.MovesBufferLength == 0)
 		return 0;
 
@@ -1225,6 +1243,8 @@ int ValidMoves(Move* moves) {
 
 int ValidMovesOnThread(Game* game, Move* moves) {
 	CreateMoves(game, 0);
+	RemoveInvalidMoves(game);
+
 	if (game->MovesBufferLength == 0)
 		return 0;
 
@@ -1358,6 +1378,13 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 			unsigned long long prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
+			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			bool legal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!legal)
+			{
+				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				continue;
+			}
 			int childValue = AlphaBetaQuite(bestVal, beta, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			bestVal = max(bestVal, childValue);
@@ -1381,6 +1408,13 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 			unsigned long long prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
+			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			bool legal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!legal)
+			{
+				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				continue;
+			}
 			int childValue = AlphaBetaQuite(alpha, bestVal, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			bestVal = min(bestVal, childValue);
@@ -1449,18 +1483,12 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	CreateMoves(game, depth);
 	int moveCount = game->MovesBufferLength;
 
-	if (moveCount == 0) {
-		if (SquareAttacked(game->KingSquares[game->Side >> 4], game->Side ^ 24, game))
-			return game->Side == WHITE ? 8000 + depth : -8000 - depth;//mate
-		else
-			return 0;//stale mate
-	}
-
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	// alpha beta pruning
 	short bestVal = 0;
+	int legalCount = 0;
 	if (game->Side == BLACK) { //maximizing, black
 		bestVal = alpha;
 		for (int i = 0; i < moveCount; i++)
@@ -1471,6 +1499,15 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			unsigned long long prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
+
+			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!isLegal)
+			{
+				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				continue;
+			}
+			legalCount++;
 			int childValue = AlphaBeta(bestVal, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			if (childValue > bestVal) {
 				bestVal = childValue;
@@ -1480,6 +1517,12 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (bestVal >= beta)
 				break;
+		}
+		if (legalCount == 0) {
+			if (incheck)
+				return -8000;
+			else
+				return 0;
 		}
 	}
 	else { //minimizing, white
@@ -1491,6 +1534,14 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			short prevPosScore = game->PositionScore;
 			unsigned long long prevHash = game->Hash;
 			int captIndex = MakeMove(childMove, game);
+			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!isLegal)
+			{
+				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				continue;
+			}
+			legalCount++;
 			short childValue = AlphaBeta(alpha, bestVal, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			if (childValue < bestVal) {
 				bestVal = childValue;
@@ -1500,6 +1551,12 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (bestVal <= alpha)
 				break;
+		}
+		if (legalCount == 0) {
+			if (incheck)
+				return 8000; //mate
+			else
+				return 0; //stale mate
 		}
 	}
 	free(localMoves);
@@ -1656,7 +1713,7 @@ Move Search(bool async) {
 
 	Stopped = false;
 	SearchedLeafs = 0;
-	
+
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
 	{
@@ -1682,7 +1739,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	int index = 0;
 	PlayerMove moves[100];
 	int movesCount = 0;
-	while (true)
+	while (false)//(true)
 	{
 		Move bMove;// = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
 		if (bMove.MoveInfo == NotAMove)
@@ -1716,6 +1773,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	clock_t start = clock();
 	//ClearHashTable();
 	CreateMoves(&mainGame, 0);
+	RemoveInvalidMoves(&mainGame);
 	int moveCount = mainGame.MovesBufferLength;
 	g_rootMoves.Length = moveCount;
 	memcpy(g_rootMoves.moves, mainGame.MovesBuffer, moveCount * sizeof(Move));

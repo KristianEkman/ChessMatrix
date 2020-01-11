@@ -186,6 +186,7 @@ int Perft(depth) {
 	}
 	int nodeCount = 0;
 	CreateMoves(&mainGame, 0);
+	RemoveInvalidMoves(&mainGame);
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
@@ -259,6 +260,7 @@ void PerftSaveHash(depth) {
 	if (depth == 0)
 		return;
 	CreateMoves(&mainGame, 0);
+	RemoveInvalidMoves(&mainGame);
 	if (mainGame.MovesBufferLength == 0)
 		return;
 	int count = mainGame.MovesBufferLength;
@@ -309,6 +311,7 @@ int PerftHashDb(int depth) {
 		return 1;
 	int nodeCount = 0;
 	CreateMoves(&mainGame, 0);
+	RemoveInvalidMoves(&mainGame);
 	if (mainGame.MovesBufferLength == 0)
 		return nodeCount;
 	int count = mainGame.MovesBufferLength;
@@ -748,13 +751,12 @@ void _runTests() {
 }
 
 void runAllTests() {
-	//DeepTest();
-	/*TestEvalOpenFile();
+	//PerftSaveHashTest();
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
+	return;
 	_failedAsserts = 0;
 
 #ifdef _DEBUG
