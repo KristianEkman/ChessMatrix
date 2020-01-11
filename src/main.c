@@ -1326,7 +1326,7 @@ short GetScore(Game* game) {
 	if (DrawByRepetition(game))
 		return 0;
 	// todo 50 move rule.
-	return game->Material[0] + game->Material[1] + game->PositionScore;// +GetEval(game);
+	return game->Material[0] + game->Material[1] + game->PositionScore;;// +GetEval(game);
 }
 
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
@@ -1401,7 +1401,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return moveScore; // GetEval(game);
+		return moveScore + GetEval(game); // GetEval(game);
 	}
 
 	/*short score;
