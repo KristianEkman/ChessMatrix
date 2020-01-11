@@ -1212,7 +1212,6 @@ void WriteFen(char* fenBuffer) {
 void RemoveInvalidMoves(Game* game) {
 	int validMovesCount = 0;
 	Move validMoves[100];
-	int kingSquare = game->KingSquares[game->Side >> 4];
 
 	for (size_t m = 0; m < game->MovesBufferLength; m++)
 	{
@@ -1221,6 +1220,8 @@ void RemoveInvalidMoves(Game* game) {
 		short prevPosScor = game->PositionScore;
 		unsigned long long prevHash = game->Hash;
 		int captIndex = MakeMove(move, game);
+		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+
 		bool legal = !SquareAttacked(kingSquare, game->Side, game);
 		UnMakeMove(move, captIndex, prevState,prevPosScor, game, prevHash);
 		if (legal)
