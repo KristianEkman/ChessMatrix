@@ -751,12 +751,12 @@ void _runTests() {
 }
 
 void runAllTests() {
-	//PerftSaveHashTest();
+	/*PerftSaveHashTest();
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;
+	return;*/
 	_failedAsserts = 0;
 
 #ifdef _DEBUG

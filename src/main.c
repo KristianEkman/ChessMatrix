@@ -1226,7 +1226,7 @@ void RemoveInvalidMoves(Game* game) {
 		if (legal)
 			validMoves[validMovesCount++] = move;
 	}
-	memcpy(game->MovesBuffer, validMoves, validMovesCount);
+	memcpy(game->MovesBuffer, &validMoves, validMovesCount * sizeof(Move));
 	game->MovesBufferLength = validMovesCount;
 }
 
