@@ -1450,7 +1450,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	int moveCount = game->MovesBufferLength;
 
 	if (moveCount == 0) {
-		if (SquareAttacked(game->KingSquares[game->Side >> 4], game->Side ^ 24, game))
+		if (incheck)
 			return game->Side == WHITE ? 8000 + depth : -8000 - depth;//mate
 		else
 			return 0;//stale mate
