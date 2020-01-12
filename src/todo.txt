@@ -1,18 +1,15 @@
-Skriva om alpha beta
+Generara promotions i quite search
 
-Kolla legal i alpha beta
+Lagra score alpha beta pv i hash.
 
-Lagra score alpha beta i hash
-
+Minska inflytande av positions.
 
 Timing
+	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
 
 Fungerar draw by rep?
-
-Slå på hash table for score.
-	kolla på vice
 
 Eval: 
     open file on king

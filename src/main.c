@@ -1298,18 +1298,18 @@ void AdjustPositionImportance() {
 	{
 		for (int s = 0; s < 64; s++)
 		{
-			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 2;
-			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 2;
+			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
+			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
 		}
 	}
 
 	for (int i = 0; i < 64; i++)
 	{
-		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 2;
-		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 2;
+		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
+		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
 
-		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 2;
-		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 2;
+		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
+		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
 	}
 }
 

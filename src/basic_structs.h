@@ -1,5 +1,7 @@
 #pragma once
 
+typedef unsigned long long U64;
+
 typedef enum  {
 	NOPIECE,
 	BISHOP,
@@ -74,7 +76,7 @@ typedef struct {
 	GameState PreviousGameState;
 	bool Invalid;
 	int PreviousPositionScore;
-	unsigned long long PreviousHash;
+	U64 PreviousHash;
 } PlayerMove;
 
 
@@ -87,8 +89,8 @@ typedef struct {
 	short Material[2];
 	PieceType Squares[64];
 	short PositionScore;
-	unsigned long long Hash;
-	unsigned long long PositionHistory[256];
+	U64 Hash;
+	U64 PositionHistory[256];
 	int PositionHistoryLength;
 	int ThreadIndex;
 	Piece Pieces[2][16];
@@ -106,12 +108,20 @@ typedef struct {
 	int Length;
 } GlobalRootMoves;
 
+typedef enum HashEntryType {
+	EXACT,
+	ALPHA,
+	BETA
+} HashEntryType;
 
-typedef struct  {
-	short Score;
-	char Depth;
+typedef struct HashEntry {
 	int Key2;
-}HashTableEntry;
+	short Score;
+	HashEntryType Type;
+	char Depth;
+	char From;
+	char To;
+} HashEntry;
 
 
 typedef struct {
