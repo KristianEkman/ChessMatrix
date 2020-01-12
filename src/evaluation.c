@@ -191,15 +191,15 @@ short GetEval(Game* game) {
 
 			// connected rooks, no king between
 		}
-		case BISHOP:
-		{
-			//todo: bad bishops
+		//case BISHOP:
+		//{
+		//	//todo: bad bishops
 
-			//outposts, protected by a pawn?
-		}
-		case KNIGHT: {
-			//outposts, protected by a pawn?
-		}
+		//	//outposts, protected by a pawn?
+		//}
+		//case KNIGHT: {
+		//	//outposts, protected by a pawn?
+		//}
 		case PAWN: {
 			score -= neg * DoublePawns(i, game, pieceType);
 		}

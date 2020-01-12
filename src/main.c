@@ -1353,7 +1353,6 @@ short GetScore(Game* game) {
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
-	short bestVal = 0;
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
@@ -1364,13 +1363,15 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
-		bestVal = alpha;
 		if (score >= beta)
 		{
 			free(localMoves);
 			return beta;
 		}
 
+		if (score > alpha)
+			alpha = score;
+		score = -9000;
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1386,21 +1387,28 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			int childValue = AlphaBetaQuite(bestVal, beta, game, childMove.ScoreAtDepth);
+			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			bestVal = max(bestVal, childValue);
-			if (bestVal >= beta)
-				break;
+			if (score > alpha) {
+				if (score >= beta) {
+					free(localMoves);
+					return beta;
+				}
+				alpha = score;
+			}
 		}
+		free(localMoves);
+		return alpha;
 	}
 	else { //minimizing
-		bestVal = beta;
 		if (score <= alpha)
 		{
 			free(localMoves);
 			return alpha;
 		}
-
+		if (score < beta)
+			beta = score;
+		score = 9000;
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1416,15 +1424,19 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			int childValue = AlphaBetaQuite(alpha, bestVal, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			bestVal = min(bestVal, childValue);
-			if (bestVal <= alpha)
-				break;
+			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
+			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);		
+			if (score < beta) {
+				if (score <= alpha) {
+					free(localMoves);
+					return alpha;
+				}
+				beta = score;
+			}
 		}
-	}
-	free(localMoves);
-	return bestVal;
+		free(localMoves);
+		return beta;
+	}	
 }
 
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore) {
@@ -1436,7 +1448,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return moveScore + GetEval(game); // GetEval(game);
+		return moveScore + GetEval(game);
 	}
 
 	/*short score;
@@ -1488,10 +1500,12 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	// alpha beta pruning
-	short bestVal = 0;
+	short bestScore = 0;
+	short score = 0;
 	int legalCount = 0;
 	if (game->Side == BLACK) { //maximizing, black
-		bestVal = alpha;
+		bestScore = -9000;
+		score = -9000;
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1509,25 +1523,33 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			int childValue = AlphaBeta(bestVal, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
-			if (childValue > bestVal) {
-				bestVal = childValue;
-				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
-			}
-			//addHashScore(game->Hash, bestVal, depth);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (bestVal >= beta)
-				break;
+
+			if (score > bestScore) {
+				bestScore = score;
+				if (score > alpha) {
+					if (score >= beta) {
+						//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
+						free(localMoves);
+						return beta;
+					}
+					alpha = score;
+				}
+			}
 		}
+		free(localMoves);
 		if (legalCount == 0) {
 			if (incheck)
 				return -8000;
 			else
 				return 0;
 		}
+		return alpha;
 	}
 	else { //minimizing, white
-		bestVal = beta;
+		bestScore = 9000;
+		score = 9000;
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
@@ -1543,25 +1565,29 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			short childValue = AlphaBeta(alpha, bestVal, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
-			if (childValue < bestVal) {
-				bestVal = childValue;
-				//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
-			}
-			//addHashScore(game->Hash, bestVal, depth);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (bestVal <= alpha)
-				break;
+			if (score < bestScore) {
+				bestScore = score;
+				if (score < beta) {
+					if (score <= alpha) {
+						//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
+						free(localMoves);
+						return alpha;
+					}
+					beta = score;
+				}
+			}
 		}
+		free(localMoves);
 		if (legalCount == 0) {
 			if (incheck)
 				return 8000; //mate
 			else
 				return 0; //stale mate
 		}
+		return beta;
 	}
-	free(localMoves);
-	return bestVal;
 }
 
 Game* CopyMainGame(int threadNo) {
