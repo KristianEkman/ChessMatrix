@@ -1,8 +1,6 @@
+definiera MAXSCORE, MINSCORE
+
 Generara promotions i quite search
-
-Lagra score alpha beta pv i hash.
-
-Minska inflytande av positions.
 
 Timing
 	- Öka max fallback tid om det finns tid.

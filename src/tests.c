@@ -147,41 +147,45 @@ void HashTableRoundTrip() {
 }
 
 void HashTableDepthTest() {
-	//printf("\n");printf(__func__);
-	//ClearHashTable();
-	//U64 hash = 0x1234567890ABCDEF;
+	printf("%s\n", __func__);
+	ClearHashTable();
+	U64 hash = 0x1234567890ABCDEF;
 
-	//addHashScore(hash, 3000, 2, EXACT);
-	//bool empty = FALSE;
-	//int depth = 0;
-	//short score = getScoreFromHash(hash, &empty, &depth);
-	//AssertAreEqualInts(3000, score, "hash table score missmatch");
+	addHashScore(hash, 3000, 2, EXACT, 40, 50 );
+	int depth = 2;
+	short score;
+	char from, to;
+	getScoreFromHash(hash, depth, &score, &from, &to, 100, 200);
+	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	//addHashScore(hash, 4000, 1, ALPHA); //smaller depth
-	//short score2 = getScoreFromHash(hash, &empty, &depth);
-	//AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
+	addHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
+	short score2 = 0;
+	getScoreFromHash(hash, 2,  &score2, &from, &to, 30, 60);
+	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	//addHashScore(hash, 5000, 3, BETA); //smaller depth
-	//score = getScoreFromHash(hash, &empty, &depth);
-	//AssertAreEqualInts(5000, score, "larger depth should replace value");
+	addHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
+	getScoreFromHash(hash, 3, &score, &from, &to, 30, 31);
+	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
 void HashTablePerformance(int iterations) {
-	//printf("\n");printf(__func__);
-	//ClearHashTable();
-	//U64 hash = llrand();
-	//short expected = 1;
+	printf("%s\n", __func__);
+	ClearHashTable();
+	U64 hash = llrand();
+	short expected = 1;
 
-	//for (int i = 0; i < iterations; i++)
-	//{
-	//	expected++;
-	//	hash++;
-	//	addHashScore(hash, expected, 1, EXACT);
-	//	bool empty = FALSE;
-	//	int depth = 0;
-	//	short score = getScoreFromHash(hash, &empty, &depth);
-	//	AssertAreEqualInts(expected, score, "hash table score missmatch");
-	//}
+	for (int i = 0; i < iterations; i++)
+	{
+		expected++;
+		hash++;
+		addHashScore(hash, expected, 1, EXACT, 1, 1);
+		bool empty = false;
+		int depth = 0;
+		short score = 0;
+		char from, to;
+		getScoreFromHash(hash, depth, &score, &from, &to, 100, 200);
+		AssertAreEqualInts(expected, score, "hash table score missmatch");
+	}
 }
 int Perft(depth) {
 	if (depth == 0)
@@ -755,12 +759,11 @@ void _runTests() {
 }
 
 void runAllTests() {
-	HashTableRoundTrip();
-	if (_failedAsserts == 0)
+	/*if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;
+	return;*/
 	_failedAsserts = 0;
 
 #ifdef _DEBUG
