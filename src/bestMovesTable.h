@@ -1,7 +1,7 @@
 //#pragma once
 //
 //typedef struct {
-//	unsigned long long PositionHash;
+//	U64 PositionHash;
 //	char from;
 //	char to;
 //} BestMovesTableEntry;
@@ -16,7 +16,7 @@
 //
 //void InitBestMovesTable(BestMovesTable* bmTable, int sizeMb);
 //
-//void AddBestMovesEntry(BestMovesTable* bmTable, unsigned long long hash, char from, char to);
+//void AddBestMovesEntry(BestMovesTable* bmTable, U64 hash, char from, char to);
 //
-//Move GetBestMove(BestMovesTable* bmTable, unsigned long long hash);
+//Move GetBestMove(BestMovesTable* bmTable, U64 hash);
 //

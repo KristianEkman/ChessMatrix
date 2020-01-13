@@ -8,7 +8,7 @@
 //	{
 //		bmTable->pEntries[i].from = (char)0;
 //		bmTable->pEntries[i].to = (char)0;
-//		bmTable->pEntries[i].PositionHash = (unsigned long long)0;
+//		bmTable->pEntries[i].PositionHash = (U64)0;
 //	}
 //}
 //
@@ -18,14 +18,14 @@
 //	ClearTable(bmTable);
 //}
 //
-//void AddBestMovesEntry(BestMovesTable* bmTable, unsigned long long hash, char from, char to) {
+//void AddBestMovesEntry(BestMovesTable* bmTable, U64 hash, char from, char to) {
 //	unsigned int index = hash % bmTable->NumberOfEntries;
 //	bmTable->pEntries[index].PositionHash = hash;
 //	bmTable->pEntries[index].from = from;
 //	bmTable->pEntries[index].to = to;
 //}
 //
-//Move GetBestMove(BestMovesTable* bmTable, unsigned long long hash) {
+//Move GetBestMove(BestMovesTable* bmTable, U64 hash) {
 //	unsigned int index = hash % bmTable->NumberOfEntries;
 //	Move move;
 //	move.From = 0;

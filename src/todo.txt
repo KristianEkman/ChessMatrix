@@ -1,9 +1,6 @@
+definiera MAXSCORE, MINSCORE
+
 Generara promotions i quite search
-
-Lagra score alpha beta pv i hash.
-	Hur minska collisioner mellan trådar? Det borde bli. Nån sorts eget lås. Ej skiva om den är låst med logga.
-
-Minska inflytande av positions.
 
 Timing
 	- Öka max fallback tid om det finns tid.

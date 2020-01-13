@@ -6,11 +6,6 @@
 #include "utils.h"
 #include "hashTable.h"
 
-//Very Simple hash table
-//Array of 16777215, 2^24 or FFFFFF entries using 24 first bits of hash as an index.
-//At each index there are three slots. Max size of HashTable is 384 MB.
-//Can be incerased by 128MB by increasing slot count by one.
-
 //		bits shift >>   mask
 //key2	31	 0	        7FFF FFFF
 //score	14	 31	        3FFF
@@ -19,88 +14,68 @@
 //from	6	 52	        3F
 //to	6	 58	        3F
 
-HashEntry HashTable[IndexLength + 1][SlotCount];
+HashTable H_Table;
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
-	//return;
-	unsigned int idx = (unsigned int)(hash & IndexLength);
-	HashEntry* entry = HashTable[idx];
-
-	unsigned int key2 = hash & 0xFFFFFFFF;
-
-	/*U64 pack = key2 & 0x7FFFFFFF;
-	pack &= (score + 32767) << 31;
-	pack &= depth << 45;
-	pack &= type << 50;
-	pack &= from << 52;
-	pack &= to << 58;*/
-
-	for (int i = 0; i < SlotCount; i++)
-	{
-		if (entry[i].Key2 == 0) { //empty entry, add it			
-			entry[i].Score = score;
-			entry[i].Key2 = key2;
-			entry[i].Depth = depth;
-			entry[i].From = from;
-			entry[i].To = to;
-			entry[i].Type = type;
-			//HashTableEntries++;
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	U64 entry = H_Table.Entries[idx];
+	unsigned int key2 = hash & 0x7FFFFFFF;
+	int dbDepth = (entry >> 45) & 0x1F;
+	unsigned int dbKey2 = entry & 0x7FFFFFFF;
+	if (dbKey2 == key2) {
+		if (depth < dbDepth)
 			return;
-		}
-		if (entry[i].Key2 == key2 && depth >= entry[i].Depth) {
-			entry[i].Score = entry;
-			entry[i].Key2 = key2;
-			entry[i].Depth = depth;
-			entry[i].From = from;
-			entry[i].To = to;
-			entry[i].Type = type;
-			return;
-		}
 	}
+
+	//always overwrite unless same hash with lower depth is stored.
+	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
+	U64 pack = key2 & 0x7FFFFFFF;
+	pack |= (((U64)score + 8190) << 31);
+	pack |= (U64)depth << 45;
+	pack |= (U64)type << 50;
+	pack |= (U64)from << 52;
+	pack |= (U64)to << 58;
+	H_Table.Entries[idx] = pack;
 	//HashTableFullCount++;
 }
 
 bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, short alpha, short beta) {
-	unsigned int idx = (unsigned int)(hash & IndexLength);
-	HashEntry* entries = HashTable[idx];
-	int key2 = hash & 0xFFFFFFFF;
-	for (int i = 0; i < SlotCount; i++)
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	unsigned int key2 = hash & 0x7FFFFFFF;
+
+	U64 entry = H_Table.Entries[idx];
+	unsigned int dbKey = entry & 0x7FFFFFFF;
+	int dbDepth = (entry >> 45) & 0x1F;
+	if (dbKey == key2 && depth <= dbDepth)
 	{
-		HashEntry* entry = &entries[i];
-		if (entry->Key2 == key2)
+		*score = ((entry >> 31) & 0x3FFF) - 8190;
+		//todo: adjust mate scores with in_deep
+
+		HashEntryType type = (entry >> 50) & 0x3;
+		*from = (entry >> 52) & 0x3F;
+		*to = (entry >> 52) & 0x3F;
+
+		switch (type)
 		{
-			*from = entry->From;
-			*to = entry->To;
-			if (entry[i].Depth >= depth) {
-				*score = entry[i].Score;
-
-				// adjust mate scores with in_deep
-
-				switch (entry->Type)
-				{
-				case ALPHA:
-					if (*score <= alpha) { // is this true for both black and white?
-						*score = alpha;
-						return true;
-					}
-					break;
-				case BETA:
-					if (*score >= beta) { // is this true for both black and white?
-						*score = beta;
-						return true;
-					}
-					break;
-				case EXACT:
-					return true;
-					break;
-				default:
-					break;
-				}
+		case ALPHA:
+			if (*score <= alpha) { // is this true for both black and white?
+				*score = alpha;
+				return true;
 			}
 			break;
-			//HashTableMatches++;
+		case BETA:
+			if (*score >= beta) { // is this true for both black and white?
+				*score = beta;
+				return true;
+			}
+			break;
+		case EXACT:
+			return true;
+			break;
+		default:
+			break;
 		}
 	}
-	return false;
+	//HashTableMatches++;
 }
 
 void GenerateZobritsKeys() {
@@ -120,19 +95,16 @@ void GenerateZobritsKeys() {
 	for (int i = 1; i < 9; i++)
 		ZobritsEnpassantFile[i] = llrand();
 }
+
+void Allocate(unsigned int megabytes) {
+	free(H_Table.Entries);
+	H_Table.EntryCount = (megabytes * 0x100000) / sizeof(U64);
+	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(U64));
+}
+
 void ClearHashTable() {
-	HashEntry emptyEntry;
-	emptyEntry.Depth = 0;
-	emptyEntry.From = 0;
-	emptyEntry.Key2 = 0;
-	emptyEntry.Score = 0;
-	emptyEntry.To = 0;
-	emptyEntry.Type = 0;
-	for (size_t i = 0; i < IndexLength; i++)
-		for (size_t s = 0; s < SlotCount; s++)
-		{
-			HashTable[i][s] = emptyEntry;
-		}
+	for (size_t i = 0; i < H_Table.EntryCount; i++)
+		H_Table.Entries[i] = 0;
 	/*HashTableFullCount = 0;
 	HashTableEntries = 0;
 	HashTableMatches = 0;*/
