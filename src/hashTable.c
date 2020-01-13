@@ -25,7 +25,14 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 	unsigned int idx = (unsigned int)(hash & IndexLength);
 	HashEntry* entry = HashTable[idx];
 
-	int key2 = hash & 0xFFFFFFFF;
+	unsigned int key2 = hash & 0xFFFFFFFF;
+
+	/*U64 pack = key2 & 0x7FFFFFFF;
+	pack &= (score + 32767) << 31;
+	pack &= depth << 45;
+	pack &= type << 50;
+	pack &= from << 52;
+	pack &= to << 58;*/
 
 	for (int i = 0; i < SlotCount; i++)
 	{
