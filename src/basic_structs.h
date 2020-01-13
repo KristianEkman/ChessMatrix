@@ -1,6 +1,5 @@
 #pragma once
-
-typedef unsigned long long U64;
+#include "common.h"
 
 typedef enum  {
 	NOPIECE,
@@ -107,22 +106,6 @@ typedef struct {
 	Move moves[100];
 	int Length;
 } GlobalRootMoves;
-
-typedef enum HashEntryType {
-	EXACT,
-	ALPHA,
-	BETA
-} HashEntryType;
-
-typedef struct HashEntry {
-	int Key2;
-	short Score;
-	HashEntryType Type;
-	char Depth;
-	char From;
-	char To;
-} HashEntry;
-
 
 typedef struct {
 	int MaxDepth;
