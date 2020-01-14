@@ -765,7 +765,7 @@ void runAllTests() {
 	PerftSaveHashTest();
 #endif // _DEBUG
 
-	HashKeyTest();
+	/*HashKeyTest();
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
@@ -786,7 +786,7 @@ void runAllTests() {
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
 	OpenFileTest();SemiOpenFileTest();
-	DoublePawnsTest();
+	DoublePawnsTest();*/
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
