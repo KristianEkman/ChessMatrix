@@ -1360,17 +1360,24 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		SearchedLeafs++;
 		return moveScore;
 	}
+
+	if (game->Side == BLACK) {
+		if (score >= beta)
+			return beta;
+		if (score > alpha)
+			alpha = score;
+	}
+	else {
+		if (score <= alpha)
+			return alpha;
+		if (score < beta)
+			beta = score;
+	}
+
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
-		if (score >= beta)
-		{
-			free(localMoves);
-			return beta;
-		}
-
-		if (score > alpha)
-			alpha = score;
+		
 		score = -9000;
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1401,13 +1408,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		return alpha;
 	}
 	else { //minimizing
-		if (score <= alpha)
-		{
-			free(localMoves);
-			return alpha;
-		}
-		if (score < beta)
-			beta = score;
 		score = 9000;
 		for (int i = 0; i < moveCount; i++)
 		{
