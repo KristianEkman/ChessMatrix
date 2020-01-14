@@ -1,6 +1,9 @@
 #pragma once
 #include "common.h"
 
+#define MAX_SCORE 8190 //14 bits
+#define MIN_SCORE -8190
+
 typedef enum  {
 	NOPIECE,
 	BISHOP,

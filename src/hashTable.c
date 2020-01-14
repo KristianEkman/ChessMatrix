@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <Windows.h>
+
 #include "basic_structs.h"
 #include "utils.h"
 #include "hashTable.h"
@@ -29,7 +30,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 	//always overwrite unless same hash with lower depth is stored.
 	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
 	U64 pack = key2 & 0x7FFFFFFF;
-	pack |= (((U64)score + 8190) << 31);
+	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
 	pack |= (U64)depth << 45;
 	pack |= (U64)type << 50;
 	pack |= (U64)from << 52;
@@ -45,37 +46,39 @@ bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, 
 	U64 entry = H_Table.Entries[idx];
 	unsigned int dbKey = entry & 0x7FFFFFFF;
 	int dbDepth = (entry >> 45) & 0x1F;
-	if (dbKey == key2 && depth <= dbDepth)
-	{
-		*score = ((entry >> 31) & 0x3FFF) - 8190;
-		//todo: adjust mate scores with in_deep
-
-		HashEntryType type = (entry >> 50) & 0x3;
+	if (dbKey == key2) {
 		*from = (entry >> 52) & 0x3F;
 		*to = (entry >> 52) & 0x3F;
-
-		switch (type)
+		if (dbDepth >= depth)
 		{
-		case ALPHA:
-			if (*score <= alpha) { // is this true for both black and white?
-				*score = alpha;
+			*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
+			//todo: adjust mate scores with in_deep
+
+			HashEntryType type = (entry >> 50) & 0x3;
+			switch (type)
+			{
+			case ALPHA:
+				if (*score <= alpha) { // is this true for both black and white?
+					*score = alpha;
+					return true;
+				}
+				break;
+			case BETA:
+				if (*score >= beta) { // is this true for both black and white?
+					*score = beta;
+					return true;
+				}
+				break;
+			case EXACT:
 				return true;
+				break;
+			default:
+				break;
 			}
-			break;
-		case BETA:
-			if (*score >= beta) { // is this true for both black and white?
-				*score = beta;
-				return true;
-			}
-			break;
-		case EXACT:
-			return true;
-			break;
-		default:
-			break;
 		}
 	}
 	//HashTableMatches++;
+	return false;
 }
 
 void GenerateZobritsKeys() {

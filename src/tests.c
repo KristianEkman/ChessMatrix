@@ -172,18 +172,19 @@ void HashTablePerformance(int iterations) {
 	printf("%s\n", __func__);
 	ClearHashTable();
 	U64 hash = llrand();
-	short expected = 1;
+	short expected = MIN_SCORE;
+	int depth = 1;
+	short score = 0;
+	char from, to;
 
 	for (int i = 0; i < iterations; i++)
 	{
 		expected++;
+		if (expected > MAX_SCORE)
+			expected = MIN_SCORE;
 		hash++;
-		addHashScore(hash, expected, 1, EXACT, 1, 1);
-		bool empty = false;
-		int depth = 0;
-		short score = 0;
-		char from, to;
-		getScoreFromHash(hash, depth, &score, &from, &to, 100, 200);
+		addHashScore(hash, expected, 1, EXACT, 1, 1), "";		
+		Assert(getScoreFromHash(hash, depth, &score, &from, &to, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
@@ -619,6 +620,7 @@ void TestEvalOpenFile() {
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
+	ClearHashTable();
 	SearchedLeafs = 0;
 	clock_t start = clock();
 	DefaultSearch();
@@ -639,6 +641,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
+	ClearHashTable();
 	SearchedLeafs = 0;
 	DefaultSearch();
 	g_topSearchParams.MoveTime = secs * 1000;
@@ -772,7 +775,7 @@ void runAllTests() {
 	PerftSaveHashTest();
 #endif // _DEBUG
 
-	HashKeyTest();
+	/*HashKeyTest();
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
@@ -793,7 +796,7 @@ void runAllTests() {
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
 	OpenFileTest();SemiOpenFileTest();
-	DoublePawnsTest();
+	DoublePawnsTest();*/
 
 	/*PositionScorePawns();
 	PositionScoreKnights();
