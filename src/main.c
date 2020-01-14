@@ -1482,8 +1482,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
 				}
-			}
-			if (game->Side == WHITE)
+			}else //(game->Side == WHITE)
 			{
 				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {

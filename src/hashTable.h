@@ -33,7 +33,7 @@ typedef struct HashTable {
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
 bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, short alpha, short beta);
 
-void Allocate(int megabytes);
+void Allocate(unsigned int megabytes);
 void GenerateZobritsKeys();
 void ClearHashTable();
 
