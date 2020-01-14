@@ -1452,19 +1452,22 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return moveScore + GetEval(game);
 	}
 
+	//In check extension
+	int side01 = game->Side >> 4;
+	int otherSide = game->Side ^ 24;
+	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
+	if (incheck)
+		depth++;
+
+	//Probe hash
 	short score = 0;char from, to;
 
 	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
 		return score;
 	}
 
-	int side01 = game->Side >> 4;
-	int otherSide = game->Side ^ 24;
-
+	
 	//NULL move check
-	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
-	if (incheck)
-		depth++;
 	int r = 3; //todo: tests att sätta till 
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
 		(game->Side == BLACK && game->Material[side01] > 500))
@@ -1549,6 +1552,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			else
 				return 0;
 		}
+
 		if (alpha != oldAlpha)
 			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
@@ -1581,7 +1585,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				bestMove = childMove;
 				if (score < beta) {
 					if (score <= alpha) {
-						addHashScore(game->Hash, alpha, depth, ALPHA, childMove.From, childMove.To);
+						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
 						free(localMoves);
 						return alpha;
 					}
@@ -1596,6 +1600,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			else
 				return 0; //stale mate
 		}
+
 		if (beta != oldBeta)
 			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
