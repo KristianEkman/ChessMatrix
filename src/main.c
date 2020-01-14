@@ -1353,14 +1353,6 @@ short GetScore(Game* game) {
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
-	CreateCaptureMoves(game);
-	int moveCount = game->MovesBufferLength;
-	if (moveCount == 0)
-	{
-		SearchedLeafs++;
-		return moveScore;
-	}
-
 	if (game->Side == BLACK) {
 		if (score >= beta)
 			return beta;
@@ -1372,6 +1364,14 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 			return alpha;
 		if (score < beta)
 			beta = score;
+	}
+
+	CreateCaptureMoves(game);
+	int moveCount = game->MovesBufferLength;
+	if (moveCount == 0)
+	{
+		SearchedLeafs++;
+		return moveScore;
 	}
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
