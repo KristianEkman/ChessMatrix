@@ -1,6 +1,8 @@
 Skriva om alpha beta
 
-Kolla legal i alpha beta
+r1b1k2r/ppppqpp1/4n2p/1B1Q4/8/2P2N2/P1P2PPP/R1B1R1K1 b kq - 0 12
+På djup 8 forkar inte svart c7c6
+skrivtestfall och leta bugg
 
 Lagra score alpha beta i hash
 

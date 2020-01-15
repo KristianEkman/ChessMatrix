@@ -1,5 +1,6 @@
 #include "basic_structs.h"
 #include "evaluation.h"
+#include <stdlib.h>
 //white, black, (flipped, starts at A1)
 
 //[type][side][square]
@@ -32,8 +33,8 @@ short PositionValueMatrix[7][2][64] = {
 	},
 	//rookPositionValues[2][64] =
 	{
-		{ 
-		    0, 0, 0, 0, 0, 0, 0, 0,
+		{
+			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -42,7 +43,7 @@ short PositionValueMatrix[7][2][64] = {
 			30,30,30,30,30,30,30,30,
 			0, 0, 0, 0, 0, 0, 0, 0,
 		},
-		{ 
+		{
 			0, 0, 0, 0, 0, 0, 0, 0,
 		   30,30,30,30,30,30,30,30,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -56,13 +57,13 @@ short PositionValueMatrix[7][2][64] = {
 	// queenPositionValues[2][64] = 
 	{
 			{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, },
-		    { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, }
+			{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, }
 	},
 	//char pawnPositionValues[2][64] =
 	{
-		{ 
+		{
 			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0, 
+			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 5, 5, 0, 0, 0,
 			3, 3, 3,30,30, 3, 3, 3,
 			6, 6, 6,20,20, 6, 6, 6,
@@ -159,13 +160,13 @@ short KingPositionValueMatrix[2][2][64] = {
 	}
 };
 
-short CastlingPoints[2] = {-40, 40};
+short CastlingPoints[2] = { -40, 40 };
 
 
 short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
 	short open = 30;
-	for	(int i = 0; i < 7; i++)
+	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
 		if ((game->Squares[file] & PAWN)) //smi open
@@ -180,49 +181,47 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
-		if ((game->Squares[file] == pawn)) //smi open
+		if ((game->Squares[file] == pawn)) //semi open
 			score += 9;
 	}
 	return score;
 }
 
 short GetEval(Game* game) {
-
-	int score = 0;
-	for (int i = 0; i < 64; i++)
+	short score = 0;
+	short neg[] = { -1, 1 };
+	for (size_t s = 0; s < 2; s++)
 	{
-		PieceType pieceType = game->Squares[i];
-		if (pieceType == NOPIECE)
-			continue;
-		PieceType color = pieceType & (BLACK | WHITE);
-		int neg = -1;
-		if (color == BLACK)
-			neg = 1;
-
-		PieceType pt = pieceType & 7;
-
-		switch (pt)
+		for (int p = 0; p < 16; p++)
 		{
-		case ROOK:
-		{
-			score += neg * OpenRookFile(i, game);
+			Piece piece = game->Pieces[s][p];
+			int i = piece.SquareIndex;
+			if (piece.Off)
+				continue;
+			PieceType pt = game->Pieces[s][p].Type & 7;
+			switch (pt)
+			{
+			case ROOK:
+			{
+				score += ( neg[s] * OpenRookFile(i, game));
 
-			// connected rooks, no king between
-		}
-		//case BISHOP:
-		//{
-		//	//todo: bad bishops
+				// connected rooks, no king between
+			}
+			//case BISHOP:
+			//{
+			//	//todo: bad bishops
 
-		//	//outposts, protected by a pawn?
-		//}
-		//case KNIGHT: {
-		//	//outposts, protected by a pawn?
-		//}
-		case PAWN: {
-			score -= neg * DoublePawns(i, game, pieceType);
-		}
-		default:
-			break;
+			//	//outposts, protected by a pawn?
+			//}
+			//case KNIGHT: {
+			//	//outposts, protected by a pawn?
+			//}
+			case PAWN: {
+				score -= (neg[s] * DoublePawns(i, game, piece.Type));
+			}
+			default:
+				break;
+			}
 		}
 	}
 	return score;
