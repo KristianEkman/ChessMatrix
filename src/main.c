@@ -1366,7 +1366,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	if (score > alpha)
 		alpha = score;
 
-
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
