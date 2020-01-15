@@ -26,6 +26,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 		if (depth < dbDepth)
 			return;
 	}
+	//printf("%llu\t\t%d\t\%d\t%d\t%d\t%d\n", hash, score, depth, type, from, to);
 
 	//always overwrite unless same hash with lower depth is stored.
 	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
@@ -48,7 +49,7 @@ bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, 
 	int dbDepth = (entry >> 45) & 0x1F;
 	if (dbKey == key2) {
 		*from = (entry >> 52) & 0x3F;
-		*to = (entry >> 52) & 0x3F;
+		*to = (entry >> 58) & 0x3F;
 		if (dbDepth >= depth)
 		{
 			*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
@@ -76,6 +77,22 @@ bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, 
 				break;
 			}
 		}
+	}
+	//HashTableMatches++;
+	return false;
+}
+
+bool getBestMoveFromHash(U64 hash, Move* move) {
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	unsigned int key2 = hash & 0x7FFFFFFF;
+
+	U64 entry = H_Table.Entries[idx];
+	unsigned int dbKey = entry & 0x7FFFFFFF;
+	int dbDepth = (entry >> 45) & 0x1F;
+	if (dbKey == key2) {
+		move->From = (entry >> 52) & 0x3F;
+		move->To = (entry >> 58) & 0x3F;
+		return true;		
 	}
 	//HashTableMatches++;
 	return false;
