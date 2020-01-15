@@ -78,6 +78,7 @@ int main(int argc, char* argv[]) {
 	ResetDepthTimes();
 	AdjustPositionImportance();
 	GenerateZobritsKeys();
+	Allocate(1024);
 	ClearHashTable();
 	InitGame();
 	/*for (int i = 0; i < SEARCH_THREADS; i++)
@@ -422,7 +423,7 @@ int MakeMove(Move move, Game* game) {
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
 
-	unsigned long long hash = mainGame.Hash;
+	U64 hash = game->Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
@@ -574,7 +575,7 @@ int MakeMove(Move move, Game* game) {
 	return captIndex;
 }
 
-void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, unsigned long long prevHash) {
+void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, U64 prevHash) {
 
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
@@ -649,7 +650,7 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 
 void MakeNullMove(Game* game) {
 	int side01 = game->Side >> 4;
-	unsigned long long hash = ZobritsEnpassantFile[game->State & 15];
+	U64 hash = ZobritsEnpassantFile[game->State & 15];
 	//resetting en passant
 	game->State &= ~15;
 
@@ -659,7 +660,7 @@ void MakeNullMove(Game* game) {
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 }
 
-void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prevHash) {
+void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
 	game->State = prevGameState;
@@ -737,15 +738,11 @@ bool SquareAttacked(int square, char attackedBy, Game* game) {
 	return false;
 }
 
-void SortMoves(Move* moves, int moveCount, Game* game) {
-
-	if (game->Side == WHITE)
-		QuickSort(moves, 0, moveCount - 1);
-	else
-		QuickSortDescending(moves, 0, moveCount - 1);
+void SortMoves(Move* moves, int moveCount) {
+	QuickSort(moves, 0, moveCount - 1);
 }
 
-void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int depth, char pieceIdx) {
+void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {
 	GameState prevGameState = game->State;
 	Move move;
 	move.From = fromSquare;
@@ -753,7 +750,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 	short prevPosScore = game->PositionScore;
-	unsigned long long prevHash = game->Hash;
+	U64 prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
 	move.ScoreAtDepth = GetScore(game);
@@ -762,7 +759,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
 }
 
-void CreateMoves(Game* game, int depth) {
+void CreateMoves(Game* game) {
 	game->MovesBufferLength = 0;
 	int side01 = game->Side >> 4;
 	for (size_t pi = 0; pi < 16; pi++)
@@ -785,16 +782,16 @@ void CreateMoves(Game* game, int depth) {
 				if (game->Squares[toSquare] != NOPIECE)
 					break;
 				if (toSquare < 8 || toSquare > 55) {
-					CreateMove(i, toSquare, PromotionQueen, game, depth, pi);
-					CreateMove(i, toSquare, PromotionRook, game, depth, pi);
-					CreateMove(i, toSquare, PromotionBishop, game, depth, pi);
-					CreateMove(i, toSquare, PromotionKnight, game, depth, pi);
+					CreateMove(i, toSquare, PromotionQueen, game, pi);
+					CreateMove(i, toSquare, PromotionRook, game, pi);
+					CreateMove(i, toSquare, PromotionBishop, game, pi);
+					CreateMove(i, toSquare, PromotionKnight, game, pi);
 				}
 				else if (pp == 2) {
-					CreateMove(i, toSquare, EnPassant, game, depth, pi);
+					CreateMove(i, toSquare, EnPassant, game, pi);
 				}
 				else {
-					CreateMove(i, toSquare, PlainMove, game, depth, pi);
+					CreateMove(i, toSquare, PlainMove, game, pi);
 				}
 			}
 
@@ -807,13 +804,13 @@ void CreateMoves(Game* game, int depth) {
 				if (game->Squares[toSquare] & (game->Side ^ 24))
 				{
 					if (toSquare < 8 || toSquare > 55) {
-						CreateMove(i, toSquare, PromotionQueen, game, depth, pi);
-						CreateMove(i, toSquare, PromotionRook, game, depth, pi);
-						CreateMove(i, toSquare, PromotionBishop, game, depth, pi);
-						CreateMove(i, toSquare, PromotionKnight, game, depth, pi);
+						CreateMove(i, toSquare, PromotionQueen, game, pi);
+						CreateMove(i, toSquare, PromotionRook, game, pi);
+						CreateMove(i, toSquare, PromotionBishop, game, pi);
+						CreateMove(i, toSquare, PromotionKnight, game, pi);
 					}
 					else {
-						CreateMove(i, toSquare, PlainMove, game, depth, pi);
+						CreateMove(i, toSquare, PlainMove, game, pi);
 					}
 				}
 				else {
@@ -822,7 +819,7 @@ void CreateMoves(Game* game, int depth) {
 						int toFile = toSquare & 7;
 						int toRank = toSquare >> 3;
 						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
-							CreateMove(i, toSquare, EnPassantCapture, game, depth, pi);
+							CreateMove(i, toSquare, EnPassantCapture, game, pi);
 					}
 				}
 			}
@@ -835,7 +832,7 @@ void CreateMoves(Game* game, int depth) {
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
 				if (!(game->Squares[toSquare] & game->Side)) {
-					CreateMove(i, toSquare, 0, game, depth, pi);
+					CreateMove(i, toSquare, 0, game, pi);
 				}
 			}
 			break;
@@ -847,7 +844,7 @@ void CreateMoves(Game* game, int depth) {
 			{
 				int toSquare = PieceTypeSquarePatterns[1][i][p];
 				if (!(game->Squares[toSquare] & game->Side)) {
-					CreateMove(i, toSquare, KingMove, game, depth, pi);
+					CreateMove(i, toSquare, KingMove, game, pi);
 				}
 			}
 
@@ -859,7 +856,7 @@ void CreateMoves(Game* game, int depth) {
 						game->Squares[castleBlackOffset + 6] == NOPIECE)
 					{
 						if (!SquareAttacked(5 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game))
-							CreateMove(i, 6 + castleBlackOffset, CastleShort, game, depth, pi);
+							CreateMove(i, 6 + castleBlackOffset, CastleShort, game, pi);
 					}
 				}
 				if ((game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong)) {
@@ -869,7 +866,7 @@ void CreateMoves(Game* game, int depth) {
 						game->Squares[castleBlackOffset + 3] == NOPIECE)
 					{
 						if (!SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(3 + castleBlackOffset, game->Side ^ 24, game))
-							CreateMove(i, 2 + castleBlackOffset, CastleLong, game, depth, pi);
+							CreateMove(i, 2 + castleBlackOffset, CastleLong, game, pi);
 					}
 				}
 			}
@@ -890,12 +887,12 @@ void CreateMoves(Game* game, int depth) {
 
 					if (toPiece != NOPIECE) {
 						if (!(toPiece & game->Side)) {
-							CreateMove(i, toSquare, moveInfo, game, depth, pi);
+							CreateMove(i, toSquare, moveInfo, game, pi);
 						}
 						break;
 					}
 					else {
-						CreateMove(i, toSquare, moveInfo, game, depth, pi);
+						CreateMove(i, toSquare, moveInfo, game, pi);
 					}
 				}
 			}
@@ -904,7 +901,7 @@ void CreateMoves(Game* game, int depth) {
 		}
 
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
+	SortMoves(game->MovesBuffer, game->MovesBufferLength);
 }
 
 void CreateCaptureMoves(Game* game) {
@@ -926,14 +923,13 @@ void CreateCaptureMoves(Game* game) {
 		{
 			int infront = -Behind[side01];
 			int toSquare = i + infront;
-			if (game->Squares[toSquare] != NOPIECE)
-				break;
-			if (toSquare < 8 || toSquare > 55) {
-				CreateMove(i, toSquare, PromotionQueen, game, 0, pi);
-				CreateMove(i, toSquare, PromotionRook, game, 0, pi);
-				CreateMove(i, toSquare, PromotionBishop, game, 0, pi);
-				CreateMove(i, toSquare, PromotionKnight, game, 0, pi);
-			}
+			if (game->Squares[toSquare] == NOPIECE)
+				if (toSquare < 8 || toSquare > 55) {
+					CreateMove(i, toSquare, PromotionQueen, game,  pi);
+					CreateMove(i, toSquare, PromotionRook, game,  pi);
+					CreateMove(i, toSquare, PromotionBishop, game,  pi);
+					CreateMove(i, toSquare, PromotionKnight, game,  pi);
+				}
 
 			int captPat = PawnCapturePattern[side01];
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
@@ -944,13 +940,13 @@ void CreateCaptureMoves(Game* game) {
 				if (game->Squares[toSquare] & otherSide)
 				{
 					if (toSquare < 8 || toSquare > 55) {
-						CreateMove(i, toSquare, PromotionQueen, game, 0, pi);
-						/*CreateMove(i, toSquare, PromotionRook, game, 0, pi);
-						CreateMove(i, toSquare, PromotionBishop, game, 0, pi);
-						CreateMove(i, toSquare, PromotionKnight, game, 0, pi);*/
+						CreateMove(i, toSquare, PromotionQueen, game,  pi);
+						/*CreateMove(i, toSquare, PromotionRook, game,  pi);
+						CreateMove(i, toSquare, PromotionBishop, game,  pi);
+						CreateMove(i, toSquare, PromotionKnight, game,  pi);*/
 					}
 					else {
-						CreateMove(i, toSquare, PlainMove, game, 0, pi);
+						CreateMove(i, toSquare, PlainMove, game,  pi);
 					}
 				}
 				else {
@@ -959,7 +955,7 @@ void CreateCaptureMoves(Game* game) {
 						int toFile = toSquare & 7;
 						int toRank = toSquare >> 3;
 						if (toFile == enpFile && toRank == EnpassantRankPattern[side01])
-							CreateMove(i, toSquare, EnPassantCapture, game, 0, pi);
+							CreateMove(i, toSquare, EnPassantCapture, game,  pi);
 					}
 				}
 			}
@@ -972,7 +968,7 @@ void CreateCaptureMoves(Game* game) {
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
 				if (game->Squares[toSquare] & otherSide) {
-					CreateMove(i, toSquare, 0, game, 0, pi);
+					CreateMove(i, toSquare, 0, game, pi);
 				}
 			}
 			break;
@@ -984,7 +980,7 @@ void CreateCaptureMoves(Game* game) {
 			{
 				int toSquare = PieceTypeSquarePatterns[1][i][p];
 				if (game->Squares[toSquare] & otherSide) {
-					CreateMove(i, toSquare, KingMove, game, 0, pi);
+					CreateMove(i, toSquare, KingMove, game, pi);
 				}
 			}
 			break;
@@ -1002,7 +998,7 @@ void CreateCaptureMoves(Game* game) {
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 					if (toPiece & otherSide) {
-						CreateMove(i, toSquare, moveInfo, game, 0, pi);
+						CreateMove(i, toSquare, moveInfo, game, pi);
 						break;
 					}
 				}
@@ -1011,7 +1007,7 @@ void CreateCaptureMoves(Game* game) {
 		}
 		}
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
+	SortMoves(game->MovesBuffer, game->MovesBufferLength);
 }
 
 PieceType parsePieceType(char c) {
@@ -1229,7 +1225,7 @@ void RemoveInvalidMoves(Game* game) {
 		Move move = game->MovesBuffer[m];
 		GameState prevState = game->State;
 		short prevPosScor = game->PositionScore;
-		unsigned long long prevHash = game->Hash;
+		U64 prevHash = game->Hash;
 		int captIndex = MakeMove(move, game);
 		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 
@@ -1299,7 +1295,6 @@ void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
 }
 
-
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
 }
@@ -1309,18 +1304,18 @@ void AdjustPositionImportance() {
 	{
 		for (int s = 0; s < 64; s++)
 		{
-			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 2;
-			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 2;
+			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
+			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
 		}
 	}
 
 	for (int i = 0; i < 64; i++)
 	{
-		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 2;
-		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 2;
+		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
+		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
 
-		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 2;
-		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 2;
+		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
+		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
 	}
 }
 
@@ -1354,28 +1349,22 @@ bool DrawByRepetition(Game* game) {
 }
 
 short GetScore(Game* game) {
-	int drawRepLengthEnd = 30;
 	if (DrawByRepetition(game))
 		return 0;
 	// todo 50 move rule.
-	return game->Material[0] + game->Material[1] + game->PositionScore;;// +GetEval(game);
+	if (game->Side == WHITE)
+		return -(game->Material[0] + game->Material[1] + game->PositionScore);
+
+	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
-	if (game->Side == BLACK) {
-		if (score >= beta)
-			return beta;
-		if (score > alpha)
-			alpha = score;
-	}
-	else {
-		if (score <= alpha)
-			return alpha;
-		if (score < beta)
-			beta = score;
-	}
+	if (score >= beta)
+		return beta;
+	if (score > alpha)
+		alpha = score;
 
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
@@ -1387,67 +1376,36 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-	if (game->Side == BLACK) { //maximizing
 
-		score = -9000;
-		for (int i = 0; i < moveCount; i++)
+	score = MIN_SCORE;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move childMove = localMoves[i];
+		GameState state = game->State;
+		int prevPosScore = game->PositionScore;
+		unsigned long long prevHash = game->Hash;
+
+		int captIndex = MakeMove(childMove, game);
+		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+		bool legal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!legal)
 		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			unsigned long long prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score > alpha) {
-				if (score >= beta) {
-					free(localMoves);
-					return beta;
-				}
-				alpha = score;
-			}
+			continue;
 		}
-		free(localMoves);
-		return alpha;
+		score = -AlphaBetaQuite(-beta, -alpha, game, childMove.ScoreAtDepth);
+		UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+		if (score > alpha) {
+			if (score >= beta) {
+				free(localMoves);
+				return beta;
+			}
+			alpha = score;
+		}
 	}
-	else { //minimizing
-		score = 9000;
-		for (int i = 0; i < moveCount; i++)
-		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			unsigned long long prevHash = game->Hash;
+	free(localMoves);
+	return alpha;
 
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score < beta) {
-				if (score <= alpha) {
-					free(localMoves);
-					return alpha;
-				}
-				beta = score;
-			}
-		}
-		free(localMoves);
-		return beta;
-	}
 }
 
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, short deep_in) {
@@ -1462,12 +1420,11 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return moveScore + GetEval(game);
 	}
 
-	/*short score;
-	int dbDepth = 0;
-	bool empty;
-	short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
-	if (!empty && dbDepth > depth + 1)
-		return dbScore;*/
+	short score = 0;char from, to;
+
+	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
+		return score;
+	}
 
 	int side01 = game->Side >> 4;
 	int otherSide = game->Side ^ 24;
@@ -1476,28 +1433,18 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
 	if (incheck)
 		depth++;
-	int r = 3;
+	int r = 3; //todo: tests att sätta till 
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
 			GameState prevState = game->State;
-			unsigned long long prevHash = game->Hash;
+			U64 prevHash = game->Hash;
 			MakeNullMove(game);
-			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
-				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
-					return alpha;
-				}
-			}
-			if (game->Side == WHITE)
-			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore, deep_in + 1);
-				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
-					return beta;
-				}
+			int nullScore = -AlphaBeta(-beta, -beta + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
+			if (nullScore >= beta && nullScore > -7000 && nullScore < 7000) {
+				UnMakeNullMove(prevState, game, prevHash);
+				return beta;
 			}
 			UnMakeNullMove(prevState, game, prevHash);
 		}
@@ -1512,93 +1459,56 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	// alpha beta pruning
 	short bestScore = 0;
-	short score = 0;
+	Move bestMove = localMoves[0];
 	int legalCount = 0;
-	if (game->Side == BLACK) { //maximizing, black
-		bestScore = -9000;
-		score = -9000;
-		for (int i = 0; i < moveCount; i++)
+	bestScore = MIN_SCORE;
+	score = MIN_SCORE;
+	short oldAlpha = alpha;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move childMove = localMoves[i];
+		GameState state = game->State;
+		int prevPosScore = game->PositionScore;
+		U64 prevHash = game->Hash;
+		int captIndex = MakeMove(childMove, game);
+		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+		bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!isLegal)
 		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			unsigned long long prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
-
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			legalCount++;
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			continue;
+		}
+		legalCount++;
+		score = -AlphaBeta(-beta, -alpha, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
+		UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
-			if (score > bestScore) {
-				bestScore = score;
-				if (score > alpha) {
-					if (score >= beta) {
-						//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
-						free(localMoves);
-						return beta;
-					}
-					alpha = score;
+		if (score > bestScore) {
+			bestScore = score;
+			bestMove = childMove;
+			if (score > alpha) {
+				if (score >= beta) {
+					addHashScore(game->Hash, bestScore, depth, BETA, bestMove.From, bestMove.To);
+					free(localMoves);
+					return beta;
 				}
+				alpha = score;
 			}
 		}
-		free(localMoves);
-		if (legalCount == 0) {
-			if (incheck)
-				return -8000 + deep_in;
-			else
-				return 0;
-		}
-		return alpha;
 	}
-	else { //minimizing, white
-		bestScore = 9000;
-		score = 9000;
-		for (int i = 0; i < moveCount; i++)
-		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			short prevPosScore = game->PositionScore;
-			unsigned long long prevHash = game->Hash;
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			legalCount++;
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score < bestScore) {
-				bestScore = score;
-				if (score < beta) {
-					if (score <= alpha) {
-						//AddBestMovesEntry(&bmTables[game->ThreadIndex], prevHash, childMove.From, childMove.To);
-						free(localMoves);
-						return alpha;
-					}
-					beta = score;
-				}
-			}
-		}
-		free(localMoves);
-		if (legalCount == 0) {
-			if (incheck)
-				return 8000 - deep_in; //mate
-			else
-				return 0; //stale mate
-		}
-		return beta;
+	free(localMoves);
+	if (legalCount == 0) {
+		if (incheck)
+			return -8000 + deep_in;
+		else
+			return 0;
 	}
+
+	if (alpha != oldAlpha)
+		addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+	else
+		addHashScore(game->Hash, bestScore, depth, ALPHA, bestMove.From, bestMove.To);
+
+	return alpha;
 }
 
 Game* CopyMainGame(int threadNo) {
@@ -1611,7 +1521,7 @@ Game* CopyMainGame(int threadNo) {
 
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
-	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
+	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(U64));
 	/*for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -1629,13 +1539,13 @@ DWORD WINAPI DoNothingThread(int* prm) {
 	ExitThread(0);
 }
 
-// Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
+// Entry point for a thread that starts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
 // Sets the score on the root move pointer. They are all common for all threads.
 
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
-
+	
 	do
 	{
 		Game* game = &(threadGames[prm->threadID]);
@@ -1643,14 +1553,14 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		g_rootMoves.moves[prm->moveIndex].ThreadIndex = prm->threadID;
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
-		unsigned long long prevHash = game->Hash;
+		U64 prevHash = game->Hash;
 
 		int captIndex = MakeMove(move, game);
-
-		short g_alpha = -9000;
-		short g_beta = 9000;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
-
+		
+		short alpha = MIN_SCORE;
+		short beta = MAX_SCORE;
+		int score = AlphaBeta(alpha, beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
+		
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
@@ -1674,10 +1584,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
-
-	/*g_alpha = -9000;
-	g_beta = 9000;*/
-
+	
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
 		if (i > moveCount - 1) //in case more threads than moves
@@ -1695,7 +1602,8 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
+	SortMoves(g_rootMoves.moves, moveCount);
+	addHashScore(mainGame.Hash, g_rootMoves.moves[0].ScoreAtDepth, depth, EXACT, g_rootMoves.moves[0].From, g_rootMoves.moves[0].To);
 
 	//free(tps);
 }
@@ -1757,15 +1665,17 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	int index = 0;
 	PlayerMove moves[100];
 	int movesCount = 0;
-	while (false)//(true)
+	
+	while (true)
 	{
-		Move bMove;// = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
-		if (bMove.MoveInfo == NotAMove)
+		Move bestMove;
+		if (!getBestMoveFromHash(game->Hash, &bestMove))
 			break;
-		char sMove[5];
-		MoveToString(bMove, sMove);
-		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
+		
+		char* sMove[5];
+		MoveToString(bestMove, sMove);
 
+		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 		if (plMove.Invalid)
 			break;
 		moves[movesCount++] = plMove;
@@ -1777,6 +1687,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
+
 	int nps = (float)SearchedLeafs / ellapsed;
 	int time = ellapsed * 1000;
 	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", move.ScoreAtDepth, depth, SearchedLeafs, time, nps, buffer);
@@ -1803,7 +1714,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	{
 		clock_t depStart = clock();
 		SetMovesScoreAtDepth(depth, moveCount);
-		//SortMoves(localMoves, moveCount, &mainGame);
+		//SortMoves(localMoves, moveCount);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
 			g_topSearchParams.BestMove = g_rootMoves.moves[0];
 			bestScore = g_rootMoves.moves[0].ScoreAtDepth;

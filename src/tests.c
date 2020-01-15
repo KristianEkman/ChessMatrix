@@ -85,7 +85,7 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 	}
 }
 
-void AssertAreEqualLongs(unsigned long long expected, unsigned long long actual, char* msg) {
+void AssertAreEqualLongs(U64 expected, U64 actual, char* msg) {
 	if (expected != actual)
 	{
 		printf("\n");
@@ -111,12 +111,12 @@ void printPerftResults() {
 
 void HashKeyTest() {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
-	unsigned long long hash1 = mainGame.Hash;
+	U64 hash1 = mainGame.Hash;
  	PlayerMove pl1 = MakePlayerMove("g1f3");
 	PlayerMove pl2 = MakePlayerMove("g8f6");
 	PlayerMove pl3 = MakePlayerMove("f3g1");
 	PlayerMove pl4 = MakePlayerMove("f6g8");
-	unsigned long long hash2 = mainGame.Hash;
+	U64 hash2 = mainGame.Hash;
 
 	AssertAreEqualLongs(hash1, hash2, "Hash keys should be equal");
 
@@ -125,57 +125,66 @@ void HashKeyTest() {
 void HashTableRoundTrip() {
 	printf("\n");printf(__func__);
 	ClearHashTable();
-	unsigned long long hash = 0x1234567890ABCDEF;
+	U64 hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	addHashScore(hash, expected, 1);
-	bool empty = FALSE;
+	addHashScore(hash, expected, 1, EXACT, 1, 2);
 	int depth = 0;
-	short score = getScoreFromHash(hash, &empty, &depth);
+	short score = 0;
+	char from = 0, to = 0;
+	getScoreFromHash(hash, 1, &score, &from, &to, 3000 ,0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
-	unsigned long long hash2 = hash + 1;
-	short expected2 = 4000;
-	addHashScore(hash2, expected2, 1);
-	short score2 = getScoreFromHash(hash2, &empty, &depth);
+	U64 hash2 = hash + 1;
+	short expected2 = -4000;
+	addHashScore(hash2, expected2, 1, EXACT, 10, 12);
+
+	short score2;
+	getScoreFromHash(hash2, 1, &score2, &from, &to, 0 ,0);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
-	score = getScoreFromHash(hash, &empty, &depth);
+	
+	getScoreFromHash(hash, 1, &score, &from, &to, 0 , 0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
 void HashTableDepthTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ClearHashTable();
-	unsigned long long hash = 0x1234567890ABCDEF;
+	U64 hash = 0x1234567890ABCDEF;
 
-	addHashScore(hash, 3000, 2);
-	bool empty = FALSE;
-	int depth = 0;
-	short score = getScoreFromHash(hash, &empty, &depth);
+	addHashScore(hash, 3000, 2, EXACT, 40, 50 );
+	int depth = 2;
+	short score;
+	char from, to;
+	getScoreFromHash(hash, depth, &score, &from, &to, 100, 200);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	addHashScore(hash, 4000, 1); //smaller depth
-	short score2 = getScoreFromHash(hash, &empty, &depth);
+	addHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
+	short score2 = 0;
+	getScoreFromHash(hash, 2,  &score2, &from, &to, 30, 60);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	addHashScore(hash, 5000, 3); //smaller depth
-	score = getScoreFromHash(hash, &empty, &depth);
+	addHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
+	getScoreFromHash(hash, 3, &score, &from, &to, 30, 31);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
 void HashTablePerformance(int iterations) {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ClearHashTable();
-	unsigned long long hash = llrand();
-	short expected = 1;
+	U64 hash = llrand();
+	short expected = MIN_SCORE;
+	int depth = 1;
+	short score = 0;
+	char from, to;
 
 	for (int i = 0; i < iterations; i++)
 	{
 		expected++;
+		if (expected > MAX_SCORE)
+			expected = MIN_SCORE;
 		hash++;
-		addHashScore(hash, expected, 1);
-		bool empty = FALSE;
-		int depth = 0;
-		short score = getScoreFromHash(hash, &empty, &depth);
+		addHashScore(hash, expected, 1, EXACT, 1, 1), "";		
+		Assert(getScoreFromHash(hash, depth, &score, &from, &to, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
@@ -211,7 +220,7 @@ int Perft(depth) {
 
 		GameState prevGameState = mainGame.State;
 		int prevPositionScore = mainGame.PositionScore;
-		unsigned long long prevHash = mainGame.Hash;
+		U64 prevHash = mainGame.Hash;
 
 		int captIndex = MakeMove(move, &mainGame);
 		nodeCount += Perft(depth - 1);
@@ -228,7 +237,7 @@ int perftSaveHashCount = 0;
 int collisionCount = 0;
 
 typedef struct {
-	unsigned long long Hash;
+	U64 Hash;
 	char Fen[100];
 } HashFen;
 
@@ -271,7 +280,7 @@ void PerftSaveHash(depth) {
 		Move move = localMoves[i];
 		GameState prevGameState = mainGame.State;
 		int prevPositionScore = mainGame.PositionScore;
-		unsigned long long prevHash = mainGame.Hash;
+		U64 prevHash = mainGame.Hash;
 
 		int captIndex = MakeMove(move, &mainGame);
 		PerftSaveHash(depth - 1);
@@ -322,7 +331,7 @@ int PerftHashDb(int depth) {
 		Move move = localMoves[i];
 		GameState prevGameState = mainGame.State;
 		int prevPositionScore = mainGame.PositionScore;
-		unsigned long long prevHash = mainGame.Hash;
+		U64 prevHash = mainGame.Hash;
 
 		int captIndex = MakeMove(move, &mainGame);
 		nodeCount += PerftHashDb(depth - 1);
@@ -611,6 +620,7 @@ void TestEvalOpenFile() {
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
+	ClearHashTable();
 	SearchedLeafs = 0;
 	clock_t start = clock();
 	DefaultSearch();
@@ -631,6 +641,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
+	ClearHashTable();
 	SearchedLeafs = 0;
 	DefaultSearch();
 	g_topSearchParams.MoveTime = secs * 1000;
@@ -751,8 +762,7 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*PerftSaveHashTest();
-	if (_failedAsserts == 0)
+	/*if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
@@ -765,7 +775,7 @@ void runAllTests() {
 	PerftSaveHashTest();
 #endif // _DEBUG
 
-	/*HashKeyTest();
+	HashKeyTest();
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
 	HashTableRoundTrip();
@@ -786,7 +796,7 @@ void runAllTests() {
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
 	OpenFileTest();SemiOpenFileTest();
-	DoublePawnsTest();*/
+	DoublePawnsTest();
 
 	/*PositionScorePawns();
 	PositionScoreKnights();

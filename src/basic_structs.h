@@ -1,4 +1,8 @@
 #pragma once
+#include "common.h"
+
+#define MAX_SCORE 8190 //14 bits
+#define MIN_SCORE -8190
 
 typedef enum  {
 	NOPIECE,
@@ -74,7 +78,7 @@ typedef struct {
 	GameState PreviousGameState;
 	bool Invalid;
 	int PreviousPositionScore;
-	unsigned long long PreviousHash;
+	U64 PreviousHash;
 } PlayerMove;
 
 
@@ -87,8 +91,8 @@ typedef struct {
 	short Material[2];
 	PieceType Squares[64];
 	short PositionScore;
-	unsigned long long Hash;
-	unsigned long long PositionHistory[256];
+	U64 Hash;
+	U64 PositionHistory[256];
 	int PositionHistoryLength;
 	int ThreadIndex;
 	Piece Pieces[2][16];
@@ -105,14 +109,6 @@ typedef struct {
 	Move moves[100];
 	int Length;
 } GlobalRootMoves;
-
-
-typedef struct  {
-	short Score;
-	char Depth;
-	int Key2;
-}HashTableEntry;
-
 
 typedef struct {
 	int MaxDepth;
