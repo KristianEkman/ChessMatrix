@@ -1,9 +1,10 @@
 #pragma once
 #include <stdbool.h>
+#include "common.h"
 
 int parseChar(char c);
 
-unsigned long long llrand();
+U64 llrand();
 
 bool streq(char s1[], char s2[]);
 

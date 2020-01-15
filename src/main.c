@@ -78,6 +78,7 @@ int main(int argc, char* argv[]) {
 	ResetDepthTimes();
 	AdjustPositionImportance();
 	GenerateZobritsKeys();
+	Allocate(1024);
 	ClearHashTable();
 	InitGame();
 	/*for (int i = 0; i < SEARCH_THREADS; i++)
@@ -422,7 +423,7 @@ int MakeMove(Move move, Game* game) {
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
 
-	unsigned long long hash = mainGame.Hash;
+	U64 hash = mainGame.Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
@@ -574,7 +575,7 @@ int MakeMove(Move move, Game* game) {
 	return captIndex;
 }
 
-void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, unsigned long long prevHash) {
+void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, U64 prevHash) {
 
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
@@ -649,7 +650,7 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 
 void MakeNullMove(Game* game) {
 	int side01 = game->Side >> 4;
-	unsigned long long hash = ZobritsEnpassantFile[game->State & 15];
+	U64 hash = ZobritsEnpassantFile[game->State & 15];
 	//resetting en passant
 	game->State &= ~15;
 
@@ -659,7 +660,7 @@ void MakeNullMove(Game* game) {
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 }
 
-void UnMakeNullMove(GameState prevGameState, Game* game, unsigned long long prevHash) {
+void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
 	game->State = prevGameState;
@@ -749,7 +750,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 	short prevPosScore = game->PositionScore;
-	unsigned long long prevHash = game->Hash;
+	U64 prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
 	move.ScoreAtDepth = GetScore(game);
@@ -1224,7 +1225,7 @@ void RemoveInvalidMoves(Game* game) {
 		Move move = game->MovesBuffer[m];
 		GameState prevState = game->State;
 		short prevPosScor = game->PositionScore;
-		unsigned long long prevHash = game->Hash;
+		U64 prevHash = game->Hash;
 		int captIndex = MakeMove(move, game);
 		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 
@@ -1304,18 +1305,18 @@ void AdjustPositionImportance() {
 	{
 		for (int s = 0; s < 64; s++)
 		{
-			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 2;
-			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 2;
+			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
+			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
 		}
 	}
 
 	for (int i = 0; i < 64; i++)
 	{
-		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 2;
-		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 2;
+		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
+		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
 
-		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 2;
-		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 2;
+		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
+		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
 	}
 }
 
@@ -1420,12 +1421,11 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return moveScore + GetEval(game);
 	}
 
-	/*short score;
-	int dbDepth = 0;
-	bool empty;
-	short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
-	if (!empty && dbDepth > depth + 1)
-		return dbScore;*/
+	short score = 0;char from, to;
+
+	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
+		return score;
+	}
 
 	int side01 = game->Side >> 4;
 	int otherSide = game->Side ^ 24;
@@ -1434,13 +1434,13 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
 	if (incheck)
 		depth++;
-	int r = 3;
+	int r = 3; //todo: tests att sätta till 
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
 			GameState prevState = game->State;
-			unsigned long long prevHash = game->Hash;
+			U64 prevHash = game->Hash;
 			MakeNullMove(game);
 			int nullScore = -AlphaBeta(-beta, -beta + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
 			if (nullScore >= beta && nullScore > -7000 && nullScore < 7000) {
@@ -1460,7 +1460,6 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	// alpha beta pruning
 	short bestScore = 0;
-	short score = 0;
 	int legalCount = 0;
 	bestScore = -9000;
 	score = -9000;
@@ -1517,7 +1516,7 @@ Game* CopyMainGame(int threadNo) {
 
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
-	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(unsigned long long));
+	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(U64));
 	/*for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -1549,7 +1548,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		g_rootMoves.moves[prm->moveIndex].ThreadIndex = prm->threadID;
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
-		unsigned long long prevHash = game->Hash;
+		U64 prevHash = game->Hash;
 
 		int captIndex = MakeMove(move, game);
 
@@ -1580,10 +1579,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
-
-	/*g_alpha = -9000;
-	g_beta = 9000;*/
-
+	
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
 		if (i > moveCount - 1) //in case more threads than moves
