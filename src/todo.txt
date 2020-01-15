@@ -1,20 +1,17 @@
-Skriva om alpha beta
+definiera MAXSCORE, MINSCORE
 
-r1b1k2r/ppppqpp1/4n2p/1B1Q4/8/2P2N2/P1P2PPP/R1B1R1K1 b kq - 0 12
-På djup 8 forkar inte svart c7c6
-skrivtestfall och leta bugg
+
+testfallet fallerar på djup 5
+r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6
 
 Lagra score alpha beta i hash
 
-
 Timing
+	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
 
 Fungerar draw by rep?
-
-Slå på hash table for score.
-	kolla på vice
 
 Eval: 
     open file on king
@@ -25,8 +22,6 @@ Eval:
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
-	
-
 	
 Opening Book
 	Opening Score, early queen, minor piece count.
