@@ -1,10 +1,8 @@
-definiera MAXSCORE, MINSCORE
-
 
 testfallet fallerar på djup 5
 r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6
 
-Lagra score alpha beta i hash
+sortera pv-moves först
 
 Timing
 	- Öka max fallback tid om det finns tid.
