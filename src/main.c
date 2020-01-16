@@ -1420,7 +1420,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return moveScore + GetEval(game);
 	}
 
-	short score = 0;char from, to;
+	short score = 0; char from, to;
 
 	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
 		return score;

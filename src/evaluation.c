@@ -224,5 +224,7 @@ short GetEval(Game* game) {
 			}
 		}
 	}
+	if (game->Side == WHITE)
+		return -score;
 	return score;
 }
