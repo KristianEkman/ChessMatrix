@@ -423,7 +423,7 @@ int MakeMove(Move move, Game* game) {
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
 
-	U64 hash = mainGame.Hash;
+	U64 hash = game->Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
