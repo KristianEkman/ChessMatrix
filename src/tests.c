@@ -662,8 +662,8 @@ void BestMoveTestBlackCaptureBishop() {
 
 void TestWhiteMateIn2() {
 	char * fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
-	AssertBestMove(5, __func__, fen, "d5d7");
-	AssertBestMoveTimed(1, __func__, fen, "d5d7");
+	AssertBestMove(5, __func__, fen, "c6c7");
+	AssertBestMoveTimed(1, __func__, fen, "c6c7");
 }
 
 void BlackMatesIn5Deeping() {

@@ -925,6 +925,18 @@ void CreateCaptureMoves(Game* game) {
 		{
 		case PAWN:
 		{
+			int infront = -Behind[side01];
+			int toSquare = i + infront;
+			if (game->Squares[toSquare] == NOPIECE)
+			{
+				if (toSquare < 8 || toSquare > 55) {
+					CreateMove(i, toSquare, PromotionQueen, game,0, pi);
+					/*CreateMove(i, toSquare, PromotionRook, game,0, pi);
+					CreateMove(i, toSquare, PromotionBishop, game,0, pi);
+					CreateMove(i, toSquare, PromotionKnight, game,0, pi);*/
+				}
+			}
+
 			int captPat = PawnCapturePattern[game->Side >> 4];
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
@@ -935,9 +947,9 @@ void CreateCaptureMoves(Game* game) {
 				{
 					if (toSquare < 8 || toSquare > 55) {
 						CreateMove(i, toSquare, PromotionQueen, game, 0, pi);
-						CreateMove(i, toSquare, PromotionRook, game, 0, pi);
+						/*CreateMove(i, toSquare, PromotionRook, game, 0, pi);
 						CreateMove(i, toSquare, PromotionBishop, game, 0, pi);
-						CreateMove(i, toSquare, PromotionKnight, game, 0, pi);
+						CreateMove(i, toSquare, PromotionKnight, game, 0, pi);*/
 					}
 					else {
 						CreateMove(i, toSquare, PlainMove, game, 0, pi);
@@ -1354,6 +1366,19 @@ short GetScore(Game* game) {
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
+	if (game->Side == BLACK) {
+		if (score >= beta)
+			return beta;
+		if (score > alpha)
+			alpha = score;
+	}
+	else {
+		if (score <= alpha)
+			return alpha;
+		if (score < beta)
+			beta = score;
+	}
+
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
@@ -1361,17 +1386,10 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		SearchedLeafs++;
 		return moveScore;
 	}
+
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	if (game->Side == BLACK) { //maximizing
-		if (score >= beta)
-		{
-			free(localMoves);
-			return beta;
-		}
-
-		if (score > alpha)
-			alpha = score;
 		score = MIN_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1402,13 +1420,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		return alpha;
 	}
 	else { //minimizing
-		if (score <= alpha)
-		{
-			free(localMoves);
-			return alpha;
-		}
-		if (score < beta)
-			beta = score;
 		score = MAX_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
@@ -1440,7 +1451,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	}
 }
 
-short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore) {
+short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (Stopped)
 		return moveScore; // should not be used;
 
@@ -1461,11 +1472,9 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	//Probe hash
 	short score = 0;char from, to;
-
 	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
 		return score;
 	}
-
 	
 	//NULL move check
 	int r = 3; //todo: tests att sätta till 
@@ -1477,14 +1486,14 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			U64 prevHash = game->Hash;
 			MakeNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore);
+				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
 				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
 				}
 			}else //(game->Side == WHITE)
 			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore);
+				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore, deep_in + 1);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return beta;
@@ -1527,7 +1536,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
 			if (score > bestScore) {
@@ -1547,7 +1556,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		free(localMoves);
 		if (legalCount == 0) {
 			if (incheck)
-				return -8000;
+				return -8000 + deep_in;
 			else
 				return 0;
 		}
@@ -1577,7 +1586,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (score < bestScore) {
 				bestScore = score;
@@ -1595,7 +1604,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		free(localMoves);
 		if (legalCount == 0) {
 			if (incheck)
-				return 8000; //mate
+				return 8000 - deep_in; //mate
 			else
 				return 0; //stale mate
 		}
@@ -1664,7 +1673,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		else {*/
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth);
+		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
 		//addHashScore(game->Hash, score, prm->depth);
 	//}
 
@@ -1781,15 +1790,16 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	int index = 0;
 	PlayerMove moves[100];
 	int movesCount = 0;
-	while (false)//(true)
+	while (true)
 	{
-		Move bMove;// = GetBestMove(&bmTables[move.ThreadIndex], game->Hash);
-		if (bMove.MoveInfo == NotAMove)
+		Move bestMove;
+		if (!getBestMoveFromHash(game->Hash, &bestMove))
 			break;
-		char sMove[5];
-		MoveToString(bMove, sMove);
-		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 
+		char* sMove[5];
+		MoveToString(bestMove, sMove);
+
+		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 		if (plMove.Invalid)
 			break;
 		moves[movesCount++] = plMove;

@@ -81,6 +81,21 @@ bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, 
 	return false;
 }
 
+bool getBestMoveFromHash(U64 hash, Move* move) {
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	unsigned int key2 = hash & 0x7FFFFFFF;
+
+	U64 entry = H_Table.Entries[idx];
+	unsigned int dbKey = entry & 0x7FFFFFFF;
+	int dbDepth = (entry >> 45) & 0x1F;
+	if (dbKey == key2) {
+		move->From = (entry >> 52) & 0x3F;
+		move->To = (entry >> 58) & 0x3F;
+		return true;
+	}
+	return false;
+}
+
 void GenerateZobritsKeys() {
 	for (int i = 0; i < 23; i++) //only using 16 of these, but King | BLACK is 22 and some are not use. See also PieceType enum.
 		for (int s = 0; s < 64; s++)
