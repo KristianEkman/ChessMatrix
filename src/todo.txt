@@ -1,11 +1,10 @@
-Sortering av pv moves
 
 Timing
 	- Hur funkar den vid tidsbrist?
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
-Undvika thread collirions i add hash.
+Undvika thread krockar i add hash. lagga packning tidigare.
 
 Fungerar draw by rep?
 	Slå ihop GetEval och GetScore.
@@ -16,7 +15,6 @@ Opening Book
 Eval: 
     connected rooks on file and rank
 	open file on king
-	push pawns
 	Tempo
 		Not move queen
 		Not move piece twice
@@ -27,6 +25,21 @@ Eval:
 Fifty move rule.
 
 Material draw?
+
+Mer pruning
+	Aspiration window
+	Futilty pruning
+	Razoring
+	Killer moves
+
+Refactor main
+	Flytta ut globala variabler.
+	Flytta ut search, movegen, uci, evaluation
+	Enums for color01
+
+killer-heuristic
+
+Fler testafall.
 
 time control blitz
 	Syfte:
@@ -44,20 +57,5 @@ time control blitz
 		Ta bort tid om mots ligger före.
 
 	Sätt också en maxtid som alltid avbryter.		
-
-Mer pruning
-	Aspiration window
-	Futilty pruning
-	Razoring
-	Killer moves
-
-Refactor main
-	Flytta ut globala variabler.
-	Flytta ut search, movegen, uci, evaluation
-	Enums for color01
-
-killer-heuristic
-
-Fler testafall.
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
