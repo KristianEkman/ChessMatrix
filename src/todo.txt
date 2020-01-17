@@ -1,13 +1,16 @@
 
+inte spara till hash vid stoppad.
+
+merge till master
+
+räkna nodes istf leafs.
+
 Timing
 	- Hur funkar den vid tidsbrist?
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
 Undvika thread krockar i add hash. lagga packning tidigare.
-
-Fungerar draw by rep?
-	Slå ihop GetEval och GetScore.
 
 Opening Book
 	Opening Score, early queen, minor piece count, slå av och på.

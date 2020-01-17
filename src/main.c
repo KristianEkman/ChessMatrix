@@ -757,7 +757,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 	U64 prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
-	move.ScoreAtDepth = GetScore(game);
+	move.ScoreAtDepth = GetMoveScore(game);
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
@@ -1342,27 +1342,6 @@ void SwitchSignOfWhitePositionValue() {
 	}
 }
 
-bool DrawByRepetition(Game* game) {
-	if (game->PositionHistoryLength < 50)
-		return false;
-	int start = game->PositionHistoryLength - 15; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
-	int end = game->PositionHistoryLength - (int)2;
-	for (size_t i = start; i < end; i++)
-	{
-		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
-			return true;
-	}
-	return false;
-}
-
-short GetScore(Game* game) {
-	int drawRepLengthEnd = 30;
-	if (DrawByRepetition(game))
-		return 0;
-	// todo 50 move rule.
-	return game->Material[0] + game->Material[1] + game->PositionScore;;// +GetEval(game);
-}
-
 void MoveToTop(Move move, Move* list, int length) {
 	for (size_t i = 0; i < length; i++)
 	{
@@ -1472,7 +1451,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
 		SearchedLeafs++;
-		return moveScore + GetEval(game);
+		return GetEval(game, moveScore);
 	}
 
 	//In check extension
@@ -1831,7 +1810,10 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	int nps = (float)SearchedLeafs / ellapsed;
 	int time = ellapsed * 1000;
-	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", move.ScoreAtDepth, depth, SearchedLeafs, time, nps, buffer);
+	short score = move.ScoreAtDepth;
+	if (game->Side == WHITE)
+		score = -score;
+	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", score, depth, SearchedLeafs, time, nps, buffer);
 	fflush(stdout);
 	return 0;
 }
@@ -1881,14 +1863,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 
 	} while (depth <= maxDepth && !Stopped);
-	clock_t stop = clock();
-
-	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	int nps = SearchedLeafs / secs; // todo
-	short score = g_rootMoves.moves[0].ScoreAtDepth;
-
-	printf("info nodes %d nps %d score cp %d depth %d\n", SearchedLeafs, nps, score, depth);
-	fflush(stdout);
+	
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);

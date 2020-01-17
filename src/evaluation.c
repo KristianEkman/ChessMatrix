@@ -1,7 +1,8 @@
 #include "basic_structs.h"
 #include "evaluation.h"
-//white, black, (flipped, starts at A1)
+#include <stdlib.h>
 
+//white, black, (flipped, starts at A1)
 //[type][side][square]
 short PositionValueMatrix[7][2][64] = {
 	{
@@ -186,44 +187,68 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 	return score;
 }
 
-short GetEval(Game* game) {
-
-	int score = 0;
-	for (int i = 0; i < 64; i++)
+bool DrawByRepetition(Game* game) {
+	if (game->PositionHistoryLength < 50)
+		return false;
+	int start = game->PositionHistoryLength - 15; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
+	int end = game->PositionHistoryLength - (int)2;
+	for (size_t i = start; i < end; i++)
 	{
-		PieceType pieceType = game->Squares[i];
-		if (pieceType == NOPIECE)
-			continue;
-		PieceType color = pieceType & (BLACK | WHITE);
-		int neg = -1;
-		if (color == BLACK)
-			neg = 1;
+		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
+			return true;
+	}
+	return false;
+}
 
-		PieceType pt = pieceType & 7;
+short GetMoveScore(Game* game) {
+	return game->Material[0] + game->Material[1] + game->PositionScore;
+}
 
-		switch (pt)
+short GetEval(Game* game, short moveScore) {
+	// todo 50 move rule.
+	if (DrawByRepetition(game))
+		return 0;
+
+	int score = moveScore;
+	int neg = -1;
+	for (size_t s = 0; s < 2; s++)
+	{
+		for (size_t p = 0; p < 16; p++)
 		{
-		case ROOK:
-		{
-			score += neg * OpenRookFile(i, game);
+			Piece piece = game->Pieces[s][p];
+			if (piece.Off)
+				continue;
+			int i = piece.SquareIndex;
+			PieceType pieceType = piece.Type;
+			PieceType color = pieceType & (BLACK | WHITE);
 
-			// connected rooks, no king between
-		}
-		//case BISHOP:
-		//{
-		//	//todo: bad bishops
+			PieceType pt = pieceType & 7;
 
-		//	//outposts, protected by a pawn?
-		//}
-		//case KNIGHT: {
-		//	//outposts, protected by a pawn?
-		//}
-		case PAWN: {
-			score -= neg * DoublePawns(i, game, pieceType);
+			switch (pt)
+			{
+			case ROOK:
+			{
+				score += neg * OpenRookFile(i, game);
+				// connected rooks, no king between
+			}
+			//case BISHOP:
+			//{
+			//	//todo: bad bishops
+
+			//	//outposts, protected by a pawn?
+			//}
+			//case KNIGHT: {
+			//	//outposts, protected by a pawn?
+			//}
+			case PAWN: {
+				score -= neg * DoublePawns(i, game, pieceType);
+			}
+			default:
+				break;
+			}
 		}
-		default:
-			break;
-		}
+		neg += 2; // -1 >>> 1
 	}
 	return score;
+
 }
