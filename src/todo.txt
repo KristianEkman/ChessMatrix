@@ -1,5 +1,4 @@
 
-inte spara till hash vid stoppad.
 
 merge till master
 
@@ -34,13 +33,13 @@ Mer pruning
 	Futilty pruning
 	Razoring
 	Killer moves
+	killer-heuristic
 
 Refactor main
 	Flytta ut globala variabler.
 	Flytta ut search, movegen, uci, evaluation
 	Enums for color01
 
-killer-heuristic
 
 Fler testafall.
 
