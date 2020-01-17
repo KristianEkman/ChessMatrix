@@ -1363,6 +1363,18 @@ short GetScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;;// +GetEval(game);
 }
 
+void MoveToTop(Move move, Move* list, int length) {
+	for (size_t i = 0; i < length; i++)
+	{
+		if (move.From == list[i].From && move.To == list[i].To && i > 0) {
+			Move temp = list[i];
+			memmove(&list[1], list, i * sizeof(Move));
+			list[0] = temp;
+			return;
+		}
+	}
+}
+
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
@@ -1471,8 +1483,9 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		depth++;
 
 	//Probe hash
-	short score = 0;char from, to;
-	if (getScoreFromHash(game->Hash, depth, &score, &from, &to, alpha, beta)) {
+	short score = 0; Move pvMove;
+	pvMove.MoveInfo = NotAMove;
+	if (getScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta)) {
 		return score;
 	}
 	
@@ -1509,6 +1522,11 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+
+	// move pv move first
+	if (pvMove.MoveInfo != NotAMove) {
+		MoveToTop(pvMove, localMoves, moveCount);
+	}
 
 	// alpha beta pruning
 	short bestScore = 0;

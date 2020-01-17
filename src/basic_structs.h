@@ -39,7 +39,7 @@ typedef enum {
 	//
 }MoveInfo;
 
-typedef struct {
+typedef struct Move {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
