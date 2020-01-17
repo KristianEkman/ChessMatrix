@@ -1784,13 +1784,13 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	pv += 4;
 	strcpy(pv, " ");
 	pv++;
-	Game* game = &threadGames[move.ThreadIndex];
+	Game* game = &mainGame;
 
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
 	PlayerMove moves[100];
 	int movesCount = 0;
-	while (true)
+	while (movesCount < depth)
 	{
 		Move bestMove;
 		if (!getBestMoveFromHash(game->Hash, &bestMove))

@@ -1,16 +1,21 @@
-definiera MAXSCORE, MINSCORE
-
-Generara promotions i quite search
+Sortering av pv moves
 
 Timing
+	- Hur funkar den vid tidsbrist?
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
+Undvika thread collirions i add hash.
 
 Fungerar draw by rep?
+	Slå ihop GetEval och GetScore.
+
+Opening Book
+	Opening Score, early queen, minor piece count, slå av och på.
 
 Eval: 
-    open file on king
+    connected rooks on file and rank
+	open file on king
 	push pawns
 	Tempo
 		Not move queen
@@ -18,13 +23,6 @@ Eval:
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
-	
-
-	
-Opening Book
-	Opening Score, early queen, minor piece count.
-
-konfigurerbar, hash size
 
 Fifty move rule.
 
@@ -47,20 +45,16 @@ time control blitz
 
 	Sätt också en maxtid som alltid avbryter.		
 
-Hash table.
-	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
-	- Dubbelkolla init.
-
 Mer pruning
 	Aspiration window
 	Futilty pruning
 	Razoring
+	Killer moves
 
 Refactor main
 	Flytta ut globala variabler.
 	Flytta ut search, movegen, uci, evaluation
 	Enums for color01
-
 
 killer-heuristic
 
