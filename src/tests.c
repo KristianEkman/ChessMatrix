@@ -614,7 +614,7 @@ void TestEvalOpenFile() {
 	printf("\n");printf(__func__);
 	char* startFen = "r3kb1r/ppp1nppp/5n2/8/8/4BN2/PPP2PPP/RN1R2K1 b kq - 0 12";
 	ReadFen(startFen);
-	int score = GetEval(&mainGame);
+	int score = GetEval(&mainGame, 0);
 }
 
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {

@@ -1,39 +1,47 @@
 
-testfallet fallerar på djup 5
-r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6
 
-r1b2rk1/ppppqppp/2nbpn2/1N6/8/P4NP1/1PPPPPBP/1RBQK2R w K - 7 8
-ger konstigheter.
+merge till master
 
-sortera pv-moves först
-
-hämta bestmove från hash så kan alphabeta börja tidigare
+räkna nodes istf leafs.
 
 Timing
+	- Hur funkar den vid tidsbrist?
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
+Undvika thread krockar i add hash. lagga packning tidigare.
 
-Fungerar draw by rep?
+Opening Book
+	Opening Score, early queen, minor piece count, slå av och på.
 
 Eval: 
-    open file on king
-	push pawns
+    connected rooks on file and rank
+	open file on king
 	Tempo
 		Not move queen
 		Not move piece twice
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
-	
-Opening Book
-	Opening Score, early queen, minor piece count.
-
-konfigurerbar, hash size
 
 Fifty move rule.
 
 Material draw?
+
+Mer pruning
+	Aspiration window
+	Futilty pruning
+	Razoring
+	Killer moves
+	killer-heuristic
+
+Refactor main
+	Flytta ut globala variabler.
+	Flytta ut search, movegen, uci, evaluation
+	Enums for color01
+
+
+Fler testafall.
 
 time control blitz
 	Syfte:
@@ -51,24 +59,5 @@ time control blitz
 		Ta bort tid om mots ligger före.
 
 	Sätt också en maxtid som alltid avbryter.		
-
-Hash table.
-	- Testa hur bra hashtable är på att lagra drag. Hur fort blir den full?
-	- Dubbelkolla init.
-
-Mer pruning
-	Aspiration window
-	Futilty pruning
-	Razoring
-
-Refactor main
-	Flytta ut globala variabler.
-	Flytta ut search, movegen, uci, evaluation
-	Enums for color01
-
-
-killer-heuristic
-
-Fler testafall.
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.

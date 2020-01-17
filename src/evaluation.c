@@ -1,8 +1,8 @@
 #include "basic_structs.h"
 #include "evaluation.h"
 #include <stdlib.h>
-//white, black, (flipped, starts at A1)
 
+//white, black, (flipped, starts at A1)
 //[type][side][square]
 short PositionValueMatrix[7][2][64] = {
 	{
@@ -33,6 +33,11 @@ short PositionValueMatrix[7][2][64] = {
 	},
 	//rookPositionValues[2][64] =
 	{
+		{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, },
+		{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, }
+	},
+	// queenPositionValues[2][64] = 
+	{
 		{
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -53,11 +58,6 @@ short PositionValueMatrix[7][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 		}
-	},
-	// queenPositionValues[2][64] = 
-	{
-			{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, },
-			{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, }
 	},
 	//char pawnPositionValues[2][64] =
 	{
@@ -181,30 +181,54 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
-		if ((game->Squares[file] == pawn)) //semi open
+		if ((game->Squares[file] == pawn)) //smi open
 			score += 9;
 	}
 	return score;
 }
 
-short GetEval(Game* game) {
-	short score = 0;
-	short neg[] = { -1, 1 };
+bool DrawByRepetition(Game* game) {
+	if (game->PositionHistoryLength < 50)
+		return false;
+	int start = game->PositionHistoryLength - 15; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
+	int end = game->PositionHistoryLength - (int)2;
+	for (size_t i = start; i < end; i++)
+	{
+		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
+			return true;
+	}
+	return false;
+}
+
+short GetMoveScore(Game* game) {
+	return game->Material[0] + game->Material[1] + game->PositionScore;
+}
+
+short GetEval(Game* game, short moveScore) {
+	// todo 50 move rule.
+	if (DrawByRepetition(game))
+		return 0;
+
+	int score = moveScore;
+	int neg = -1;
 	for (size_t s = 0; s < 2; s++)
 	{
-		for (int p = 0; p < 16; p++)
+		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
-			int i = piece.SquareIndex;
 			if (piece.Off)
 				continue;
-			PieceType pt = game->Pieces[s][p].Type & 7;
+			int i = piece.SquareIndex;
+			PieceType pieceType = piece.Type;
+			PieceType color = pieceType & (BLACK | WHITE);
+
+			PieceType pt = pieceType & 7;
+
 			switch (pt)
 			{
 			case ROOK:
 			{
-				score += ( neg[s] * OpenRookFile(i, game));
-
+				score += neg * OpenRookFile(i, game);
 				// connected rooks, no king between
 			}
 			//case BISHOP:
@@ -217,14 +241,14 @@ short GetEval(Game* game) {
 			//	//outposts, protected by a pawn?
 			//}
 			case PAWN: {
-				score -= (neg[s] * DoublePawns(i, game, piece.Type));
+				score -= neg * DoublePawns(i, game, pieceType);
 			}
 			default:
 				break;
 			}
 		}
+		neg += 2; // -1 >>> 1
 	}
-	if (game->Side == WHITE)
-		return -score;
 	return score;
+
 }

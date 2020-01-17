@@ -16,7 +16,6 @@ Game mainGame;
 short TotalMaterial(Game * game);
 int SearchedLeafs;
 DWORD WINAPI BestMoveDeepening(void * params);
-short GetScore(Game * game);
 void CreateMoves(Game * game, int depth);
 void RemoveInvalidMoves(Game* game);
 int MakeMove(Move move, Game * mainGame);
