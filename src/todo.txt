@@ -7,6 +7,7 @@ Timing
 	- Hur funkar den vid tidsbrist?
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
+	- logga time estimation missed
 
 Undvika thread krockar i add hash. lagga packning tidigare.
 
@@ -22,6 +23,8 @@ Eval:
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
+
+Testa negabax igen.
 
 Opening Book
 	Opening Score, early queen, minor piece count, slå av och på.

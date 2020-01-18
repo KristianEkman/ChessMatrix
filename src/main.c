@@ -100,6 +100,7 @@ void EnterUciMode() {
 			stdout_wl("readyok");
 		}
 		else if (startsWith(buf, "ucinewgame")) {
+			ClearHashTable();  // the reason is that estimation of next move is much easier.
 			ResetDepthTimes();
 		}
 		else if (startsWith(buf, "position ")) {
@@ -1704,14 +1705,18 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
-	while (!Stopped && (now - start < (ms / (float)1000) * CLOCKS_PER_SEC))
+	while (!Stopped)
 	{
 		Sleep(100);
 		now = clock();
+		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
+		{
+			printf("Search stopped by timeout.\n"); // This is not preferable since it is more economic to stop before going to next depth.
+			fflush(stdout);
+			break;
+		}
 	}
 
-	printf("Search stopped by watcher.\n");
-	fflush(stdout);
 	Stopped = true;
 	ExitThread(0);
 	return 0;
