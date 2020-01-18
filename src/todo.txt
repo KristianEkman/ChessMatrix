@@ -11,7 +11,9 @@ Timing
 Undvika thread krockar i add hash. lagga packning tidigare.
 
 Eval: 
+	double pawns framför kung, oskyddad kung
 	passed pawns
+	isolated pawns
     connected rooks on file and rank
 	open file on king
 	Tempo
