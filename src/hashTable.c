@@ -17,24 +17,27 @@
 
 HashTable H_Table;
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
-	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
-	U64 entry = H_Table.Entries[idx];
 	unsigned int key2 = hash & 0x7FFFFFFF;
-	int dbDepth = (entry >> 45) & 0x1F;
-	unsigned int dbKey2 = entry & 0x7FFFFFFF;
-	if (dbKey2 == key2) {
-		if (depth < dbDepth)
-			return;
-	}
-
-	//always overwrite unless same hash with lower depth is stored.
-	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
 	U64 pack = key2 & 0x7FFFFFFF;
 	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
 	pack |= (U64)depth << 45;
 	pack |= (U64)type << 50;
 	pack |= (U64)from << 52;
 	pack |= (U64)to << 58;
+
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	U64 entry = H_Table.Entries[idx];
+	int dbDepth = (entry >> 45) & 0x1F;
+	unsigned int dbKey2 = entry & 0x7FFFFFFF;
+
+	//always overwrite unless same hash with lower depth is stored.
+	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
+	if (dbKey2 == key2) {
+		if (depth < dbDepth)
+			return;
+	}
+
+	
 	H_Table.Entries[idx] = pack;
 	//HashTableFullCount++;
 }
