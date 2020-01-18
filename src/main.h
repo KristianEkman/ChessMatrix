@@ -14,7 +14,7 @@ void UnMakePlayerMove(PlayerMove move);
 Move parseMove(char * sMove, MoveInfo info);
 Game mainGame;
 short TotalMaterial(Game * game);
-int SearchedLeafs;
+unsigned int g_SearchedNodes;
 DWORD WINAPI BestMoveDeepening(void * params);
 void CreateMoves(Game * game, int depth);
 void RemoveInvalidMoves(Game* game);

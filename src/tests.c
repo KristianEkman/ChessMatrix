@@ -621,15 +621,15 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	SearchedLeafs = 0;
+	g_SearchedNodes = 0;
 	clock_t start = clock();
 	DefaultSearch();
 	g_topSearchParams.MaxDepth = depth;
 	Move bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("%.2fk leafs in %.2fs\n", (float)SearchedLeafs / 1000, secs);
-	printf("%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
+	printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
+	printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
 	char sMove[6];
 	MoveToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
@@ -642,7 +642,7 @@ void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	SearchedLeafs = 0;
+	g_SearchedNodes = 0;
 	DefaultSearch();
 	g_topSearchParams.MoveTime = secs * 1000;
 	Move bestMove = Search(false);

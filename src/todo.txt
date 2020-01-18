@@ -1,8 +1,7 @@
 
+Otillåtet drag med 10s kvar
+	- justera timekontrol?
 
-merge till master
-
-räkna nodes istf leafs.
 
 Timing
 	- Hur funkar den vid tidsbrist?
@@ -10,9 +9,6 @@ Timing
 	- Tänka längre om score har sjunkit mkt.
 
 Undvika thread krockar i add hash. lagga packning tidigare.
-
-Opening Book
-	Opening Score, early queen, minor piece count, slå av och på.
 
 Eval: 
     connected rooks on file and rank
@@ -24,7 +20,14 @@ Eval:
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 
+Opening Book
+	Opening Score, early queen, minor piece count, slå av och på.
+
 Fifty move rule.
+
+Konfigurarbar hash storlek via uci.
+
+Räkna på hur stor hash som behövs.
 
 Material draw?
 

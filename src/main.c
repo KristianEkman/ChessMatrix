@@ -14,13 +14,10 @@
 #include "evaluation.h"
 #include "sort.h"
 #include "hashTable.h"
-#include "bestMovesTable.h"
 #include "timeControl.h"
 
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
-//BestMovesTable bmTables[SEARCH_THREADS];
-//const int TBL_SIZE_MB = 32;
 GlobalRootMoves g_rootMoves;
 
 bool Stopped;
@@ -758,6 +755,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, int
 
 	int captIndex = MakeMove(move, game);
 	move.ScoreAtDepth = GetMoveScore(game);
+	//move.ScoreAtDepth = GetEval(game, move.ScoreAtDepth);
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
@@ -1357,6 +1355,7 @@ void MoveToTop(Move move, Move* list, int length) {
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	int score = moveScore;
+	g_SearchedNodes++;
 	if (game->Side == BLACK) {
 		if (score >= beta)
 			return beta;
@@ -1374,7 +1373,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 	{
-		SearchedLeafs++;
 		return moveScore;
 	}
 
@@ -1445,12 +1443,13 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (Stopped)
 		return moveScore; // should not be used;
+	
+	g_SearchedNodes++;
 
 	if (!depth) {
 		if (captIndex > -1) {
 			return AlphaBetaQuite(alpha, beta, game, moveScore);
 		}
-		SearchedLeafs++;
 		return GetEval(game, moveScore);
 	}
 
@@ -1625,13 +1624,6 @@ Game* CopyMainGame(int threadNo) {
 	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(U64));
-	/*for (size_t s = 0; s < 2; s++)
-	{
-		for (size_t p = 0; p < 16; p++)
-		{
-
-		}
-	}*/
 	memcpy(mainGame.Pieces, threadGames[threadNo].Pieces, 32 * sizeof(Piece));
 
 	return &threadGames[threadNo];
@@ -1645,10 +1637,7 @@ DWORD WINAPI DoNothingThread(int* prm) {
 // Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
 // Sets the score on the root move pointer. They are all common for all threads.
-
 DWORD WINAPI SearchThread(ThreadParams* prm) {
-	//printf("mi %d  ti %d\n", prm->moveIndex, prm->threadID);
-
 	do
 	{
 		Game* game = &(threadGames[prm->threadID]);
@@ -1659,35 +1648,15 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		U64 prevHash = game->Hash;
 
 		int captIndex = MakeMove(move, game);
-		/*bool empty = FALSE;
-		short score;
-		int dbDepth = 0;
-		short dbScore = getScoreFromHash(game->Hash, &empty, &dbDepth);
-		if (!empty && dbDepth > prm->depth)
-		{
-			score = dbScore;
-		}
-		else {*/
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
 		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
-		//addHashScore(game->Hash, score, prm->depth);
-	//}
 
 		if (!Stopped)
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
-		/*if (game->Side == BLACK)
-			g_beta = min(g_beta, score);
-		else
-			g_alpha = max(g_alpha, score);*/
-
-			//if ((game->Side == WHITE && score < -7900) || (game->Side == BLACK && score > 7900))
-			//{
-			//	ExitThread(0);
-			//	return 0; //a check mate is found, no need to search further.
-			//}
+		
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
@@ -1760,7 +1729,7 @@ Move Search(bool async) {
 	}
 
 	Stopped = false;
-	SearchedLeafs = 0;
+	g_SearchedNodes = 0;
 
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
 	if (!async)
@@ -1770,6 +1739,11 @@ Move Search(bool async) {
 			TerminateThread(timeLimitThread, 0);
 		return g_topSearchParams.BestMove;
 	}
+
+	//this will not be used.
+	Move nomove;
+	nomove.MoveInfo = NotAMove;
+	return nomove;
 }
 
 int PrintBestLine(Move move, int depth, float ellapsed) {
@@ -1808,12 +1782,12 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	int nps = (float)SearchedLeafs / ellapsed;
+	int nps = (float)g_SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
 	short score = move.ScoreAtDepth;
 	if (game->Side == WHITE)
 		score = -score;
-	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", score, depth, SearchedLeafs, time, nps, buffer);
+	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", score, depth, g_SearchedNodes, time, nps, buffer);
 	fflush(stdout);
 	return 0;
 }
@@ -1837,13 +1811,10 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	{
 		clock_t depStart = clock();
 		SetMovesScoreAtDepth(depth, moveCount);
-		//SortMoves(localMoves, moveCount, &mainGame);
 		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
 			g_topSearchParams.BestMove = g_rootMoves.moves[0];
 			bestScore = g_rootMoves.moves[0].ScoreAtDepth;
 			MoveToString(g_rootMoves.moves[0], bestMove);
-			//printf("INFO depth %d - %s\n", depth, bestMove);
-			//pv, bestline. hur?
 			depth++;
 			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
 			PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
@@ -1862,8 +1833,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 			}
 		}
 
-	} while (depth <= maxDepth && !Stopped);
-	
+	} while (depth <= maxDepth && !Stopped);	
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
