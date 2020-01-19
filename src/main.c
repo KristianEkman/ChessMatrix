@@ -1270,7 +1270,7 @@ int ValidMovesOnThread(Game* game, Move* moves) {
 
 PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	Move move = parseMove(sMove, 0);
-	Move moves[100];
+	Move moves[2048];
 	int length = ValidMovesOnThread(game, moves);
 	PlayerMove playerMove;
 	for (int i = 0; i < length; i++)
@@ -1383,7 +1383,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 	{
-		return moveScore;
+		return score;
 	}
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
@@ -1773,7 +1773,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
-	PlayerMove moves[100];
+	PlayerMove moves[2000];
 	int movesCount = 0;
 	while (movesCount < depth)
 	{

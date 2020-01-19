@@ -92,7 +92,7 @@ typedef struct {
 	PieceType Squares[64];
 	short PositionScore;
 	U64 Hash;
-	U64 PositionHistory[256];
+	U64 PositionHistory[2000];
 	int PositionHistoryLength;
 	int ThreadIndex;
 	Piece Pieces[2][16];
