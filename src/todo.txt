@@ -1,10 +1,14 @@
 
 Otillåtet drag med 10s kvar
-	- justera timekontrol? Alltid generara minnst ett giltigt drag äve om Stopped = true.
+	- justera timekontrol? Alltid generara minnst ett giltigt drag även om Stopped = true.
 
 smartare skedulering där ledig tråd tar nästa drag utan att krocka
 	- för att en tråd inte ska a otur att få tilldelat flera svårsökta positioner.
 	- locks
+
+Db måste ha blivit korrupt. I game 10 i en turnering valdes ett felaktigt drag som gav bort en häst.
+	- Se till så hash rensas efter varje match. 
+	- Eller kanske en hash per tråd.
 
 Eval: 
 	konstanter för allt
