@@ -19,3 +19,5 @@ short GetMoveScore(Game* game);
 
 short GetEval(Game* game, short moveScore);
 
+bool DrawByRepetition(Game* game);
+

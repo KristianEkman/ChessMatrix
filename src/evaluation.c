@@ -206,9 +206,9 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 }
 
 bool DrawByRepetition(Game* game) {
-	if (game->PositionHistoryLength < 50)
+	if (game->PositionHistoryLength < 50) //This draw can happen early also
 		return false;
-	int start = game->PositionHistoryLength - 15; //Only checking back 30 moves. Possible to miss repetions but must be very rare.
+	int start = game->PositionHistoryLength - 10; //Only checking back some moves. Possible to miss repetions but must be very rare.
 	int end = game->PositionHistoryLength - (int)2;
 	for (size_t i = start; i < end; i++)
 	{
@@ -223,9 +223,6 @@ short GetMoveScore(Game* game) {
 }
 
 short GetEval(Game* game, short moveScore) {
-	// todo 50 move rule.
-	if (DrawByRepetition(game))
-		return 0;
 
 	int score = moveScore;
 	int neg = -1;

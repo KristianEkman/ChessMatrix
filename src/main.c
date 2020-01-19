@@ -324,6 +324,9 @@ void PrintGame(Game* game) {
 	}
 	printf("    a   b   c   d   e   f   g   h  \n");
 	printf("%llu\n", game->Hash);
+	char fen[100];
+	WriteFen(fen);
+	printf("%s\n", fen);
 }
 
 void KingPositionScore(Move move, Game* game) {
@@ -1446,6 +1449,9 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return moveScore; // should not be used;
 	
 	g_SearchedNodes++;
+	
+	if (DrawByRepetition(game)) // todo 50 move rule.
+		return 0;
 
 	if (!depth) {
 		if (captIndex > -1) {
@@ -1483,7 +1489,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
 				}
-			}else //(game->Side == WHITE)
+			}
+			else //(game->Side == WHITE)
 			{
 				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore, deep_in + 1);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
@@ -1502,7 +1509,6 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	// move pv move first
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount);
 	}

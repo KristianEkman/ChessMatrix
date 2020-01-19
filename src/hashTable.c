@@ -126,7 +126,7 @@ void Allocate(unsigned int megabytes) {
 
 void ClearHashTable() {
 	for (size_t i = 0; i < H_Table.EntryCount; i++)
-		H_Table.Entries[i] = 0;
+		H_Table.Entries[i] = 0ULL;
 	/*HashTableFullCount = 0;
 	HashTableEntries = 0;
 	HashTableMatches = 0;*/
