@@ -932,7 +932,7 @@ void CreateCaptureMoves(Game* game) {
 			if (game->Squares[toSquare] == NOPIECE)
 			{
 				if (toSquare < 8 || toSquare > 55) {
-					CreateMove(i, toSquare, PromotionQueen, game,0, pi);
+					CreateMove(i, toSquare, PromotionQueen, game, 0, pi);
 					/*CreateMove(i, toSquare, PromotionRook, game,0, pi);
 					CreateMove(i, toSquare, PromotionBishop, game,0, pi);
 					CreateMove(i, toSquare, PromotionKnight, game,0, pi);*/
@@ -1358,8 +1358,13 @@ void MoveToTop(Move move, Move* list, int length) {
 
 short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
-	int score = moveScore;
 	g_SearchedNodes++;
+
+	if (DrawByRepetition(game))
+		return 0;
+
+	int score = GetEval(game, moveScore);
+
 	if (game->Side == BLACK) {
 		if (score >= beta)
 			return beta;
@@ -1372,6 +1377,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		if (score < beta)
 			beta = score;
 	}
+
 
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
@@ -1447,18 +1453,15 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (Stopped)
 		return moveScore; // should not be used;
-	
+
 	g_SearchedNodes++;
-	
-	if (DrawByRepetition(game)) // todo 50 move rule.
-		return 0;
 
 	if (!depth) {
-		if (captIndex > -1) {
-			return AlphaBetaQuite(alpha, beta, game, moveScore);
-		}
-		return GetEval(game, moveScore);
+		return AlphaBetaQuite(alpha, beta, game, moveScore);
 	}
+
+	if (DrawByRepetition(game))
+		return 0;
 
 	//In check extension
 	int side01 = game->Side >> 4;
@@ -1473,7 +1476,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	if (getScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta)) {
 		return score;
 	}
-	
+
 	//NULL move check
 	int r = 3; //todo: tests att sätta till 
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
@@ -1663,7 +1666,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
-		
+
 		prm->moveIndex += SEARCH_THREADS;
 	} while (prm->moveIndex < prm->moveCount);
 	ExitThread(0);
@@ -1683,7 +1686,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
-	
+
 	for (int i = 0; i < SEARCH_THREADS; i++)
 	{
 		if (i > moveCount - 1) //in case more threads than moves
@@ -1715,7 +1718,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 	{
 		Sleep(100);
 		now = clock();
-		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
+		if ((now - start > (ms / (float)1000)* CLOCKS_PER_SEC))
 		{
 			printf("Search stopped by timeout.\n"); // This is not preferable since it is more economic to stop before going to next depth.
 			fflush(stdout);
@@ -1837,7 +1840,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 
 			float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
 			int moveNo = mainGame.PositionHistoryLength;
-			
+
 			RegisterDepthTime(moveNo, depth, depthTime * 1000);
 			if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, mainGame.Side)) {
 				Stopped = true;
@@ -1845,7 +1848,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 			}
 		}
 
-	} while (depth <= maxDepth && !Stopped);	
+	} while (depth <= maxDepth && !Stopped);
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);

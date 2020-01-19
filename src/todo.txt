@@ -1,15 +1,19 @@
 
 Otillåtet drag med 10s kvar
-	- justera timekontrol? Alltid generara minns ett giltigt drag äve om Stopped = true.
+	- justera timekontrol? Alltid generara minnst ett giltigt drag äve om Stopped = true.
+
+smartare skedulering där ledig tråd tar nästa drag utan att krocka
+	- för att en tråd inte ska a otur att få tilldelat flera svårsökta positioner.
+	- locks
 
 Eval: 
-	double pawns framför kung, oskyddad kung
-	passed pawns
-	isolated pawns
-    connected rooks on file and rank
-	open file on king
+	konstanter för allt
+	open file on king before endgame is bad
+	passed pawns is good.
+	isolated pawns is bad
+    connected rooks on file and rank is good
 	Tempo
-		Not move queen
+		Not move queen in opening
 		Not move piece twice
 
 	Bad bishops -- performance ??

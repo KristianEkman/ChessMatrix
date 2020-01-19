@@ -216,6 +216,8 @@ bool DrawByRepetition(Game* game) {
 			return true;
 	}
 	return false;
+
+	// todo 50 move rule.
 }
 
 short GetMoveScore(Game* game) {
