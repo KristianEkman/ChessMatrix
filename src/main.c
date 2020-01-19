@@ -1831,6 +1831,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 
 			float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
 			int moveNo = mainGame.PositionHistoryLength;
+			
 			RegisterDepthTime(moveNo, depth, depthTime * 1000);
 			if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, mainGame.Side)) {
 				Stopped = true;

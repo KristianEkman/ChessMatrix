@@ -1,15 +1,18 @@
+draw by rep verkar inte fungera
+Hämtar den från hash?
+position startpos moves b1c3 e7e6 e2e4 d7d5 e4d5 e6d5 g1f3 f8b4 f1d3 g8f6 e1g1 e8g8 a2a3 b4d6 f3d4 b8c6 d4c6 b7c6 a1b1 c8g4 f2f3 d6c5 g1h1 g4e6 b2b4 c5b6 c3a4 a7a5 a4b6 c7b6 b4a5 a8a5 f1e1 d5d4 h1g1 d8c7 c1b2 f8d8 d3f1 c6c5 f1d3 c5c4 d3e4 c4c3 b2c1 a5h5 g2g3 h5e5 e4d3 e5e1 d1e1 g7g6 d2c3 d4c3 c1e3 f6d5 e3d4 c7d6 e1e5 d6e5 d4e5 e6f5 d3f5 g6f5 b1d1 g8f8 e5f6 d8d7 f6c3 f8e8 c3e1 d5e3 d1c1 d7d1 c1d1 e3d1 e1d2 d1b2 g1f2 h7h5 f2g1 b2c4 d2c1 b6b5 g1f2 e8d7 f3f4 d7d6 f2e2 d6d5 e2d3 d5c5 c2c3 c5d5 h2h4 f7f6 d3c2 c4d6 c1e3 d5e4 e3d4 e4f3 d4f6 d6e4 f6g5 f3g3 c2b3 e4d2 b3b4 d2f3 b4b5 f3h4 g5h4 g3h4 a3a4 h4g3 a4a5 g3f4 a5a6 f4g3 b5c4 h5h4 a6a7 h4h3 a7a8q f5f4 c4d3 g3f2 a8h1 f2g3 d3e4 g3h4 e4f5 h4g3 f5e4 g3h4 e4f5 h4g3
+och
+position startpos moves b1c3 e7e6 e2e4 d7d5 e4d5 e6d5 g1f3 f8b4 f1d3 g8f6 e1g1 e8g8 a2a3 b4d6 c3b5 b8c6 c2c4 d5c4 d3c4 c8f5 b5d6 d8d6 d2d4 a8e8 c4b5 f6d5 g1h1 e8e7 b5c4 h7h6 f3e5 b7b5 e5c6 d6c6 c4b3 f5e4 f2f3 e4g6 f1e1 g6c2 b3c2 c6c2 e1f1 c2c4 a3a4 b5b4 b2b3 c4a6 h1g1 d5c3 d1d2 e7e2 d2f4 e2c2 f4e3 c2e2 e3f4 e2c2 f4e3 c2e2
 
 Otillåtet drag med 10s kvar
-	- justera timekontrol?
+	- justera timekontrol? Alltid generara minns ett giltigt drag äve om Stopped = true.
 
 
 Timing
-	- Hur funkar den vid tidsbrist?
-	- Öka max fallback tid om det finns tid.
-	- Tänka längre om score har sjunkit mkt.
-	- logga time estimation missed
+	- Minimera risken för Search stopped.
+		Varför blir det så många?
 
-Undvika thread krockar i add hash. lagga packning tidigare.
+	- Tänka längre om score har sjunkit mkt?
 
 Eval: 
 	double pawns framför kung, oskyddad kung
@@ -24,7 +27,7 @@ Eval:
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 
-Testa negabax igen.
+Testa negamax igen.
 
 Opening Book
 	Opening Score, early queen, minor piece count, slå av och på.
@@ -49,10 +52,12 @@ Refactor main
 	Flytta ut search, movegen, uci, evaluation
 	Enums for color01
 
-
 Fler testafall.
 
+Linux kompatibel.
+
 time control blitz
+==================
 	Syfte:
 		- 1. Tiden ska inte ta slut
 		- 2. Tiden ska utnyttjas
