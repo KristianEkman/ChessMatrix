@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
 }
 
 void EnterUciMode() {
-	char buf[1024];
-	fgets(buf, 1024, stdin);
+	char buf[5000];
+	fgets(buf, 5000, stdin);
 	while (!streq(buf, "quit\n"))
 	{
 		if (startsWith(buf, "uci ")) {
@@ -131,6 +131,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
+				printf("info string position parsed\n");
 				AssertGame(&g_mainGame);
 			}
 		}
@@ -182,6 +183,8 @@ void EnterUciMode() {
 					if (g_mainGame.Side == BLACK)
 						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 20;
 				}
+				printf("info string Searching Starting\n");
+				fflush(stdout);
 				Search(true);
 			}
 		}
@@ -191,7 +194,7 @@ void EnterUciMode() {
 		else if (streq(buf, "i\n")) {
 			EnterInteractiveMode();
 		}
-		fgets(buf, 1024, stdin);
+		fgets(buf, 5000, stdin);
 	}
 }
 
@@ -1269,19 +1272,19 @@ int ValidMovesOnThread(Game* game, Move* moves) {
 
 PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	Move move = ParseMove(sMove, 0);
-	Move moves[1000];
-	int length = ValidMovesOnThread(game, moves);
+	Move validMoves[256];
+	int length = ValidMovesOnThread(game, validMoves);
 	PlayerMove playerMove;
 	for (int i = 0; i < length; i++)
 	{
-		if (moves[i].From == move.From && moves[i].To == move.To) {
-			playerMove.Move = moves[i];
+		if (validMoves[i].From == move.From && validMoves[i].To == move.To) {
+			playerMove.Move = validMoves[i];
 			playerMove.PreviousGameState = game->State;
 			playerMove.Invalid = false;
 			playerMove.PreviousPositionScore = game->PositionScore;
 			playerMove.PreviousHash = game->Hash;
 
-			int captIndex = MakeMove(moves[i], game);
+			int captIndex = MakeMove(validMoves[i], game);
 			playerMove.CaptureIndex = captIndex;
 			return playerMove;
 		}
