@@ -101,7 +101,6 @@ typedef struct {
 typedef struct {
 	int threadID;
 	int moveCount;
-	int moveIndex;
 	int depth;
 } ThreadParams;
 

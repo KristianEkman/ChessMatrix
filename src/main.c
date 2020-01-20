@@ -19,6 +19,8 @@
 Game mainGame;
 Game threadGames[SEARCH_THREADS];
 GlobalRootMoves g_rootMoves;
+int g_LastStartedMove = -1;
+HANDLE g_MutexFreeMove;
 
 bool Stopped;
 
@@ -70,6 +72,7 @@ void InitPieceList() {
 }
 
 int main(int argc, char* argv[]) {
+	g_MutexFreeMove = CreateMutex(NULL, FALSE, NULL);
 	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
 	ResetDepthTimes();
@@ -1644,15 +1647,31 @@ DWORD WINAPI DoNothingThread(int* prm) {
 	ExitThread(0);
 }
 
+int GetNextFreeMove() {
+	DWORD waitResult = WaitForSingleObject(g_MutexFreeMove, INFINITE);
+	int ret;
+	if (waitResult == WAIT_OBJECT_0) {
+		ret = g_LastStartedMove + 1;
+		g_LastStartedMove++;
+		ReleaseMutex(g_MutexFreeMove);
+	}
+	return ret;
+}
+
 // Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
 // Sets the score on the root move pointer. They are all common for all threads.
 DWORD WINAPI SearchThread(ThreadParams* prm) {
+	int moveIndex = GetNextFreeMove();
 	do
 	{
+		Sleep(10);
+		//if (prm->depth > 7)
+			//printf("Start Thread %d on move %d\n", prm->threadID, moveIndex);
+
 		Game* game = &(threadGames[prm->threadID]);
-		Move move = g_rootMoves.moves[prm->moveIndex];
-		g_rootMoves.moves[prm->moveIndex].ThreadIndex = prm->threadID;
+		Move move = g_rootMoves.moves[moveIndex];
+		g_rootMoves.moves[moveIndex].ThreadIndex = prm->threadID;
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
 		U64 prevHash = game->Hash;
@@ -1663,12 +1682,15 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
 
 		if (!Stopped)
-			g_rootMoves.moves[prm->moveIndex].ScoreAtDepth = score;
+			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
+		//if (prm->depth > 7)
+			//printf("Stop  Thread %d on move %d\n", prm->threadID, moveIndex);
 
-		prm->moveIndex += SEARCH_THREADS;
-	} while (prm->moveIndex < prm->moveCount);
+		moveIndex = GetNextFreeMove();
+
+	} while (moveIndex < prm->moveCount);
 	ExitThread(0);
 	return 0;
 }
@@ -1684,6 +1706,8 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 
 	ThreadParams* tps = malloc(sizeof(ThreadParams) * SEARCH_THREADS);
 
+	g_LastStartedMove = -1;
+
 	for (int i = 0; i < SEARCH_THREADS; i++)
 		CopyMainGame(i);
 
@@ -1694,14 +1718,11 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 		else {
 			tps->threadID = i;
 			tps->depth = depth;
-			tps->moveIndex = i;
 			tps->moveCount = moveCount;
 			threadHandles[i] = CreateThread(NULL, 0, SearchThread, tps, 0, NULL);
 			tps++;
 
 		}
-		//todo: error handling
-
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
