@@ -2,6 +2,8 @@
 #include "basic_structs.h"
 #define SEARCH_THREADS 7
 
+Game g_mainGame;
+unsigned int g_SearchedNodes;
 
 void PrintGame(Game * game);
 void ReadFen(char * fen);
@@ -11,10 +13,8 @@ int ValidMoves(Move * moves);
 PlayerMove MakePlayerMove(char * sMove);
 void UnMakePlayerMove(PlayerMove move);
 
-Move parseMove(char * sMove, MoveInfo info);
-Game mainGame;
+Move ParseMove(char * sMove, MoveInfo info);
 short TotalMaterial(Game * game);
-unsigned int g_SearchedNodes;
 DWORD WINAPI BestMoveDeepening(void * params);
 void CreateMoves(Game * game, int depth);
 void RemoveInvalidMoves(Game* game);

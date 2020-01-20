@@ -16,18 +16,16 @@
 #include "hashTable.h"
 #include "timeControl.h"
 
-Game mainGame;
-Game threadGames[SEARCH_THREADS];
+Game g_threadGames[SEARCH_THREADS];
 GlobalRootMoves g_rootMoves;
 int g_LastStartedMove = -1;
 HANDLE g_MutexFreeMove;
-
-bool Stopped;
+bool g_Stopped;
 
 void ComputerMove() {
 	g_topSearchParams.MoveTime = 5000;
 	Move move = Search(false);
-	int captIndex = MakeMove(move, &mainGame);
+	int captIndex = MakeMove(move, &g_mainGame);
 }
 
 void ManualMove() {
@@ -53,22 +51,22 @@ void InitPieceList() {
 	for (int s = 0; s < 2; s++)
 	{
 		for (int p = 0; p < 8; p++)
-			mainGame.Pieces[s][p].Type = PAWN | side[s];
+			g_mainGame.Pieces[s][p].Type = PAWN | side[s];
 
-		mainGame.Pieces[s][8].Type = ROOK | side[s];
-		mainGame.Pieces[s][9].Type = ROOK | side[s];
+		g_mainGame.Pieces[s][8].Type = ROOK | side[s];
+		g_mainGame.Pieces[s][9].Type = ROOK | side[s];
 
-		mainGame.Pieces[s][10].Type = KNIGHT | side[s];
-		mainGame.Pieces[s][11].Type = KNIGHT | side[s];
+		g_mainGame.Pieces[s][10].Type = KNIGHT | side[s];
+		g_mainGame.Pieces[s][11].Type = KNIGHT | side[s];
 
-		mainGame.Pieces[s][12].Type = BISHOP | side[s];
-		mainGame.Pieces[s][13].Type = BISHOP | side[s];
+		g_mainGame.Pieces[s][12].Type = BISHOP | side[s];
+		g_mainGame.Pieces[s][13].Type = BISHOP | side[s];
 
-		mainGame.Pieces[s][14].Type = QUEEN | side[s];
-		mainGame.Pieces[s][15].Type = KING | side[s];
+		g_mainGame.Pieces[s][14].Type = QUEEN | side[s];
+		g_mainGame.Pieces[s][15].Type = KING | side[s];
 
 		for (int p = 0; p < 16; p++)
-			mainGame.Pieces[s][p].Off = true;
+			g_mainGame.Pieces[s][p].Off = true;
 	}
 }
 
@@ -133,7 +131,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-				AssertGame(&mainGame);
+				AssertGame(&g_mainGame);
 			}
 		}
 		else if (startsWith(buf, "go ")) {
@@ -181,14 +179,14 @@ void EnterUciMode() {
 				if (g_topSearchParams.TimeControl)
 				{
 					g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / 20;
-					if (mainGame.Side == BLACK)
+					if (g_mainGame.Side == BLACK)
 						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 20;
 				}
 				Search(true);
 			}
 		}
 		else if (streq(buf, "stop\n")) {
-			Stopped = true;
+			g_Stopped = true;
 		}
 		else if (streq(buf, "i\n")) {
 			EnterInteractiveMode();
@@ -202,7 +200,7 @@ int EnterInteractiveMode() {
 	while (scan != 'q')
 	{
 		system("@cls||clear");
-		PrintGame(&mainGame);
+		PrintGame(&g_mainGame);
 		printf("m: make move\n");
 		printf("c: computer move\n");
 		printf("t: run tests\n");
@@ -225,7 +223,7 @@ int EnterInteractiveMode() {
 		default:
 			break;
 		}
-		PrintGame(&mainGame);
+		PrintGame(&g_mainGame);
 	}
 
 	return 0;
@@ -233,7 +231,7 @@ int EnterInteractiveMode() {
 
 void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
 	for (int p = 0; p < 16; p++) {
-		Piece* piece = &(mainGame.Pieces[side01][p]);
+		Piece* piece = &(g_mainGame.Pieces[side01][p]);
 		if (piece->Off && piece->Type == pieceType) {
 			piece->SquareIndex = square;
 			piece->Off = false;
@@ -243,7 +241,7 @@ void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
 }
 
 void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
-	mainGame.Squares[rank * 8 + file] = type | color;
+	g_mainGame.Squares[rank * 8 + file] = type | color;
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
 
@@ -251,14 +249,14 @@ void InitGame() {
 	InitPieceList();
 
 	for (int i = 0; i < 64; i++)
-		mainGame.Squares[i] = NOPIECE;
+		g_mainGame.Squares[i] = NOPIECE;
 
 	InitPiece(0, 0, ROOK, WHITE);
 	InitPiece(1, 0, KNIGHT, WHITE);
 	InitPiece(2, 0, BISHOP, WHITE);
 	InitPiece(3, 0, QUEEN, WHITE);
 	InitPiece(4, 0, KING, WHITE);
-	mainGame.KingSquares[0] = 4;
+	g_mainGame.KingSquares[0] = 4;
 	InitPiece(5, 0, BISHOP, WHITE);
 	InitPiece(6, 0, KNIGHT, WHITE);
 	InitPiece(7, 0, ROOK, WHITE);
@@ -271,19 +269,19 @@ void InitGame() {
 	InitPiece(2, 7, BISHOP, BLACK);
 	InitPiece(3, 7, QUEEN, BLACK);
 	InitPiece(4, 7, KING, BLACK);
-	mainGame.KingSquares[1] = 60;
+	g_mainGame.KingSquares[1] = 60;
 	InitPiece(5, 7, BISHOP, BLACK);
 	InitPiece(6, 7, KNIGHT, BLACK);
 	InitPiece(7, 7, ROOK, BLACK);
 
 	for (int i = 0; i < 8; i++)
 		InitPiece(i, 6, PAWN, BLACK);
-	mainGame.Side = WHITE;
+	g_mainGame.Side = WHITE;
 
-	mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
-	mainGame.Material[0] = 0;
-	mainGame.Material[1] = 0;
-	mainGame.PositionHistoryLength = 0;
+	g_mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
+	g_mainGame.Material[0] = 0;
+	g_mainGame.Material[1] = 0;
+	g_mainGame.PositionHistoryLength = 0;
 	InitHash();
 	InitScores();
 }
@@ -396,7 +394,6 @@ void AssertGame(Game* game) {
 	}
 #endif // _DEBUG
 }
-
 
 int MakeMove(Move move, Game* game) {
 	char f = move.From;
@@ -1051,7 +1048,7 @@ PieceType parseSide(char c) {
 	}
 }
 
-Move parseMove(char* sMove, MoveInfo info) {
+Move ParseMove(char* sMove, MoveInfo info) {
 	int fromFile = sMove[0] - 'a';
 	int fromRank = sMove[1] - '1';
 	int toFile = sMove[2] - 'a';
@@ -1064,47 +1061,47 @@ Move parseMove(char* sMove, MoveInfo info) {
 }
 
 void InitScores() {
-	mainGame.Material[0] = 0;
-	mainGame.Material[1] = 0;
-	mainGame.PositionScore = 0;
+	g_mainGame.Material[0] = 0;
+	g_mainGame.Material[1] = 0;
+	g_mainGame.PositionScore = 0;
 
 	for (int i = 0; i < 64; i++)
 	{
-		PieceType pt = mainGame.Squares[i] & 7;
-		int colorSide = (mainGame.Squares[i] & (WHITE | BLACK)) >> 4;
-		mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
-		mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
+		PieceType pt = g_mainGame.Squares[i] & 7;
+		int colorSide = (g_mainGame.Squares[i] & (WHITE | BLACK)) >> 4;
+		g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
+		g_mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
 	}
 
 	//aproximation that endgame starts att 1900.
-	int endGame = mainGame.Material[1] - mainGame.Material[0] < 1900 ? 1 : 0;
+	int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < 1900 ? 1 : 0;
 
-	mainGame.PositionScore += KingPositionValueMatrix[endGame][0][mainGame.KingSquares[0]];
-	mainGame.PositionScore += KingPositionValueMatrix[endGame][1][mainGame.KingSquares[1]];
+	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][0][g_mainGame.KingSquares[0]];
+	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][1][g_mainGame.KingSquares[1]];
 }
 
 void InitHash() {
-	mainGame.Hash = 0;
+	g_mainGame.Hash = 0;
 	for (int i = 0; i < 64; i++)
-		mainGame.Hash ^= ZobritsPieceTypesSquares[mainGame.Squares[i]][i];
-	mainGame.Hash ^= ZobritsSides[mainGame.Side >> 4];
-	if (mainGame.State & WhiteCanCastleLong)
-		mainGame.Hash ^= ZobritsCastlingRights[0];
-	if (mainGame.State & WhiteCanCastleShort)
-		mainGame.Hash ^= ZobritsCastlingRights[1];
-	if (mainGame.State & BlackCanCastleLong)
-		mainGame.Hash ^= ZobritsCastlingRights[2];
-	if (mainGame.State & BlackCanCastleShort)
-		mainGame.Hash ^= ZobritsCastlingRights[3];
+		g_mainGame.Hash ^= ZobritsPieceTypesSquares[g_mainGame.Squares[i]][i];
+	g_mainGame.Hash ^= ZobritsSides[g_mainGame.Side >> 4];
+	if (g_mainGame.State & WhiteCanCastleLong)
+		g_mainGame.Hash ^= ZobritsCastlingRights[0];
+	if (g_mainGame.State & WhiteCanCastleShort)
+		g_mainGame.Hash ^= ZobritsCastlingRights[1];
+	if (g_mainGame.State & BlackCanCastleLong)
+		g_mainGame.Hash ^= ZobritsCastlingRights[2];
+	if (g_mainGame.State & BlackCanCastleShort)
+		g_mainGame.Hash ^= ZobritsCastlingRights[3];
 
-	mainGame.Hash ^= ZobritsEnpassantFile[mainGame.State & 15];
+	g_mainGame.Hash ^= ZobritsEnpassantFile[g_mainGame.State & 15];
 }
 
 void ReadFen(char* fen) {
 	InitPieceList();
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
-		mainGame.Squares[i] = NOPIECE;
+		g_mainGame.Squares[i] = NOPIECE;
 	int index = 0;
 	int file = 0;
 	int rank = 7;
@@ -1130,21 +1127,21 @@ void ReadFen(char* fen) {
 	}
 
 	index++;
-	mainGame.Side = parseSide(fen[index]);
+	g_mainGame.Side = parseSide(fen[index]);
 	index++;
 	index++;
-	mainGame.State = 0;
+	g_mainGame.State = 0;
 	while (fen[index] != ' ')
 	{
 		switch (fen[index])
 		{
-		case 'K': mainGame.State |= WhiteCanCastleShort;
+		case 'K': g_mainGame.State |= WhiteCanCastleShort;
 			break;
-		case 'Q': mainGame.State |= WhiteCanCastleLong;
+		case 'Q': g_mainGame.State |= WhiteCanCastleLong;
 			break;
-		case 'k': mainGame.State |= BlackCanCastleShort;
+		case 'k': g_mainGame.State |= BlackCanCastleShort;
 			break;
-		case 'q': mainGame.State |= BlackCanCastleLong;
+		case 'q': g_mainGame.State |= BlackCanCastleLong;
 			break;
 		default:
 			break;
@@ -1154,14 +1151,14 @@ void ReadFen(char* fen) {
 	index++;
 	char enpFile = fen[index] - 'a';
 	if (enpFile >= 0 && enpFile <= 8)
-		mainGame.State |= (enpFile + 1);
+		g_mainGame.State |= (enpFile + 1);
 	//todo: counters	
 
 	for (int i = 0; i < 64; i++)
 	{
-		if ((mainGame.Squares[i] & 7) == KING) {
-			int color = (mainGame.Squares[i] >> 4);
-			mainGame.KingSquares[color] = i;
+		if ((g_mainGame.Squares[i] & 7) == KING) {
+			int color = (g_mainGame.Squares[i] >> 4);
+			g_mainGame.KingSquares[color] = i;
 		}
 	}
 
@@ -1188,7 +1185,7 @@ void WriteFen(char* fenBuffer) {
 		for (int file = 0; file < 8; file++)
 		{
 			int emptyCount = 0;
-			while (mainGame.Squares[rank * 8 + file] == NOPIECE && file < 8)
+			while (g_mainGame.Squares[rank * 8 + file] == NOPIECE && file < 8)
 			{
 				emptyCount++;
 				file++;
@@ -1199,29 +1196,29 @@ void WriteFen(char* fenBuffer) {
 				file--;
 			}
 			else {
-				fenBuffer[index++] = PieceChar(mainGame.Squares[rank * 8 + file]);
+				fenBuffer[index++] = PieceChar(g_mainGame.Squares[rank * 8 + file]);
 			}
 		}
 		if (rank > 0)
 			fenBuffer[index++] = '/';
 	}
 	fenBuffer[index++] = ' ';
-	fenBuffer[index++] = mainGame.Side == WHITE ? 'w' : 'b';
+	fenBuffer[index++] = g_mainGame.Side == WHITE ? 'w' : 'b';
 	fenBuffer[index++] = ' ';
-	if (mainGame.State & WhiteCanCastleShort) fenBuffer[index++] = 'K';
-	if (mainGame.State & WhiteCanCastleLong) fenBuffer[index++] = 'Q';
-	if (mainGame.State & BlackCanCastleShort) fenBuffer[index++] = 'k';
-	if (mainGame.State & BlackCanCastleLong) fenBuffer[index++] = 'q';
+	if (g_mainGame.State & WhiteCanCastleShort) fenBuffer[index++] = 'K';
+	if (g_mainGame.State & WhiteCanCastleLong) fenBuffer[index++] = 'Q';
+	if (g_mainGame.State & BlackCanCastleShort) fenBuffer[index++] = 'k';
+	if (g_mainGame.State & BlackCanCastleLong) fenBuffer[index++] = 'q';
 	fenBuffer[index++] = ' ';
 
 	char noFile = 'a' - 1;
-	char enPassantFile = (mainGame.State & 15) + noFile;
+	char enPassantFile = (g_mainGame.State & 15) + noFile;
 	if (enPassantFile == noFile)
 		fenBuffer[index++] = '-';
 	else
 	{
 		fenBuffer[index++] = enPassantFile;
-		fenBuffer[index++] = mainGame.Side == WHITE ? '6' : '3';
+		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
 	}
 	fenBuffer[index] = '\0';
 }
@@ -1249,14 +1246,14 @@ void RemoveInvalidMoves(Game* game) {
 }
 
 int ValidMoves(Move* moves) {
-	CreateMoves(&mainGame, 0);
-	RemoveInvalidMoves(&mainGame);
+	CreateMoves(&g_mainGame, 0);
+	RemoveInvalidMoves(&g_mainGame);
 
-	if (mainGame.MovesBufferLength == 0)
+	if (g_mainGame.MovesBufferLength == 0)
 		return 0;
 
-	memcpy(moves, mainGame.MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
-	return mainGame.MovesBufferLength;
+	memcpy(moves, g_mainGame.MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
+	return g_mainGame.MovesBufferLength;
 }
 
 int ValidMovesOnThread(Game* game, Move* moves) {
@@ -1271,8 +1268,8 @@ int ValidMovesOnThread(Game* game, Move* moves) {
 }
 
 PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
-	Move move = parseMove(sMove, 0);
-	Move moves[2048];
+	Move move = ParseMove(sMove, 0);
+	Move moves[1000];
 	int length = ValidMovesOnThread(game, moves);
 	PlayerMove playerMove;
 	for (int i = 0; i < length; i++)
@@ -1294,17 +1291,16 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 }
 
 PlayerMove MakePlayerMove(char* sMove) {
-	return MakePlayerMoveOnThread(&mainGame, sMove);
+	return MakePlayerMoveOnThread(&g_mainGame, sMove);
 }
 
 void UnMakePlayerMove(PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &mainGame, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &g_mainGame, playerMove.PreviousHash);
 }
 
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
 }
-
 
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
@@ -1453,7 +1449,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 }
 
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
-	if (Stopped)
+	if (g_Stopped)
 		return moveScore; // should not be used;
 
 	g_SearchedNodes++;
@@ -1626,19 +1622,19 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 }
 
 Game* CopyMainGame(int threadNo) {
-	threadGames[threadNo] = mainGame;
-	threadGames[threadNo].KingSquares[0] = mainGame.KingSquares[0];
-	threadGames[threadNo].KingSquares[1] = mainGame.KingSquares[1];
-	threadGames[threadNo].Material[0] = mainGame.Material[0];
-	threadGames[threadNo].Material[1] = mainGame.Material[1];
-	threadGames[threadNo].ThreadIndex = threadNo;
+	g_threadGames[threadNo] = g_mainGame;
+	g_threadGames[threadNo].KingSquares[0] = g_mainGame.KingSquares[0];
+	g_threadGames[threadNo].KingSquares[1] = g_mainGame.KingSquares[1];
+	g_threadGames[threadNo].Material[0] = g_mainGame.Material[0];
+	g_threadGames[threadNo].Material[1] = g_mainGame.Material[1];
+	g_threadGames[threadNo].ThreadIndex = threadNo;
 
-	memcpy(mainGame.MovesBuffer, threadGames[threadNo].MovesBuffer, mainGame.MovesBufferLength * sizeof(Move));
-	memcpy(mainGame.Squares, threadGames[threadNo].Squares, 64 * sizeof(PieceType));
-	memcpy(mainGame.PositionHistory, threadGames[threadNo].PositionHistory, mainGame.PositionHistoryLength * sizeof(U64));
-	memcpy(mainGame.Pieces, threadGames[threadNo].Pieces, 32 * sizeof(Piece));
+	memcpy(g_mainGame.MovesBuffer, g_threadGames[threadNo].MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
+	memcpy(g_mainGame.Squares, g_threadGames[threadNo].Squares, 64 * sizeof(PieceType));
+	memcpy(g_mainGame.PositionHistory, g_threadGames[threadNo].PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
+	memcpy(g_mainGame.Pieces, g_threadGames[threadNo].Pieces, 32 * sizeof(Piece));
 
-	return &threadGames[threadNo];
+	return &g_threadGames[threadNo];
 }
 
 DWORD WINAPI DoNothingThread(int* prm) {
@@ -1654,6 +1650,10 @@ int GetNextFreeMove() {
 		g_LastStartedMove++;
 		ReleaseMutex(g_MutexFreeMove);
 	}
+	else {
+		printf("Unexpected waitResult (%d) in GetNextFreeMove.", waitResult);
+		exit(999);
+	}
 	return ret;
 }
 
@@ -1668,7 +1668,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		//if (prm->depth > 7)
 			//printf("Start Thread %d on move %d\n", prm->threadID, moveIndex);
 
-		Game* game = &(threadGames[prm->threadID]);
+		Game* game = &(g_threadGames[prm->threadID]);
 		Move move = g_rootMoves.moves[moveIndex];
 		g_rootMoves.moves[moveIndex].ThreadIndex = prm->threadID;
 		GameState gameState = game->State;
@@ -1680,7 +1680,7 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		short g_beta = MAX_SCORE;
 		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
 
-		if (!Stopped)
+		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
@@ -1724,16 +1724,16 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 		}
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
+	SortMoves(g_rootMoves.moves, moveCount, &g_threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
 	//free(tps);
 }
 // Background thread that sets Stopped flag after specified time in ms.
-DWORD WINAPI TimeLimitWatch(int* args) {
-	int ms = *args;
+DWORD WINAPI TimeLimitWatch(void* args) {
+	int ms = g_topSearchParams.MoveTime;
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
-	while (!Stopped)
+	while (!g_Stopped)
 	{
 		Sleep(100);
 		now = clock();
@@ -1745,7 +1745,7 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 		}
 	}
 
-	Stopped = true;
+	g_Stopped = true;
 	ExitThread(0);
 	return 0;
 }
@@ -1753,15 +1753,13 @@ DWORD WINAPI TimeLimitWatch(int* args) {
 // Starting point of a search for best move.
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
-int _millis;
 Move Search(bool async) {
 	HANDLE timeLimitThread = 0;
-	_millis = g_topSearchParams.MoveTime;
-	if (_millis > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, &_millis, 0, NULL);
+	if (g_topSearchParams.MoveTime > 0) {
+		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
 	}
 
-	Stopped = false;
+	g_Stopped = false;
 	g_SearchedNodes = 0;
 
 	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
@@ -1780,7 +1778,7 @@ Move Search(bool async) {
 }
 
 int PrintBestLine(Move move, int depth, float ellapsed) {
-	char buffer[1000];
+	char buffer[2000];
 	char* pv = &buffer;
 	char sMove[5];
 	MoveToString(move, sMove);
@@ -1788,11 +1786,11 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	pv += 4;
 	strcpy(pv, " ");
 	pv++;
-	Game* game = &mainGame;
+	Game* game = &g_mainGame;
 
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
-	PlayerMove moves[2000];
+	PlayerMove moves[400];
 	int movesCount = 0;
 	while (movesCount < depth)
 	{
@@ -1831,11 +1829,11 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	int maxDepth = g_topSearchParams.MaxDepth;
 	clock_t start = clock();
 	//ClearHashTable();
-	CreateMoves(&mainGame, 0);
-	RemoveInvalidMoves(&mainGame);
-	int moveCount = mainGame.MovesBufferLength;
+	CreateMoves(&g_mainGame, 0);
+	RemoveInvalidMoves(&g_mainGame);
+	int moveCount = g_mainGame.MovesBufferLength;
 	g_rootMoves.Length = moveCount;
-	memcpy(g_rootMoves.moves, mainGame.MovesBuffer, moveCount * sizeof(Move));
+	memcpy(g_rootMoves.moves, g_mainGame.MovesBuffer, moveCount * sizeof(Move));
 
 	int depth = 1;
 	char bestMove[5];
@@ -1844,30 +1842,30 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	{
 		clock_t depStart = clock();
 		SetMovesScoreAtDepth(depth, moveCount);
-		if (!Stopped) { // avbrutna depths ger felaktigt resultat.
+		if (!g_Stopped) { // avbrutna depths ger felaktigt resultat.
 			g_topSearchParams.BestMove = g_rootMoves.moves[0];
 			bestScore = g_rootMoves.moves[0].ScoreAtDepth;
 			MoveToString(g_rootMoves.moves[0], bestMove);
 			depth++;
 			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
 			PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
-			if ((mainGame.Side == WHITE && bestScore < -7000) || (mainGame.Side == BLACK && bestScore > 7000))
+			if ((g_mainGame.Side == WHITE && bestScore < -7000) || (g_mainGame.Side == BLACK && bestScore > 7000))
 			{
-				Stopped = true;
+				g_Stopped = true;
 				break; //A check mate is found, no need to search further.
 			}
 
 			float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
-			int moveNo = mainGame.PositionHistoryLength;
+			int moveNo = g_mainGame.PositionHistoryLength;
 
 			RegisterDepthTime(moveNo, depth, depthTime * 1000);
-			if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, mainGame.Side)) {
-				Stopped = true;
+			if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, g_mainGame.Side)) {
+				g_Stopped = true;
 				break;
 			}
 		}
 
-	} while (depth <= maxDepth && !Stopped);
+	} while (depth <= maxDepth && !g_Stopped);
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);

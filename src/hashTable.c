@@ -56,7 +56,7 @@ bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short al
 		if (dbDepth >= depth)
 		{
 			*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
-			//todo: adjust mate scores with in_deep
+			//todo: adjust mate scores with in_deep?
 
 			HashEntryType type = (entry >> 50) & 0x3;
 			switch (type)
@@ -120,7 +120,7 @@ void GenerateZobritsKeys() {
 
 void Allocate(unsigned int megabytes) {
 	free(H_Table.Entries);
-	H_Table.EntryCount = (megabytes * 0x100000) / sizeof(U64);
+	H_Table.EntryCount = (megabytes * 0x100000ULL) / sizeof(U64);
 	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(U64));
 }
 
