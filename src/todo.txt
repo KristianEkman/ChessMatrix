@@ -7,6 +7,8 @@ mer än 100 drag krashar
 
 Fungerar värkligen clear hash? Känns som den mins drag i alla fall.
 
+global alpha beta. (kanske skippa trådning). Många cut offs missas.
+
 Testa lvamvv istf move score.
 
 hämta bestmove från hash så kan alphabeta börja tidigare
