@@ -13,8 +13,13 @@ Timing
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
 
+Refactor main
+	Flytta ut globala variabler.
+	Flytta ut search, movegen, uci, evaluation
+	Enums for color01
 
-Fungerar draw by rep?
+Opening Book
+	Opening Score, early queen, minor piece count, slå av och på.
 
 Eval: 
     open file on king
@@ -33,7 +38,17 @@ konfigurerbar, hash size
 
 Fifty move rule.
 
+Prioritera pv moves readn i movegen
+
 Material draw?
+
+Mer pruning
+	Aspiration window
+	Futilty pruning
+	Razoring
+	Killer moves
+
+killer-heuristic
 
 time control blitz
 	Syfte:
