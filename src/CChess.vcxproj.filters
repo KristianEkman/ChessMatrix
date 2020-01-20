@@ -36,9 +36,6 @@
     <ClCompile Include="hashTable.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bestMovesTable.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="timeControl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,9 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hashTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="bestMovesTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="timeControl.h">

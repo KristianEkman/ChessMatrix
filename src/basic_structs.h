@@ -39,7 +39,7 @@ typedef enum {
 	//
 }MoveInfo;
 
-typedef struct {
+typedef struct Move {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
@@ -92,7 +92,7 @@ typedef struct {
 	PieceType Squares[64];
 	short PositionScore;
 	U64 Hash;
-	U64 PositionHistory[256];
+	U64 PositionHistory[2000];
 	int PositionHistoryLength;
 	int ThreadIndex;
 	Piece Pieces[2][16];
@@ -101,7 +101,6 @@ typedef struct {
 typedef struct {
 	int threadID;
 	int moveCount;
-	int moveIndex;
 	int depth;
 } ThreadParams;
 

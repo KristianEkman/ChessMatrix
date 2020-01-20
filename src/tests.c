@@ -130,8 +130,8 @@ void HashTableRoundTrip() {
 	addHashScore(hash, expected, 1, EXACT, 1, 2);
 	int depth = 0;
 	short score = 0;
-	char from = 0, to = 0;
-	getScoreFromHash(hash, 1, &score, &from, &to, 3000 ,0);
+	Move move;
+	getScoreFromHash(hash, 1, &score, &move, 3000 ,0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	U64 hash2 = hash + 1;
@@ -139,10 +139,10 @@ void HashTableRoundTrip() {
 	addHashScore(hash2, expected2, 1, EXACT, 10, 12);
 
 	short score2;
-	getScoreFromHash(hash2, 1, &score2, &from, &to, 0 ,0);
+	getScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	
-	getScoreFromHash(hash, 1, &score, &from, &to, 0 , 0);
+	getScoreFromHash(hash, 1, &score, &move, 0 , 0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
@@ -154,17 +154,17 @@ void HashTableDepthTest() {
 	addHashScore(hash, 3000, 2, EXACT, 40, 50 );
 	int depth = 2;
 	short score;
-	char from, to;
-	getScoreFromHash(hash, depth, &score, &from, &to, 100, 200);
+	Move move;
+	getScoreFromHash(hash, depth, &score, &move, 100, 200);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
 	addHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
 	short score2 = 0;
-	getScoreFromHash(hash, 2,  &score2, &from, &to, 30, 60);
+	getScoreFromHash(hash, 2,  &score2, &move, 30, 60);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
 	addHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
-	getScoreFromHash(hash, 3, &score, &from, &to, 30, 31);
+	getScoreFromHash(hash, 3, &score, &move, 30, 31);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
@@ -175,7 +175,7 @@ void HashTablePerformance(int iterations) {
 	short expected = MIN_SCORE;
 	int depth = 1;
 	short score = 0;
-	char from, to;
+	Move move;
 
 	for (int i = 0; i < iterations; i++)
 	{
@@ -183,8 +183,8 @@ void HashTablePerformance(int iterations) {
 		if (expected > MAX_SCORE)
 			expected = MIN_SCORE;
 		hash++;
-		addHashScore(hash, expected, 1, EXACT, 1, 1), "";		
-		Assert(getScoreFromHash(hash, depth, &score, &from, &to, 100, 200), "No score returned from hash");
+		addHashScore(hash, expected, 1, EXACT, 1, 1);		
+		Assert(getScoreFromHash(hash, depth, &score, &move, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
@@ -614,22 +614,22 @@ void TestEvalOpenFile() {
 	printf("\n");printf(__func__);
 	char* startFen = "r3kb1r/ppp1nppp/5n2/8/8/4BN2/PPP2PPP/RN1R2K1 b kq - 0 12";
 	ReadFen(startFen);
-	int score = GetEval(&mainGame);
+	int score = GetEval(&mainGame, 0);
 }
 
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	SearchedLeafs = 0;
+	g_SearchedNodes = 0;
 	clock_t start = clock();
 	DefaultSearch();
 	g_topSearchParams.MaxDepth = depth;
 	Move bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("%.2fk leafs in %.2fs\n", (float)SearchedLeafs / 1000, secs);
-	printf("%.2fk leafs/s\n", SearchedLeafs / (1000 * secs));
+	printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
+	printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
 	char sMove[6];
 	MoveToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
@@ -642,7 +642,7 @@ void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	SearchedLeafs = 0;
+	g_SearchedNodes = 0;
 	DefaultSearch();
 	g_topSearchParams.MoveTime = secs * 1000;
 	Move bestMove = Search(false);
@@ -762,11 +762,12 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*if (_failedAsserts == 0)
-		printGreen("Success! Tests are good!\n");
-	printf("Press any key to continue.\n");
-	int c = _getch();
-	return;*/
+
+	//if (_failedAsserts == 0)
+	//	printGreen("Success! Tests are good!\n");
+	//printf("Press any key to continue.\n");
+	//int c = _getch();
+	//return;
 	_failedAsserts = 0;
 
 #ifdef _DEBUG

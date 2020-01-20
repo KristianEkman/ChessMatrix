@@ -17,30 +17,32 @@
 
 HashTable H_Table;
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
-	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
-	U64 entry = H_Table.Entries[idx];
 	unsigned int key2 = hash & 0x7FFFFFFF;
-	int dbDepth = (entry >> 45) & 0x1F;
-	unsigned int dbKey2 = entry & 0x7FFFFFFF;
-	if (dbKey2 == key2) {
-		if (depth < dbDepth)
-			return;
-	}
-	//printf("%llu\t\t%d\t\%d\t%d\t%d\t%d\n", hash, score, depth, type, from, to);
-
-	//always overwrite unless same hash with lower depth is stored.
-	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
 	U64 pack = key2 & 0x7FFFFFFF;
 	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
 	pack |= (U64)depth << 45;
 	pack |= (U64)type << 50;
 	pack |= (U64)from << 52;
 	pack |= (U64)to << 58;
+
+	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	U64 entry = H_Table.Entries[idx];
+	int dbDepth = (entry >> 45) & 0x1F;
+	unsigned int dbKey2 = entry & 0x7FFFFFFF;
+
+	//always overwrite unless same hash with lower depth is stored.
+	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
+	if (dbKey2 == key2) {
+		if (depth < dbDepth)
+			return;
+	}
+
+	
 	H_Table.Entries[idx] = pack;
 	//HashTableFullCount++;
 }
 
-bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, short alpha, short beta) {
+bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
 	unsigned int key2 = hash & 0x7FFFFFFF;
 
@@ -48,8 +50,9 @@ bool getScoreFromHash(U64 hash, char depth, short* score, char* from, char* to, 
 	unsigned int dbKey = entry & 0x7FFFFFFF;
 	int dbDepth = (entry >> 45) & 0x1F;
 	if (dbKey == key2) {
-		*from = (entry >> 52) & 0x3F;
-		*to = (entry >> 58) & 0x3F;
+		pvMove->From = (entry >> 52) & 0x3F;
+		pvMove->To = (entry >> 58) & 0x3F;
+		pvMove->MoveInfo = PlainMove;
 		if (dbDepth >= depth)
 		{
 			*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
@@ -92,9 +95,8 @@ bool getBestMoveFromHash(U64 hash, Move* move) {
 	if (dbKey == key2) {
 		move->From = (entry >> 52) & 0x3F;
 		move->To = (entry >> 58) & 0x3F;
-		return true;		
+		return true;
 	}
-	//HashTableMatches++;
 	return false;
 }
 
@@ -124,7 +126,7 @@ void Allocate(unsigned int megabytes) {
 
 void ClearHashTable() {
 	for (size_t i = 0; i < H_Table.EntryCount; i++)
-		H_Table.Entries[i] = 0;
+		H_Table.Entries[i] = 0ULL;
 	/*HashTableFullCount = 0;
 	HashTableEntries = 0;
 	HashTableMatches = 0;*/

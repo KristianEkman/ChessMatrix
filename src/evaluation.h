@@ -14,5 +14,10 @@ short OpenRookFile(int square, Game* game);
 
 short DoublePawns(int square, Game* game, PieceType pawn);
 
-short GetEval(Game* game);
+// A much faster calculation just used for move ordering.
+short GetMoveScore(Game* game);
+
+short GetEval(Game* game, short moveScore);
+
+bool DrawByRepetition(Game* game);
 
