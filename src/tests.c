@@ -248,18 +248,18 @@ void PerftSaveHash(depth) {
 	WriteFen(fen);
 	for (size_t i = 0; i < perftSaveHashCount; i++)
 	{
-		if (HashFenDb[i].Hash == mainGame.Hash) {
+		if (HashFenDb[i].Hash == g_mainGame.Hash) {
 			hasHash = TRUE;
 			
 			if (strcmp(fen, HashFenDb[i].Fen)) {
 				collisionCount++;
-				printf("\ncollision %d:\n%s\n%s\nHash: %llu", collisionCount ,fen, HashFenDb[i].Fen, mainGame.Hash);
+				printf("\ncollision %d:\n%s\n%s\nHash: %llu", collisionCount ,fen, HashFenDb[i].Fen, g_mainGame.Hash);
 			}
 		}
 	}
 
 	if (!hasHash) {
-		HashFenDb[perftSaveHashCount].Hash = mainGame.Hash;
+		HashFenDb[perftSaveHashCount].Hash = g_mainGame.Hash;
 		strcpy_s(HashFenDb[perftSaveHashCount].Fen, 100, fen);
 		perftSaveHashCount++;
 		if (perftSaveHashCount % 10000 == 0)
@@ -268,23 +268,23 @@ void PerftSaveHash(depth) {
 
 	if (depth == 0)
 		return;
-	CreateMoves(&mainGame, 0);
-	RemoveInvalidMoves(&mainGame);
-	if (mainGame.MovesBufferLength == 0)
+	CreateMoves(&g_mainGame, 0);
+	RemoveInvalidMoves(&g_mainGame);
+	if (g_mainGame.MovesBufferLength == 0)
 		return;
-	int count = mainGame.MovesBufferLength;
+	int count = g_mainGame.MovesBufferLength;
 	Move * localMoves = malloc(count * sizeof(Move));
-	memcpy(localMoves, mainGame.MovesBuffer, count * sizeof(Move));
+	memcpy(localMoves, g_mainGame.MovesBuffer, count * sizeof(Move));
 	for (int i = 0; i < count; i++)
 	{
 		Move move = localMoves[i];
-		GameState prevGameState = mainGame.State;
-		int prevPositionScore = mainGame.PositionScore;
-		U64 prevHash = mainGame.Hash;
+		GameState prevGameState = g_mainGame.State;
+		int prevPositionScore = g_mainGame.PositionScore;
+		U64 prevHash = g_mainGame.Hash;
 
-		int captIndex = MakeMove(move, &mainGame);
+		int captIndex = MakeMove(move, &g_mainGame);
 		PerftSaveHash(depth - 1);
-		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &g_mainGame, prevHash);
 	}
 	free(localMoves);
 }

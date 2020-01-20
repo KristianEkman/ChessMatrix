@@ -91,7 +91,7 @@ void EnterUciMode() {
 	fgets(buf, 1024, stdin);
 	while (!streq(buf, "quit\n"))
 	{
-		if (startsWith(buf, "uci")) {
+		if (startsWith(buf, "uci ")) {
 			stdout_wl("id name CChess");
 			stdout_wl("id author Kristian Ekman");
 			stdout_wl("uciok");
