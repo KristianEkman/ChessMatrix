@@ -25,6 +25,7 @@ HANDLE g_MutexFreeMove;
 bool Stopped;
 
 void ComputerMove() {
+	g_topSearchParams.MoveTime = 5000;
 	Move move = Search(false);
 	int captIndex = MakeMove(move, &mainGame);
 }
@@ -81,8 +82,6 @@ int main(int argc, char* argv[]) {
 	Allocate(1024);
 	ClearHashTable();
 	InitGame();
-	/*for (int i = 0; i < SEARCH_THREADS; i++)
-		InitBestMovesTable(&bmTables[i], TBL_SIZE_MB);*/
 	printf("initialized\n");
 
 	EnterUciMode();
@@ -1726,7 +1725,6 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
 	SortMoves(g_rootMoves.moves, moveCount, &threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
-
 	//free(tps);
 }
 // Background thread that sets Stopped flag after specified time in ms.
