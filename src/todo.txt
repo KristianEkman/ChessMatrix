@@ -1,5 +1,16 @@
 
 
+time control
+============
+movestogo 
+      there are x moves to the next time control
+	  tiden kvar delat med x --> normal, ingen bonus, maxtid normal ggr 1,5
+winc 
+	white increment per move in mseconds if x > 0
+binc
+	black increment per move in mseconds if x > 0
+
+Endgame tablebases
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas.
 
