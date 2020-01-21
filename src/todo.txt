@@ -12,8 +12,8 @@ Timing
 	- Tänka längre om score har sjunkit mkt.
 
 Refactor main
-	Flytta ut globala variabler.
-	Flytta ut search, movegen, uci, evaluation
+	Flytta ut globala variabler. magic strings and numbers.
+	Flytta ut search, game, movegen, uci, evaluation
 	Enums for color01
 
 Opening Book
@@ -39,8 +39,6 @@ Opening Book
 	Opening Score, early queen, minor piece count, slå av och på.
 
 Fifty move rule.
-
-Konfigurarbar hash storlek via uci.
 
 Räkna på hur stor hash som behövs.
 

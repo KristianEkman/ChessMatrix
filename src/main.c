@@ -87,21 +87,43 @@ int main(int argc, char* argv[]) {
 }
 
 void EnterUciMode() {
-	char buf[5000];
+	#define UCI_BUF_SIZE 5000
+	char buf[UCI_BUF_SIZE];
 	fgets(buf, 5000, stdin);
 	while (!streq(buf, "quit\n"))
 	{
-		if (startsWith(buf, "uci ")) {
+		if (startsWith(buf, "ucinewgame")) {
+			ClearHashTable();  // the reason is that estimation of next move is much easier.
+			ResetDepthTimes();
+			stdout_wl("info string New game");
+		}
+		else if (startsWith(buf, "uci")) {
 			stdout_wl("id name CChess");
 			stdout_wl("id author Kristian Ekman");
+			stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			stdout_wl("uciok");
 		}
 		else if (startsWith(buf, "isready")) {
 			stdout_wl("readyok");
 		}
-		else if (startsWith(buf, "ucinewgame")) {
-			ClearHashTable();  // the reason is that estimation of next move is much easier.
-			ResetDepthTimes();
+		else if (startsWith(buf, "setoption name Hash value")) {
+			//setoption name Hash value 32
+			char* token = strtok(buf, " ");
+			while (token != NULL) {
+				if (streq(token, "value")) {
+					token = strtok(NULL, " ");
+					int mb = atoi(token);
+					if (mb >= 1 && mb <= 2048) { // actual limit is 32760mb
+						Allocate(mb);
+						stdout_wl("info string New hash size set");
+					}
+					else {
+						stdout_wl("info string Invalid Hash size value (1 - 2048)");
+					}
+					break;
+				}
+				token = strtok(NULL, " ");
+			}
 		}
 		else if (startsWith(buf, "position ")) {
 			//postion fen | moves
@@ -194,7 +216,10 @@ void EnterUciMode() {
 		else if (streq(buf, "i\n")) {
 			EnterInteractiveMode();
 		}
-		fgets(buf, 5000, stdin);
+		else {
+			stdout_wl("info string unknown command");
+		}
+		fgets(buf, UCI_BUF_SIZE, stdin);
 	}
 }
 
