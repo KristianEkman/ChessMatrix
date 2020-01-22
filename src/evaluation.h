@@ -21,3 +21,5 @@ short GetEval(Game* game, short moveScore);
 
 bool DrawByRepetition(Game* game);
 
+short KingExposed(int square, Game* game);
+

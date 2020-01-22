@@ -224,32 +224,40 @@ short GetMoveScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
-short KingExposed(int square, Game* game, PieceType side) {
+short KingExposed(int square, Game* game) {
+	// If opponent has atleast 1500 material, the king should be protected by pawns.
+	// 10p for square infront
+	// 5p for diagonals.
 
-	if (game->Material[(side >> 4) ^ 1] < 1500)
+	PieceType kingColor = game->Squares[square] & (BLACK | WHITE);
+	int otherSide = (kingColor >> 4) ^ 1;
+	if (abs(game->Material[otherSide]) < 1500)
 		return 0;
 	short score = 0;
-	short squareScores[] = { 5, 10, 5 };
-	// om kungen står längst bak
-	// poäng för placeringen tas om hand av lookups
-	if (side == BLACK) {
+	// King should be on back rank.
+	// Points for placement of king is handled by main position score lookup.
+	if (kingColor == BLACK) {
 		if (square < 56)
 			return 0;
-		for (size_t s = 0; s < 2; s++)
-		{
-
-		}
-		if (game->Squares[square - 8] == NOPIECE)
+		PieceType blackPawn = (BLACK | PAWN);
+		if (game->Squares[square - 7] != blackPawn && square != 63)
+			score += 5;
+		if (game->Squares[square - 8] != blackPawn)
 			score += 10;
-	}
-	else { // WHITE
+		if (game->Squares[square - 9] != blackPawn && square != 56)
+			score += 5;
+	} else { // WHITE
 		if (square > 7)
 			return 0;
-
+		PieceType whitePawn = (WHITE | PAWN);
+		if (game->Squares[square + 7] != whitePawn && square != 0)
+			score += 5;
+		if (game->Squares[square + 8] != whitePawn)
+			score += 10;
+		if (game->Squares[square + 9] != whitePawn && square != 7)
+			score += 5;
 	}
-	// om motspelaren har minst 1500 material och ingen dam bör det stå en bonde framför.
-	// 10 p för rutan framför tom
-	// 5p för diagonalerna tomo
+	return score;
 }
 
 short GetEval(Game* game, short moveScore) {
@@ -291,7 +299,6 @@ short GetEval(Game* game, short moveScore) {
 			}
 			case KING: {
 				score -= neg * KingExposed(i, game, color);
-
 			}
 			default:
 				break;

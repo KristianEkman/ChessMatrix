@@ -744,6 +744,26 @@ void DoublePawnsTest()
 	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
 }
 
+void KingExposureTest() {
+	char * protected = "rnbq1rk1/pppppppp/4bn2/8/8/3B1N2/PPPPPPPP/RNBQ1RK1 w - - 0 1";
+	ReadFen(protected);
+	AssertAreEqualInts(6, g_mainGame.KingSquares[0], "White king is not on square 1");
+	AssertAreEqualInts(62, g_mainGame.KingSquares[1], "Black king is not on square 62");
+
+	short whiteScore = KingExposed(1, &g_mainGame);
+	short blackScore = KingExposed(62, &g_mainGame);
+	AssertAreEqualInts(0, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(0, blackScore, "Not the expected exposure score for black");
+
+	char * unprotected = "rnbq1rk1/ppppp3/4b3/8/8/3B4/1PPPP3/RNBQ1RK1 w - - 0 1";
+	ReadFen(unprotected);
+	whiteScore = KingExposed(6, &g_mainGame);
+	blackScore = KingExposed(62, &g_mainGame);
+	AssertAreEqualInts(20, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(20, blackScore, "Not the expected exposure score for black");
+
+}
+
 void indexOfTest() {
 	char* s2 = "Kristian Ekman";
 	Assert(indexOf(s2, "Ekman") == 9, "index of failed");
@@ -762,7 +782,7 @@ void _runTests() {
 }
 
 void runAllTests() {
-
+	
 	//if (_failedAsserts == 0)
 	//	printGreen("Success! Tests are good!\n");
 	//printf("Press any key to continue.\n");
@@ -798,7 +818,7 @@ void runAllTests() {
 	EnPassantMaterial();
 	OpenFileTest();SemiOpenFileTest();
 	DoublePawnsTest();
-
+	KingExposureTest();
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/
@@ -813,7 +833,6 @@ void runAllTests() {
 	BestMoveByBlack1();
 	BestMoveByBlack4();
 	BestMoveByBlack5();
-
 
 	clock_t end = clock();
 	float secs =(float) (end - start) / CLOCKS_PER_SEC;
