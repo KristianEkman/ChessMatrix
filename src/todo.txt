@@ -12,8 +12,6 @@ binc
 
 Endgame tablebases
 
-global alpha beta. (kanske skippa trådning). Många cut offs missas.
-
 Testa lvamvv istf move score.
 
 hämta bestmove från hash så kan alphabeta börja tidigare
@@ -21,6 +19,8 @@ hämta bestmove från hash så kan alphabeta börja tidigare
 Timing
 	- Öka max fallback tid om det finns tid.
 	- Tänka längre om score har sjunkit mkt.
+
+global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
 Refactor main
 	Flytta ut globala variabler. magic strings and numbers.
@@ -31,7 +31,7 @@ Opening Book
 	Opening Score, early queen, minor piece count, slå av och på.
 
 Eval: 
-        ANN
+    ANN
 	konstanter för allt
 	open file on king before endgame is bad
 	passed pawns is good.

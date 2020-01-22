@@ -601,8 +601,8 @@ char PieceTypeSquareRaysPatterns[3][64][9][8] =
 
 //white, black   nopiece, bishop, rook, queen, pawn, knight, promotions (minus pawn)
 short MaterialMatrix[2][12] = {
-	/*white*/{0, -320,-500,-900,-100,-280,  0, -200, -400, -800, 0, -200},
-	/*black*/{0,  320, 500, 900, 100, 280,  0,  200,  400,  800, 0,  200}
+	/*white*/{0, -305,-500,-1010,-100,-295,  0, -205, -400, -910, 0, -195},
+	/*black*/{0,  305, 500, 1010, 100, 295,  0,  205,  400,  910, 0,  195}
 };
 
 //white, black

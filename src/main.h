@@ -30,7 +30,7 @@ int EnterInteractiveMode();
 void InitScores();
 void InitHash();
 Move Search(bool async);
-DWORD WINAPI TimeLimitWatch(int* pms);
+DWORD WINAPI TimeLimitWatch(void* pms);
 void AdjustPositionImportance();
 void DefaultSearch();
 void AssertGame(Game* game);

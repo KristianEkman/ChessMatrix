@@ -187,7 +187,7 @@ short OpenRookFile(int square, Game* game) {
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
-		if ((game->Squares[file] & PAWN)) //smi open
+		if ((game->Squares[file] & PAWN)) //semi open
 			open -= 15;
 	}
 	return open;
@@ -199,7 +199,7 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
-		if ((game->Squares[file] == pawn)) //smi open
+		if ((game->Squares[file] == pawn))
 			score += 9;
 	}
 	return score;
@@ -236,26 +236,27 @@ short KingExposed(int square, Game* game) {
 	short score = 0;
 	// King should be on back rank.
 	// Points for placement of king is handled by main position score lookup.
-	if (kingColor == BLACK) {
-		if (square < 56)
+	if (kingColor == BLACK ) {
+		if (square < 56 && square != 59 && square != 60) //back rank not center
 			return 0;
 		PieceType blackPawn = (BLACK | PAWN);
 		if (game->Squares[square - 7] != blackPawn && square != 63)
-			score += 5;
-		if (game->Squares[square - 8] != blackPawn)
 			score += 10;
+		if (game->Squares[square - 8] != blackPawn)
+			score += 20;
 		if (game->Squares[square - 9] != blackPawn && square != 56)
-			score += 5;
-	} else { // WHITE
-		if (square > 7)
+			score += 10;
+	}
+	else { // WHITE
+		if (square > 7 && square != 3 && square != 4) //back rank not center
 			return 0;
 		PieceType whitePawn = (WHITE | PAWN);
 		if (game->Squares[square + 7] != whitePawn && square != 0)
-			score += 5;
-		if (game->Squares[square + 8] != whitePawn)
 			score += 10;
+		if (game->Squares[square + 8] != whitePawn)
+			score += 20;
 		if (game->Squares[square + 9] != whitePawn && square != 7)
-			score += 5;
+			score += 10;
 	}
 	return score;
 }
@@ -283,28 +284,33 @@ short GetEval(Game* game, short moveScore) {
 				score += neg * OpenRookFile(i, game);
 				// todo connected rooks, no king between
 			}
+			break;
 			//case BISHOP:
 			//{
 			//	//todo: bad bishops
 
 			//	//outposts, protected by a pawn?
 			//}
+			// break;
 			//case KNIGHT: {
 			//	//outposts, protected by a pawn?
 			//}
+			// break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
 
 				// passed pawns
 			}
+					 break;
 			case KING: {
 				score -= neg * KingExposed(i, game, color);
 			}
+					 break;
 			default:
 				break;
 			}
 		}
-		neg += 2; // -1 >>> 1
+		neg += 2; // -1 --> 1 // White then black
 	}
 	return score;
 

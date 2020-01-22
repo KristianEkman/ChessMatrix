@@ -528,9 +528,9 @@ void WhiteCastlingRightsAfterKingMove() {
 void MaterialBlackPawnCapture() {
 	printf("\n");printf(__func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
-	AssertAreEqualInts(-400, TotalMaterial(&g_mainGame), "Start Material missmatch");
+	AssertAreEqualInts(-510, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d4e5").Invalid, "Move was not valid");
-	AssertAreEqualInts(-500, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(-610, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void MaterialWhiteQueenCapture() {
@@ -538,7 +538,7 @@ void MaterialWhiteQueenCapture() {
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d5e4").Invalid, "Move was not valid");
-	AssertAreEqualInts(900, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(1010, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void MaterialCaptureAndPromotion() {
@@ -547,7 +547,7 @@ void MaterialCaptureAndPromotion() {
 	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	PlayerMove pm = MakePlayerMove("b7c8");
 	AssertNot(pm.Invalid, "Move was not valid");
-	AssertAreEqualInts(-900, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(-1010, TotalMaterial(&g_mainGame), "Game Material missmatch");
 	UnMakePlayerMove(pm);
 	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
 }
@@ -557,7 +557,7 @@ void MaterialPromotion() {
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("b7b8").Invalid, "Move was not valid");
-	AssertAreEqualInts(-400, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(-510, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void EnPassantMaterial() {
@@ -759,8 +759,8 @@ void KingExposureTest() {
 	ReadFen(unprotected);
 	whiteScore = KingExposed(6, &g_mainGame);
 	blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(20, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(20, blackScore, "Not the expected exposure score for black");
+	AssertAreEqualInts(40, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(40, blackScore, "Not the expected exposure score for black");
 
 }
 
