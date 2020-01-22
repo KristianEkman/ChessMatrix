@@ -224,6 +224,17 @@ short GetMoveScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
+short KingExposed(int square, Game* game, PieceType side) {
+	// om kungen står längst bak
+	// poäng för placeringen tas om hand av lookups
+	if (side == BLACK) {
+		if
+	}
+	// om motspelaren har minst 1500 material och ingen dam bör det stå en bonde framför.
+	// 10 p för rutan framför tom
+	// 5p för diagonalerna tomo
+}
+
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
@@ -238,7 +249,6 @@ short GetEval(Game* game, short moveScore) {
 			int i = piece.SquareIndex;
 			PieceType pieceType = piece.Type;
 			PieceType color = pieceType & (BLACK | WHITE);
-
 			PieceType pt = pieceType & 7;
 
 			switch (pt)
@@ -246,7 +256,7 @@ short GetEval(Game* game, short moveScore) {
 			case ROOK:
 			{
 				score += neg * OpenRookFile(i, game);
-				// connected rooks, no king between
+				// todo connected rooks, no king between
 			}
 			//case BISHOP:
 			//{
@@ -259,8 +269,12 @@ short GetEval(Game* game, short moveScore) {
 			//}
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
-
+				
 				// passed pawns
+			}
+			case KING: {
+				score -= neg * KingExposed(i, game, color);
+
 			}
 			default:
 				break;
