@@ -68,7 +68,7 @@ short PositionValueMatrix[7][2][64] = {
 		},
 		{
 			0, 0, 0, 0, 0, 0, 0, 0,
-		    0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -225,10 +225,27 @@ short GetMoveScore(Game* game) {
 }
 
 short KingExposed(int square, Game* game, PieceType side) {
+
+	if (game->Material[(side >> 4) ^ 1] < 1500)
+		return 0;
+	short score = 0;
+	short squareScores[] = { 5, 10, 5 };
 	// om kungen står längst bak
 	// poäng för placeringen tas om hand av lookups
 	if (side == BLACK) {
-		if
+		if (square < 56)
+			return 0;
+		for (size_t s = 0; s < 2; s++)
+		{
+
+		}
+		if (game->Squares[square - 8] == NOPIECE)
+			score += 10;
+	}
+	else { // WHITE
+		if (square > 7)
+			return 0;
+
 	}
 	// om motspelaren har minst 1500 material och ingen dam bör det stå en bonde framför.
 	// 10 p för rutan framför tom
@@ -269,7 +286,7 @@ short GetEval(Game* game, short moveScore) {
 			//}
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
-				
+
 				// passed pawns
 			}
 			case KING: {
