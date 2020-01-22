@@ -1570,8 +1570,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			legalCount++;
 			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-
-			if (score > bestScore) {
+			
+			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
 				if (score > alpha) {
@@ -1592,6 +1592,9 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			else
 				return 0;
 		}
+
+		if (g_Stopped)
+			return alpha;
 
 		if (alpha != oldAlpha)
 			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
@@ -1620,7 +1623,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			legalCount++;
 			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score < bestScore) {
+			
+			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
 				if (score < beta) {
@@ -1640,6 +1644,9 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			else
 				return 0; //stale mate
 		}
+
+		if (g_Stopped)
+			return beta;
 
 		if (beta != oldBeta)
 			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
