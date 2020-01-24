@@ -46,14 +46,17 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 			}
 		}
 		else if (entry == 0) { //key2 difference
+			// else if entry != 0, old entries could be moved away.
 			slot->EntrySlots[i] = pack;
 			HashTableEntries++;
 			return;
 		}
 	}
 	HashTableFull++;
+
 	slot->EntrySlots[0] = pack;
-	memset(&slot->EntrySlots[1], 0, sizeof(U64) * (SLOTS - 1));  // Hopfully most of them are old entries
+	memset(&slot->EntrySlots[1], 0, sizeof(U64) * (SLOTS - 1));  
+	// Hopfully most of them are old entries or use memmov
 }
 
 
