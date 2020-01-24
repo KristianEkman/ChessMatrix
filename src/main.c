@@ -1476,6 +1476,29 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	}
 }
 
+MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
+	Move secondKiller = game->KillerMoves[deep_in][1];
+	for (size_t i = 0; i < moveListLength; i++)
+	{
+		if (moveList[i].From == secondKiller.From && moveList[i].To == secondKiller.To) {
+			Move temp = moveList[i];
+			memmove(&moveList[1], moveList, i * sizeof(Move));
+			moveList[0] = temp;
+			break;
+		}
+	}
+	Move firstKiller = game->KillerMoves[deep_in][1];
+	for (size_t i = 0; i < moveListLength; i++)
+	{
+		if (moveList[i].From == firstKiller.From && moveList[i].To == firstKiller.To) {
+			Move temp = moveList[i];
+			memmove(&moveList[1], moveList, i * sizeof(Move));
+			moveList[0] = temp;
+			break;
+		}
+	}
+}
+
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (g_Stopped)
 		return moveScore; // should not be used;
@@ -1538,6 +1561,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
+	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount);
 	}
@@ -1578,6 +1603,11 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 					if (score >= beta) {
 						addHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
 						free(localMoves);
+
+						if (captIndex == -1) {
+							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
+							game->KillerMoves[deep_in][0] = childMove;
+						}
 						return beta;
 					}
 					alpha = score;
@@ -1630,6 +1660,10 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				if (score < beta) {
 					if (score <= alpha) {
 						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+						if (captIndex != -1) {
+							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
+							game->KillerMoves[deep_in][0] = childMove;
+						}
 						free(localMoves);
 						return alpha;
 					}
@@ -1668,7 +1702,7 @@ Game* CopyMainGame(int threadNo) {
 	memcpy(g_mainGame.Squares, g_threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(g_mainGame.PositionHistory, g_threadGames[threadNo].PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(g_mainGame.Pieces, g_threadGames[threadNo].Pieces, 32 * sizeof(Piece));
-
+	memset(g_threadGames[threadNo].KillerMoves, 0, 2 * 100 * sizeof(Move));
 	return &g_threadGames[threadNo];
 }
 

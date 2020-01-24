@@ -96,6 +96,7 @@ typedef struct {
 	int PositionHistoryLength;
 	int ThreadIndex;
 	Piece Pieces[2][16];
+	Move KillerMoves[100][2];
 } Game;
 
 typedef struct {
