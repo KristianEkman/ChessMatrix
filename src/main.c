@@ -44,6 +44,7 @@ void DefaultSearch() {
 	g_topSearchParams.TimeControl = false;
 	g_topSearchParams.WhiteIncrement = 0;
 	g_topSearchParams.BlackIncrement = 0;
+	g_topSearchParams.MovesTogo = 0;
 }
 
 void InitPieceList() {
@@ -188,24 +189,21 @@ void EnterUciMode() {
 						g_topSearchParams.TimeControl = true;
 						char* btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
-					} if (streq(token, "winc")) {
+					} else if (streq(token, "winc")) {
 						char* winc = strtok(NULL, " ");
 						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
-					} if (streq(token, "binc")) {
+					} else if (streq(token, "binc")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
+					} else if (streq(token, "movestogo")) {
+						char* binc = strtok(NULL, " ");
+						sscanf(binc, "%d", &g_topSearchParams.MovesTogo);
 					}
 					token = strtok(NULL, " ");
 				}
 
-				//Fallback if time control fails
-				if (g_topSearchParams.TimeControl)
-				{
-					g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / 20;
-					if (g_mainGame.Side == BLACK)
-						g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / 20;
-				}
-				printf("info string Searching Starting\n");
+				SetMoveTimeFallBack(g_mainGame.Side);
+
 				fflush(stdout);
 				Search(true);
 			}
@@ -1770,9 +1768,10 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	{
 		Sleep(100);
 		now = clock();
+
 		if ((now - start > (ms / (float)1000)* CLOCKS_PER_SEC))
 		{
-			printf("Search stopped by timeout.\n"); // This is not preferable since it is more economic to stop before going to next depth.
+			printf("Search stopped by timeout after %dms.\n", now - start); // This is not preferable since it is more economic to stop before going to next depth.
 			fflush(stdout);
 			break;
 		}
