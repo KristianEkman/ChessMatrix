@@ -27,7 +27,7 @@ bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
 	printf("Given time: %d\n", givenTime);
 
 	int prevMaxDepth = DepthTimeHistory[moveNo - 1][0];
-	int estimatedNextDepth = ellapsed * 5; // Default estimation
+	int estimatedNextDepth = ellapsed * 2; // Default estimation
 	if (moveNo > 0 && currentDepth > 1 && prevMaxDepth > currentDepth) {
 		estimatedNextDepth = DepthTimeHistory[moveNo - 1][currentDepth + 1];
 	}
