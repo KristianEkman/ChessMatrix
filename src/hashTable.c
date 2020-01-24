@@ -26,6 +26,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 	pack |= (U64)to << 58;
 
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+
 	U64 entry = H_Table.Entries[idx];
 	int dbDepth = (entry >> 45) & 0x1F;
 	unsigned int dbKey2 = entry & 0x7FFFFFFF;
@@ -37,9 +38,10 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 			return;
 	}
 
-	
+	if (H_Table.Entries[idx] != 0 && dbKey2 != key2)
+		HashTableOverWrites++;
 	H_Table.Entries[idx] = pack;
-	//HashTableFullCount++;
+	HashTableEntries++;
 }
 
 bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
@@ -86,6 +88,7 @@ bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short al
 }
 
 bool getBestMoveFromHash(U64 hash, Move* move) {
+	//unsigned int idx = (unsigned int)((hash >> 32) % H_Table.EntryCount);
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
 	unsigned int key2 = hash & 0x7FFFFFFF;
 
@@ -127,7 +130,12 @@ void Allocate(unsigned int megabytes) {
 void ClearHashTable() {
 	memset(H_Table.Entries, 0, H_Table.EntryCount * sizeof(U64));
 	
-	/*HashTableFullCount = 0;
 	HashTableEntries = 0;
-	HashTableMatches = 0;*/
+	HashTableOverWrites = 0;
+}
+
+void PrintHashStats() {
+	printf("Entries:    %d\n", HashTableEntries);
+	printf("Overwrites: %d\n", HashTableOverWrites);
+	printf("Capacity:   %d\n", H_Table.EntryCount);
 }

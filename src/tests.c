@@ -375,13 +375,12 @@ int PerftTest(char * fen, int depth) {
 
 
 void PerftHashDbTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ClearHashTable();
 	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
 	PerftHashDb(4);
-	//printf("\nEntries:    %d", HashTableEntries);
-	//printf("\nMatches:    %d", HashTableMatches);
-	//printf("\nFull count: %d", HashTableFullCount);
+	printf("Entries:    %d\n", HashTableEntries);
+	printf("Overwrites: %d\n", HashTableOverWrites);
 }
 void FenTest() {
 	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
