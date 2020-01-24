@@ -16,6 +16,10 @@
 //to	6	 58	        3F
 
 HashTable H_Table;
+int HashTableEntries;
+int HashTableOverWrites;
+int HashTableFull;
+
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
 	unsigned int key2 = hash & 0x7FFFFFFF;
 	U64 pack = key2 & 0x7FFFFFFF;
@@ -26,64 +30,75 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 	pack |= (U64)to << 58;
 
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	EntrySlot* slot = &H_Table.Entries[idx];
+	for (size_t i = 0; i < SLOTS; i++)
+	{
+		U64 entry = slot->EntrySlots[i];
+		int dbDepth = (entry >> 45) & 0x1F;
+		unsigned int dbKey2 = entry & 0x7FFFFFFF;
 
-	U64 entry = H_Table.Entries[idx];
-	int dbDepth = (entry >> 45) & 0x1F;
-	unsigned int dbKey2 = entry & 0x7FFFFFFF;
-
-	//always overwrite unless same hash with lower depth is stored.
-	//note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
-	if (dbKey2 == key2) {
-		if (depth < dbDepth)
+		//Always overwrite unless same hash with lower depth is stored.
+		//Note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
+		if (dbKey2 == key2) {
+			if (depth >= dbDepth) {
+				slot->EntrySlots[i] = pack;
+				return;
+			}
+		}
+		else if (entry == 0) { //key2 difference
+			slot->EntrySlots[i] = pack;
+			HashTableEntries++;
 			return;
+		}
 	}
-
-	if (H_Table.Entries[idx] != 0 && dbKey2 != key2)
-		HashTableOverWrites++;
-	H_Table.Entries[idx] = pack;
-	HashTableEntries++;
+	HashTableFull++;
+	slot->EntrySlots[0] = pack;
+	memset(&slot->EntrySlots[1], 0, sizeof(U64) * (SLOTS - 1));  // Hopfully most of them are old entries
 }
+
 
 bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
 	unsigned int key2 = hash & 0x7FFFFFFF;
-
-	U64 entry = H_Table.Entries[idx];
-	unsigned int dbKey = entry & 0x7FFFFFFF;
-	int dbDepth = (entry >> 45) & 0x1F;
-	if (dbKey == key2) {
-		pvMove->From = (entry >> 52) & 0x3F;
-		pvMove->To = (entry >> 58) & 0x3F;
-		pvMove->MoveInfo = PlainMove;
-		if (dbDepth >= depth)
-		{
-			*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
-			//todo: adjust mate scores with in_deep?
-
-			HashEntryType type = (entry >> 50) & 0x3;
-			switch (type)
+	EntrySlot* slot = &H_Table.Entries[idx];
+	for (size_t i = 0; i < SLOTS; i++)
+	{
+		U64 entry = slot->EntrySlots[i];
+		unsigned int dbKey = entry & 0x7FFFFFFF;
+		int dbDepth = (entry >> 45) & 0x1F;
+		if (dbKey == key2) {
+			pvMove->From = (entry >> 52) & 0x3F;
+			pvMove->To = (entry >> 58) & 0x3F;
+			pvMove->MoveInfo = PlainMove;
+			if (dbDepth >= depth)
 			{
-			case ALPHA:
-				if (*score <= alpha) { // is this true for both black and white?
-					*score = alpha;
+				*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
+				//todo: adjust mate scores with in_deep?
+
+				HashEntryType type = (entry >> 50) & 0x3;
+				switch (type)
+				{
+				case ALPHA:
+					if (*score <= alpha) { // is this true for both black and white?
+						*score = alpha;
+						return true;
+					}
+					break;
+				case BETA:
+					if (*score >= beta) { // is this true for both black and white?
+						*score = beta;
+						return true;
+					}
+					break;
+				case EXACT:
 					return true;
+					break;
+				default:
+					break;
 				}
-				break;
-			case BETA:
-				if (*score >= beta) { // is this true for both black and white?
-					*score = beta;
-					return true;
-				}
-				break;
-			case EXACT:
-				return true;
-				break;
-			default:
-				break;
 			}
 		}
 	}
-	//HashTableMatches++;
 	return false;
 }
 
@@ -91,15 +106,19 @@ bool getBestMoveFromHash(U64 hash, Move* move) {
 	//unsigned int idx = (unsigned int)((hash >> 32) % H_Table.EntryCount);
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
 	unsigned int key2 = hash & 0x7FFFFFFF;
-
-	U64 entry = H_Table.Entries[idx];
-	unsigned int dbKey = entry & 0x7FFFFFFF;
-	int dbDepth = (entry >> 45) & 0x1F;
-	if (dbKey == key2) {
-		move->From = (entry >> 52) & 0x3F;
-		move->To = (entry >> 58) & 0x3F;
-		return true;
+	EntrySlot* slot = &H_Table.Entries[idx];
+	for (size_t i = 0; i < SLOTS; i++)
+	{
+		U64 entry = slot->EntrySlots[i];
+		unsigned int dbKey = entry & 0x7FFFFFFF;
+		int dbDepth = (entry >> 45) & 0x1F;
+		if (dbKey == key2) {
+			move->From = (entry >> 52) & 0x3F;
+			move->To = (entry >> 58) & 0x3F;
+			return true;
+		}
 	}
+
 	return false;
 }
 
@@ -123,19 +142,20 @@ void GenerateZobritsKeys() {
 
 void Allocate(unsigned int megabytes) {
 	free(H_Table.Entries);
-	H_Table.EntryCount = (megabytes * 0x100000ULL) / sizeof(U64);
-	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(U64));
+	H_Table.EntryCount = (megabytes * 0x100000ULL) / sizeof(EntrySlot);
+	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(EntrySlot));
 }
 
 void ClearHashTable() {
-	memset(H_Table.Entries, 0, H_Table.EntryCount * sizeof(U64));
-	
+	memset(H_Table.Entries, 0, H_Table.EntryCount * sizeof(EntrySlot));
 	HashTableEntries = 0;
 	HashTableOverWrites = 0;
+	HashTableFull = 0;
 }
 
 void PrintHashStats() {
 	printf("Entries:    %d\n", HashTableEntries);
 	printf("Overwrites: %d\n", HashTableOverWrites);
-	printf("Capacity:   %d\n", H_Table.EntryCount);
+	printf("Full:       %d\n", HashTableFull);
+	printf("Capacity:   %d\n", H_Table.EntryCount * SLOTS);
 }

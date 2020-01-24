@@ -1,12 +1,10 @@
 #pragma once
+#define SLOTS 3
 
 U64 ZobritsPieceTypesSquares[23][64];
 U64 ZobritsSides[2];
 U64 ZobritsCastlingRights[4];
 U64 ZobritsEnpassantFile[9];
-
-int HashTableEntries;
-int HashTableOverWrites;
 
 
 
@@ -25,9 +23,13 @@ typedef struct HashEntry {
 	char To;
 } HashEntry;
 
+typedef struct EntrySlot {
+	U64 EntrySlots[SLOTS];
+} EntrySlot;
+
 typedef struct HashTable {
 	unsigned int EntryCount;
-	U64* Entries;
+	EntrySlot* Entries;
 } HashTable;
 
 
