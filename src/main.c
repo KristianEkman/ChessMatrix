@@ -766,9 +766,9 @@ bool SquareAttacked(int square, char attackedBy, Game* game) {
 	return false;
 }
 
-void SortMoves(Move* moves, int moveCount, Game* game) {
+void SortMoves(Move* moves, int moveCount, PieceType side) {
 
-	if (game->Side == WHITE)
+	if (side == WHITE)
 		QuickSort(moves, 0, moveCount - 1);
 	else
 		QuickSortDescending(moves, 0, moveCount - 1);
@@ -934,7 +934,7 @@ void CreateMoves(Game* game, int depth) {
 		}
 
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
+	SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 void CreateCaptureMoves(Game* game) {
@@ -1042,7 +1042,7 @@ void CreateCaptureMoves(Game* game) {
 		}
 		}
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game);
+	SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 PieceType parsePieceType(char c) {
@@ -1705,7 +1705,6 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 
 		Game* game = &(g_threadGames[prm->threadID]);
 		Move move = g_rootMoves.moves[moveIndex];
-		g_rootMoves.moves[moveIndex].ThreadIndex = prm->threadID;
 		GameState gameState = game->State;
 		int positionScore = game->PositionScore;
 		U64 prevHash = game->Hash;
@@ -1759,7 +1758,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 		}
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, &g_threadGames[g_rootMoves.moves[0].ThreadIndex]); //TODO: Why?
+	SortMoves(g_rootMoves.moves, moveCount, g_mainGame.Side); //TODO: Why?
 	//free(tps);
 }
 // Background thread that sets Stopped flag after specified time in ms.
