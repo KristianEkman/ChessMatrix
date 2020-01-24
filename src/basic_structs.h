@@ -11,10 +11,13 @@ typedef enum  {
 	QUEEN,
 	PAWN,
 	KNIGHT,
-	KING,
+	KING, // 6	
+} PieceType;
+
+typedef enum Side {
 	WHITE = 8, //01000 >> 4 ger 0
 	BLACK = 16 //10000 >> 4 ger 1
-} PieceType;
+} Side;
 
 typedef enum {
 	false,
@@ -82,7 +85,7 @@ typedef struct {
 
 
 typedef struct {
-	char Side;
+	Side Side;
 	int MovesBufferLength;
 	Move MovesBuffer[100];
 	int KingSquares[2];
