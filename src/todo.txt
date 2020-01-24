@@ -1,4 +1,5 @@
 
+behöver hashen va så komprimerad?
 pruning
 
 time control
