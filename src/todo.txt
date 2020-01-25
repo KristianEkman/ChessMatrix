@@ -70,3 +70,5 @@ Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)
+
+abc
