@@ -5,6 +5,10 @@
 int DepthTimeHistory[1024][32];
 
 bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
+// Goal:
+//	1. Time should not end
+//	2. Time should be used
+
 	int myTimeLeft = g_topSearchParams.BlackTimeLeft;
 	int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
 	int increment = g_topSearchParams.BlackIncrement;
