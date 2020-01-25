@@ -1898,6 +1898,8 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 
 	} while (depth <= maxDepth && !g_Stopped);
+	PrintHashStats();
+	
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);

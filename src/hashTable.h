@@ -1,13 +1,11 @@
 #pragma once
+#define SLOTS 3
 
 U64 ZobritsPieceTypesSquares[23][64];
 U64 ZobritsSides[2];
 U64 ZobritsCastlingRights[4];
 U64 ZobritsEnpassantFile[9];
-//
-//int HashTableFullCount;
-//int HashTableEntries;
-//int HashTableMatches;
+
 
 
 typedef enum HashEntryType {
@@ -25,10 +23,15 @@ typedef struct HashEntry {
 	char To;
 } HashEntry;
 
+typedef struct EntrySlot {
+	U64 EntrySlots[SLOTS];
+} EntrySlot;
+
 typedef struct HashTable {
 	unsigned int EntryCount;
-	U64* Entries;
+	EntrySlot* Entries;
 } HashTable;
+
 
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
 bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta);
@@ -38,6 +41,4 @@ void Allocate(unsigned int megabytes);
 void GenerateZobritsKeys();
 void ClearHashTable();
 bool getBestMoveFromHash(U64 hash, Move* move);
-
-
-
+void PrintHashStats();

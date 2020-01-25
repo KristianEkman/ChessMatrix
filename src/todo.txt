@@ -1,5 +1,6 @@
 
 behöver hashen va så komprimerad?
+	Få ner overwrites med slots igen.
 
 Endgame tablebases
 
@@ -14,7 +15,7 @@ Timing
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
 Refactor main
-	Flytta ut globala variabler. magic strings and numbers.
+	Flytta ut globala variabler. Magic strings and numbers.
 	Flytta ut search, game, movegen, uci, evaluation
 	Enums for color01
 
@@ -26,8 +27,11 @@ Eval:
 	konstanter för allt
 	open file on king before endgame is bad
 	passed pawns is good.
-	isolated pawns is bad
+	Isolated pawns is bad.
     connected rooks on file and rank is good
+	piecetypepositionpoints? Är det bra?
+	mobility?
+
 	Tempo
 		Not move queen in opening
 		Not move piece twice
