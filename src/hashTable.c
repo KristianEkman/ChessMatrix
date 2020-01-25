@@ -21,7 +21,7 @@ int HashTableOverWrites;
 int HashTableFull;
 
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
-	unsigned int key2 = hash & 0x7FFFFFFF;
+	unsigned int key2 = hash & 0x7FFFFFFF; // The scond key is just 31 bit but it seems to be sufficient.
 	U64 pack = key2 & 0x7FFFFFFF;
 	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
 	pack |= (U64)depth << 45;
@@ -31,32 +31,38 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 
 	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
 	EntrySlot* slot = &H_Table.Entries[idx];
-	for (size_t i = 0; i < SLOTS; i++)
-	{
-		U64 entry = slot->EntrySlots[i];
-		int dbDepth = (entry >> 45) & 0x1F;
-		unsigned int dbKey2 = entry & 0x7FFFFFFF;
+	U64 entry = slot->EntrySlots[0];
+	int dbDepth = (entry >> 45) & 0x1F;
+	unsigned int dbKey2 = entry & 0x7FFFFFFF;
 
-		//Always overwrite unless same hash with lower depth is stored.
-		//Note: a new hash but with colliding index will overwrite previous. Could be prevented by a few "Slots" per index.
-		if (dbKey2 == key2) {
-			if (depth >= dbDepth) {
-				slot->EntrySlots[i] = pack;
-				return;
-			}
-		}
-		else if (entry == 0) { //key2 difference
-			// else if entry != 0, old entries could be moved away.
-			slot->EntrySlots[i] = pack;
+	//Always overwrite unless same hash with lower depth is stored.
+	if (dbKey2 == key2) {
+		if (depth >= dbDepth) {
+			slot->EntrySlots[0] = pack;
 			HashTableEntries++;
 			return;
 		}
 	}
-	HashTableFull++;
+	else if (entry == 0) { // empty, just store
+		slot->EntrySlots[0] = pack;
+		HashTableEntries++;
+		return;
+	}
+	else { //key2 difference
+		// move away the older ones one position
+		memmove(&slot->EntrySlots[1], slot->EntrySlots, sizeof(U64) * (SLOTS - 1));
+		slot->EntrySlots[0] = pack;
 
-	slot->EntrySlots[0] = pack;
-	memset(&slot->EntrySlots[1], 0, sizeof(U64) * (SLOTS - 1));  
-	// Hopfully most of them are old entries or use memmov
+#ifdef _DEBUG
+		if (slot->EntrySlots[SLOTS - 1] != 0) {
+			HashTableOverWrites++;
+		}
+		else {
+			HashTableEntries++;
+		}
+#endif
+
+	}
 }
 
 

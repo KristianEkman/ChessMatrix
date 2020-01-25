@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 int DepthTimeHistory[1024][32];
-float DepthTimeFactor;
 
 bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
 	int myTimeLeft = g_topSearchParams.BlackTimeLeft;
@@ -24,15 +23,11 @@ bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
 		bonus = 0; // Don't panic if behind in time.
 
 	int givenTime = myTimeLeft / normalMoves + increment + bonus;
-	printf("Given time: %d\n", givenTime);
-
 	int prevMaxDepth = DepthTimeHistory[moveNo - 1][0];
-	int estimatedNextDepth = ellapsed * 5; // Default estimation
+	int estimatedNextDepth = ellapsed * 2; // Default estimation i wild be the engin losses more when this is increased.
 	if (moveNo > 0 && currentDepth > 1 && prevMaxDepth > currentDepth) {
 		estimatedNextDepth = DepthTimeHistory[moveNo - 1][currentDepth + 1];
 	}
-
-	printf("Ellapsed + estimated: %d\n", ellapsed + estimatedNextDepth);		
 	// Guessing that there is time for one more depth.
 	if (ellapsed + estimatedNextDepth < givenTime)
 		return true;
@@ -44,11 +39,6 @@ void RegisterDepthTime(int moveNo, int depth, int time) {
 	
 	DepthTimeHistory[moveNo][depth] = time;
 	DepthTimeHistory[moveNo][0] = depth;
-	
-	if (depth > 2)
-		DepthTimeFactor = (float)DepthTimeHistory[moveNo][depth] / (float)DepthTimeHistory[moveNo][depth - 1];
-	else
-		DepthTimeFactor = 5;
 }
 
 void ResetDepthTimes() {
