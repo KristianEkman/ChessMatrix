@@ -6,9 +6,9 @@
 #include <Windows.h>
 #include <math.h>
 
-
+HANDLE ComputeLock;
 void NewAnn() {
-
+	ComputeLock = CreateMutex(NULL, FALSE, NULL);
 	for (int i = 0; i < INPUT_SIZE; i++)
 	{
 		Neuron_I* inputNeuron = &Ann.Inputs[i];
@@ -101,7 +101,13 @@ double Sigmoid(double x)
 	return s;
 }
 
-void Compute(double* data, int dataLength) {
+double Compute(double* data, int dataLength) {
+
+	DWORD waitResult = WaitForSingleObject(ComputeLock, INFINITE);
+	if (waitResult != WAIT_OBJECT_0) {
+		printf("Unexpected wait for lock result: %d", waitResult);
+		return;
+	}
 
 	if (dataLength != INPUT_SIZE - 1)
 	{
@@ -149,15 +155,24 @@ void Compute(double* data, int dataLength) {
 		neuron->Value = LeakyReLU(neuron->Value / (double)(HIDDEN_SIZE)); // dividing to prevent over flow.
 		//neuron.Value = Sigmoid(neuron.Value / Layers[l].Count);
 	}
+	
+	ReleaseMutex(ComputeLock);
+	return Ann.Output[0].Value;
 }
 
 void BackProp(double* targets, int targLength) {
+	DWORD waitResult = WaitForSingleObject(ComputeLock, INFINITE);
+	if (waitResult != WAIT_OBJECT_0) {
+		printf("Unexpected wait for lock result: %d", waitResult);
+		return;
+	}
 
 	if (targLength != OUTPUT_SIZE)
 	{
 		fprintf(stderr, "Length of target data is not same as Length of output layer.\n");
 		exit(1000);
 	}
+
 
 	Ann.TotalError = 0;
 	//backwards propagation
@@ -221,4 +236,5 @@ void BackProp(double* targets, int targLength) {
 			weight->Value -= (weight->Delta * Ann.LearnRate);
 		}
 	}
+	ReleaseMutex(ComputeLock);
 }

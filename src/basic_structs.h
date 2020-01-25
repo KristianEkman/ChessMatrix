@@ -14,6 +14,7 @@ typedef enum  {
 	KING, // 6	
 } PieceType;
 
+// PieceType is combined with Side color define a piece.
 typedef enum Side {
 	WHITE = 8, //01000 >> 4 ger 0
 	BLACK = 16 //10000 >> 4 ger 1

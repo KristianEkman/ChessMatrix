@@ -42,6 +42,9 @@
     <ClCompile Include="ANN.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AnnMapper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patterns.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ANN.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnnMapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

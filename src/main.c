@@ -15,12 +15,15 @@
 #include "sort.h"
 #include "hashTable.h"
 #include "timeControl.h"
+#include "ANN.h"
+#include "ANN.h"
 
 Game g_threadGames[SEARCH_THREADS];
 GlobalRootMoves g_rootMoves;
 int g_LastStartedMove = -1;
 HANDLE g_MutexFreeMove;
 bool g_Stopped;
+
 
 bool ComputerMove() {
 	Move move = Search(false);
@@ -31,9 +34,9 @@ bool ComputerMove() {
 	// todo: check draw
 	//  - repetition
 	//  - by material
-	//  - by 50 move rule
+	//  - by 50 move rule	
 
-	if (move.MoveInfo != NotAMove) {
+	if (move.MoveInfo != NotAMove && !DrawByRepetition(&g_mainGame)) {
 		int captIndex = MakeMove(move, &g_mainGame);
 		return true;
 	}
@@ -53,7 +56,7 @@ void Learn() {
 	//ReadFen("8/8/8/8/8/3k4/8/3K1r2 w - - 0 1");
 	char scan = ' ';
 
-	while (scan != 'q')
+	while (true)//scan != 'q')
 	{
 		InitGame();
 		g_topSearchParams.MaxDepth = 3;
@@ -68,7 +71,7 @@ void Learn() {
 		}
 		PrintGame(&g_mainGame);
 		printf("Press a key for next game\n");
-		scanf_s(" %c", &scan, 1);
+		//scanf_s(" %c", &scan, 1);
 	}
 
 }
@@ -116,6 +119,8 @@ int main(int argc, char* argv[]) {
 	Allocate(1024);
 	ClearHashTable();
 	InitGame();
+	NewAnn();
+	Ann.LearnRate = 0.01;
 	printf("initialized\n");
 
 	EnterUciMode();
@@ -1684,14 +1689,24 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 
 		// learning algorithm
 		// convert game to matrix of 65 doubles
-
+		//double annInput[69];
+		//double output[1];
+		//MapGameToAnnInput(game, &annInput);
+		
+		// send game to ANN
+		//double annValue = Compute(annInput, 69);
 		short moveScore = GetMoveScore(game); // + Score From ANN times ( ann score is -1 to 1) game score is -8000 to 8000
 
-		// send game to ANN
-
 		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
-
+		double target[] = { score / (double)2020 };
 		// BackProp with score from alpha beta which must be more true.
+
+		// Increase R when error is big.
+		// lock from other threads when backpropagation.
+		if (score != 0)
+		{
+			BackProp(target, 1);
+		}
 
 		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;

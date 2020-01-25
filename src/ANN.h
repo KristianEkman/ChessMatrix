@@ -1,5 +1,5 @@
 #pragma once
-#define INPUT_SIZE 65 + 1
+#define INPUT_SIZE 69 + 1
 #define HIDDEN_SIZE 1000 + 1
 #define OUTPUT_SIZE 1
 
@@ -43,12 +43,10 @@ typedef struct {
 	double LearnRate;
 } ANN;
 
-
-
 ANN Ann;
 
 void NewAnn();
 void PrintAnn();
-void Compute(double* data, int dataLength);
+double Compute(double* data, int dataLength);
 void BackProp(double* targets, int targLength);
 void PrintOutput();
