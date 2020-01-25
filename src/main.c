@@ -1381,7 +1381,7 @@ void MoveToTop(Move move, Move* list, int length) {
 	}
 }
 
-short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
+short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int deep_in) {
 
 	g_SearchedNodes++;
 
@@ -1411,6 +1411,9 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	
+	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
 		for (int i = 0; i < moveCount; i++)
@@ -1428,7 +1431,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
+			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (score > alpha) {
 				if (score >= beta) {
@@ -1458,7 +1461,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
+			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (score < beta) {
 				if (score <= alpha) {
@@ -1503,7 +1506,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	g_SearchedNodes++;
 
 	if (!depth) {
-		return AlphaBetaQuite(alpha, beta, game, moveScore);
+		return AlphaBetaQuite(alpha, beta, game, moveScore, deep_in);
 	}
 
 	if (DrawByRepetition(game))
@@ -1557,8 +1560,6 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-
-	MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount);
