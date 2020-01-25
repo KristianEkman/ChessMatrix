@@ -119,6 +119,7 @@ typedef struct {
 	int BlackTimeLeft;
 	int BlackIncrement;
 	int WhiteIncrement;
+	int MovesTogo;
 	bool TimeControl;
 	Move BestMove;
 } TopSearchParams;

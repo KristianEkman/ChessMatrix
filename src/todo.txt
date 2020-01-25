@@ -2,17 +2,6 @@
 behöver hashen va så komprimerad?
 pruning
 
-time control
-============
-movestogo 
-      there are x moves to the next time control
-	  tiden kvar delat med x --> normal, ingen bonus, maxtid normal ggr 1,5
-winc 
-	white increment per move in mseconds if x > 0
-binc
-	black increment per move in mseconds if x > 0
-
-Endgame tablebases
 
 Testa lvamvv istf move score.
 
@@ -25,20 +14,25 @@ Timing
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
 Refactor main
-	Flytta ut globala variabler. magic strings and numbers.
+	Flytta ut globala variabler. Magic strings and numbers.
 	Flytta ut search, game, movegen, uci, evaluation
 	Enums for color01
 
-Opening Book
-	Opening Score, early queen, minor piece count, slå av och på.
+Books
+	slå av och på.
+	Endgame tablebases
 
 Eval: 
     ANN
 	konstanter för allt
 	open file on king before endgame is bad
 	passed pawns is good.
-	isolated pawns is bad
+	Isolated pawns is bad.
     connected rooks on file and rank is good
+	piecetypepositionpoints? Är det bra?
+	mobility?
+	early queen, minor piece count
+
 	Tempo
 		Not move queen in opening
 		Not move piece twice
@@ -48,20 +42,11 @@ Eval:
 
 Testa negamax igen.
 
-Opening Book
-	Opening Score, early queen, minor piece count, slå av och på.
-
-Fifty move rule.
+Fifty move rule, unsufficient material
 
 Räkna på hur stor hash som behövs.
 
-Prioritera pv moves readn i movegen
-
-Material draw?
-
-Timing
-	- Tänka längre om score har sjunkit mkt?
-
+Prioritera pv moves read i movegen
 
 Mer pruning
 	Aspiration window
@@ -79,25 +64,12 @@ Fler testafall.
 
 Linux kompatibel.
 
-time control blitz
+time control
 ==================
-	Syfte:
-		- 1. Tiden ska inte ta slut
-		- 2. Tiden ska utnyttjas
-
-	Input:
-		Tid kvar
-		Tid kvar mots
-		score, vem leder och hur stort
-		Uppskattad tidsåtgång för olika djup
-		Antal drag kvar -> 40
-		Ge mer tid om mots har mindre tid kvar.
-			Om man skulle hinna med ett djup till utan att hamna efter.
-		Ta bort tid om mots ligger före.
-
-	Sätt också en maxtid som alltid avbryter.		
 
 Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)
+
+abc
