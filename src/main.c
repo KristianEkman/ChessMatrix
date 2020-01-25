@@ -22,10 +22,22 @@ int g_LastStartedMove = -1;
 HANDLE g_MutexFreeMove;
 bool g_Stopped;
 
-void ComputerMove() {
-	g_topSearchParams.MoveTime = 5000;
+bool ComputerMove() {
 	Move move = Search(false);
-	int captIndex = MakeMove(move, &g_mainGame);
+	char sMove[5];
+	MoveToString(move, sMove);
+	printf("%s\n", sMove);
+
+	// todo: check draw
+	//  - repetition
+	//  - by material
+	//  - by 50 move rule
+
+	if (move.MoveInfo != NotAMove) {
+		int captIndex = MakeMove(move, &g_mainGame);
+		return true;
+	}
+	return false;
 }
 
 void ManualMove() {
@@ -34,6 +46,31 @@ void ManualMove() {
 	scanf_s(" %6c", sMove, 6);
 
 	MakePlayerMove(sMove);
+}
+
+void Learn() {
+	DefaultSearch();
+	//ReadFen("8/8/8/8/8/3k4/8/3K1r2 w - - 0 1");
+	char scan = ' ';
+
+	while (scan != 'q')
+	{
+		InitGame();
+		g_topSearchParams.MaxDepth = 3;
+		bool running = true;
+		while (running)
+		{
+			running = ComputerMove();
+			if (g_mainGame.PositionHistoryLength > 150) {
+				// instead of checking for draws
+				running = false;
+			}
+		}
+		PrintGame(&g_mainGame);
+		printf("Press a key for next game\n");
+		scanf_s(" %c", &scan, 1);
+	}
+
 }
 
 void DefaultSearch() {
@@ -189,13 +226,16 @@ void EnterUciMode() {
 						g_topSearchParams.TimeControl = true;
 						char* btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
-					} else if (streq(token, "winc")) {
+					}
+					else if (streq(token, "winc")) {
 						char* winc = strtok(NULL, " ");
 						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
-					} else if (streq(token, "binc")) {
+					}
+					else if (streq(token, "binc")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
-					} else if (streq(token, "movestogo")) {
+					}
+					else if (streq(token, "movestogo")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.MovesTogo);
 					}
@@ -229,6 +269,7 @@ int EnterInteractiveMode() {
 		PrintGame(&g_mainGame);
 		printf("m: make move\n");
 		printf("c: computer move\n");
+		printf("l: learn\n");
 		printf("t: run tests\n");
 		printf("q: quit\n");
 		scanf_s(" %c", &scan, 1);
@@ -240,8 +281,10 @@ int EnterInteractiveMode() {
 		case 'c':
 			ComputerMove();
 			break;
+		case 'l':
+			Learn();
+			break;
 		case 't':
-
 			runAllTests();
 			break;
 		case 'q':
@@ -349,7 +392,7 @@ void PrintGame(Game* game) {
 		printf("|\n  ---------------------------------\n");
 	}
 	printf("    a   b   c   d   e   f   g   h  \n");
-	printf("%llu\n", game->Hash);
+	printf("Hash: 0x%llX\n", game->Hash);
 	char fen[100];
 	WriteFen(fen);
 	printf("%s\n", fen);
@@ -388,7 +431,7 @@ void MovePiece(Game* game, int side01, int from, int to) {
 }
 
 void AssertGame(Game* game) {
-#ifdef _DEBUG
+#ifdef _DEBUGx
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -1800,7 +1843,8 @@ Move Search(bool async) {
 		WaitForSingleObject(handle, INFINITE);
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
-		return g_topSearchParams.BestMove;
+		if (g_rootMoves.Length > 0) // Special case when searching a stale position, (mate or stale mate)
+			return g_topSearchParams.BestMove;
 	}
 
 	//this will not be used.
@@ -1858,15 +1902,19 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 // Starting point of one thread that evaluates best score for every 7th root move. (If there are 7 threads)
 // Increasing depth until given max depth.
 DWORD WINAPI  BestMoveDeepening(void* v) {
-	int maxDepth = g_topSearchParams.MaxDepth;
+	int maxDepth = g_topSearchParams.MaxDepth - 1;
 	clock_t start = clock();
 	//ClearHashTable();
 	CreateMoves(&g_mainGame, 0);
 	RemoveInvalidMoves(&g_mainGame);
 	int moveCount = g_mainGame.MovesBufferLength;
 	g_rootMoves.Length = moveCount;
-	memcpy(g_rootMoves.moves, g_mainGame.MovesBuffer, moveCount * sizeof(Move));
-
+	if (moveCount > 0)
+		memcpy(g_rootMoves.moves, g_mainGame.MovesBuffer, moveCount * sizeof(Move));
+	else {
+		ExitThread(0);
+		return 0;
+	}
 	int depth = 1;
 	char bestMove[5];
 	int bestScore;
@@ -1898,8 +1946,10 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 
 	} while (depth <= maxDepth && !g_Stopped);
+
+#ifdef _DEBUG
 	PrintHashStats();
-	
+#endif
 
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);

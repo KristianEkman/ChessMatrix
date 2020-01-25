@@ -28,7 +28,7 @@ typedef struct EntrySlot {
 } EntrySlot;
 
 typedef struct HashTable {
-	unsigned int EntryCount;
+	uint EntryCount;
 	EntrySlot* Entries;
 } HashTable;
 
@@ -37,7 +37,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta);
 bool getBestMoveFromHash(U64 hash, Move* move);
 
-void Allocate(unsigned int megabytes);
+void Allocate(uint megabytes);
 void GenerateZobritsKeys();
 void ClearHashTable();
 bool getBestMoveFromHash(U64 hash, Move* move);

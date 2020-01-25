@@ -21,7 +21,7 @@ int HashTableOverWrites;
 int HashTableFull;
 
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
-	unsigned int key2 = hash & 0x7FFFFFFF; // The scond key is just 31 bit but it seems to be sufficient.
+	uint key2 = hash & 0x7FFFFFFF; // The scond key is just 31 bit but it seems to be sufficient.
 	U64 pack = key2 & 0x7FFFFFFF;
 	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
 	pack |= (U64)depth << 45;
@@ -29,11 +29,11 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 	pack |= (U64)from << 52;
 	pack |= (U64)to << 58;
 
-	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
+	uint idx = (unsigned int)(hash % H_Table.EntryCount);
 	EntrySlot* slot = &H_Table.Entries[idx];
 	U64 entry = slot->EntrySlots[0];
 	int dbDepth = (entry >> 45) & 0x1F;
-	unsigned int dbKey2 = entry & 0x7FFFFFFF;
+	uint dbKey2 = entry & 0x7FFFFFFF;
 
 	//Always overwrite unless same hash with lower depth is stored.
 	if (dbKey2 == key2) {
@@ -67,13 +67,13 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 
 
 bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
-	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
-	unsigned int key2 = hash & 0x7FFFFFFF;
+	uint idx = (unsigned int)(hash % H_Table.EntryCount);
+	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
 	for (size_t i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
-		unsigned int dbKey = entry & 0x7FFFFFFF;
+		uint dbKey = entry & 0x7FFFFFFF;
 		int dbDepth = (entry >> 45) & 0x1F;
 		if (dbKey == key2) {
 			pvMove->From = (entry >> 52) & 0x3F;
@@ -112,14 +112,14 @@ bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short al
 }
 
 bool getBestMoveFromHash(U64 hash, Move* move) {
-	//unsigned int idx = (unsigned int)((hash >> 32) % H_Table.EntryCount);
-	unsigned int idx = (unsigned int)(hash % H_Table.EntryCount);
-	unsigned int key2 = hash & 0x7FFFFFFF;
+	//uint idx = (unsigned int)((hash >> 32) % H_Table.EntryCount);
+	uint idx = (unsigned int)(hash % H_Table.EntryCount);
+	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
 	for (size_t i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
-		unsigned int dbKey = entry & 0x7FFFFFFF;
+		uint dbKey = entry & 0x7FFFFFFF;
 		int dbDepth = (entry >> 45) & 0x1F;
 		if (dbKey == key2) {
 			move->From = (entry >> 52) & 0x3F;
@@ -149,7 +149,7 @@ void GenerateZobritsKeys() {
 		ZobritsEnpassantFile[i] = llrand();
 }
 
-void Allocate(unsigned int megabytes) {
+void Allocate(uint megabytes) {
 	free(H_Table.Entries);
 	H_Table.EntryCount = (megabytes * 0x100000ULL) / sizeof(EntrySlot);
 	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(EntrySlot));

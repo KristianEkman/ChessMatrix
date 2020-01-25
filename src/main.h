@@ -3,7 +3,7 @@
 #define SEARCH_THREADS 7
 
 Game g_mainGame;
-unsigned int g_SearchedNodes;
+uint g_SearchedNodes;
 
 void PrintGame(Game * game);
 void ReadFen(char * fen);
