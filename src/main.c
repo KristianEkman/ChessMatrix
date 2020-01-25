@@ -110,10 +110,8 @@ void InitPieceList() {
 
 int main(int argc, char* argv[]) {
 	g_MutexFreeMove = CreateMutex(NULL, FALSE, NULL);
-	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
 	ResetDepthTimes();
-	AdjustPositionImportance();
 	GenerateZobritsKeys();
 	Allocate(1024);
 	ClearHashTable();
@@ -191,7 +189,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-				printf("info string position parsed\n");
+				//printf("info string position parsed\n");
 				AssertGame(&g_mainGame);
 			}
 		}
@@ -398,13 +396,6 @@ void PrintGame(Game* game) {
 	printf("%s\n", fen);
 }
 
-void KingPositionScore(Move move, Game* game) {
-	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = game->Material[1] - game->Material[0] < 1800 ? 1 : 0;
-	game->PositionScore += KingPositionValueMatrix[endGame][game->Side >> 4][move.To];
-	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side >> 4][move.From];
-}
-
 int SetCaptureOff(Game* game, int side, int squareIndex) {
 	for (int i = 0; i < 16; i++)
 	{
@@ -431,7 +422,7 @@ void MovePiece(Game* game, int side01, int from, int to) {
 }
 
 void AssertGame(Game* game) {
-#ifdef _DEBUGx
+#ifdef _DEBUG
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -472,14 +463,9 @@ int MakeMove(Move move, Game* game) {
 	int captColor = captType >> 4;
 	int side01 = game->Side >> 4;
 
-	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
-
 	PieceType pieceType = game->Squares[f];
 
 	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
 
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
@@ -547,8 +533,6 @@ int MakeMove(Move move, Game* game) {
 				hash ^= ZobritsCastlingRights[3];
 		}
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-
-		KingPositionScore(move, game);
 		break;
 	case RookMove:
 		switch (move.From)
@@ -591,8 +575,6 @@ int MakeMove(Move move, Game* game) {
 		game->Squares[rookTo] = rook;
 		MovePiece(game, side01, rookFr, rookTo);
 
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
@@ -609,9 +591,6 @@ int MakeMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 		MovePiece(game, side01, rookFr, rookTo);
-
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
@@ -644,7 +623,7 @@ int MakeMove(Move move, Game* game) {
 	return captIndex;
 }
 
-void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, U64 prevHash) {
+void UnMakeMove(Move move, int captIndex, GameState prevGameState, Game* game, U64 prevHash) {
 
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
@@ -710,7 +689,6 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 		break;
 	}
 	game->State = prevGameState;
-	game->PositionScore = prevPositionScore;
 	game->Hash = prevHash;
 	game->Side ^= 24;
 	game->PositionHistoryLength--;
@@ -822,7 +800,6 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
-	short prevPosScore = game->PositionScore;
 	U64 prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
@@ -830,7 +807,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	//move.ScoreAtDepth = GetEval(game, move.ScoreAtDepth);
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 
-	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
+	UnMakeMove(move, captIndex, prevGameState, game, prevHash);
 }
 
 void CreateMoves(Game* game, int depth) {
@@ -1133,21 +1110,16 @@ Move ParseMove(char* sMove, MoveInfo info) {
 void InitScores() {
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
-	g_mainGame.PositionScore = 0;
 
 	for (int i = 0; i < 64; i++)
 	{
 		PieceType pt = g_mainGame.Squares[i] & 7;
 		int colorSide = (g_mainGame.Squares[i] & (WHITE | BLACK)) >> 4;
 		g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
-		g_mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
 	}
 
 	//aproximation that endgame starts att 1900.
 	int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < 1900 ? 1 : 0;
-
-	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][0][g_mainGame.KingSquares[0]];
-	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][1][g_mainGame.KingSquares[1]];
 }
 
 void InitHash() {
@@ -1301,13 +1273,12 @@ void RemoveInvalidMoves(Game* game) {
 	{
 		Move move = game->MovesBuffer[m];
 		GameState prevState = game->State;
-		short prevPosScor = game->PositionScore;
 		U64 prevHash = game->Hash;
 		int captIndex = MakeMove(move, game);
 		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 
 		bool legal = !SquareAttacked(kingSquare, game->Side, game);
-		UnMakeMove(move, captIndex, prevState, prevPosScor, game, prevHash);
+		UnMakeMove(move, captIndex, prevState, game, prevHash);
 		if (legal)
 			validMoves[validMovesCount++] = move;
 	}
@@ -1348,7 +1319,6 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 			playerMove.Move = validMoves[i];
 			playerMove.PreviousGameState = game->State;
 			playerMove.Invalid = false;
-			playerMove.PreviousPositionScore = game->PositionScore;
 			playerMove.PreviousHash = game->Hash;
 
 			int captIndex = MakeMove(validMoves[i], game);
@@ -1365,51 +1335,15 @@ PlayerMove MakePlayerMove(char* sMove) {
 }
 
 void UnMakePlayerMove(PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, &g_mainGame, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, &g_mainGame, playerMove.PreviousHash);
 }
 
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
-	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
+	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, game, playerMove.PreviousHash);
 }
 
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
-}
-
-void AdjustPositionImportance() {
-	for (int i = 1; i < 7; i++)
-	{
-		for (int s = 0; s < 64; s++)
-		{
-			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
-			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
-		}
-	}
-
-	for (int i = 0; i < 64; i++)
-	{
-		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
-		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
-
-		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
-		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
-	}
-}
-
-void SwitchSignOfWhitePositionValue() {
-	for (int i = 1; i < 7; i++)
-	{
-		for (int s = 0; s < 64; s++)
-		{
-			PositionValueMatrix[i][0][s] = -PositionValueMatrix[i][0][s];
-		}
-	}
-
-	for (int i = 0; i < 64; i++)
-	{
-		KingPositionValueMatrix[0][0][i] = -KingPositionValueMatrix[0][0][i];
-		KingPositionValueMatrix[1][0][i] = -KingPositionValueMatrix[1][0][i];
-	}
 }
 
 void MoveToTop(Move move, Move* list, int length) {
@@ -1431,7 +1365,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 	if (DrawByRepetition(game))
 		return 0;
 
-	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
+	int score = moveScore; //GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
 
 	if (game->Side == BLACK) {
 		if (score >= beta)
@@ -1460,7 +1394,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		{
 			Move childMove = localMoves[i];
 			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
 			U64 prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
@@ -1468,11 +1401,11 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UnMakeMove(childMove, captIndex, state, game, prevHash);
 				continue;
 			}
 			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, game, prevHash);
 			if (score > alpha) {
 				if (score >= beta) {
 					free(localMoves);
@@ -1490,7 +1423,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 		{
 			Move childMove = localMoves[i];
 			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
 			U64 prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
@@ -1498,11 +1430,11 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore) {
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UnMakeMove(childMove, captIndex, state, game, prevHash);
 				continue;
 			}
 			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, game, prevHash);
 			if (score < beta) {
 				if (score <= alpha) {
 					free(localMoves);
@@ -1595,7 +1527,6 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		{
 			Move childMove = localMoves[i];
 			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
 			U64 prevHash = game->Hash;
 
 			int captIndex = MakeMove(childMove, game);
@@ -1604,12 +1535,12 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UnMakeMove(childMove, captIndex, state, game, prevHash);
 				continue;
 			}
 			legalCount++;
 			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, game, prevHash);
 
 			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
@@ -1650,19 +1581,18 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		{
 			Move childMove = localMoves[i];
 			GameState state = game->State;
-			short prevPosScore = game->PositionScore;
 			U64 prevHash = game->Hash;
 			int captIndex = MakeMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UnMakeMove(childMove, captIndex, state, game, prevHash);
 				continue;
 			}
 			legalCount++;
 			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UnMakeMove(childMove, captIndex, state, game, prevHash);
 
 			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
@@ -1746,17 +1676,26 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		Game* game = &(g_threadGames[prm->threadID]);
 		Move move = g_rootMoves.moves[moveIndex];
 		GameState gameState = game->State;
-		int positionScore = game->PositionScore;
 		U64 prevHash = game->Hash;
 
 		int captIndex = MakeMove(move, game);
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
+
+		// learning algorithm
+		// convert game to matrix of 65 doubles
+
+		short moveScore = GetMoveScore(game); // + Score From ANN times ( ann score is -1 to 1) game score is -8000 to 8000
+
+		// send game to ANN
+
 		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
+
+		// BackProp with score from alpha beta which must be more true.
 
 		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;
-		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
+		UnMakeMove(move, captIndex, gameState, game, prevHash);
 
 		//if (prm->depth > 7)
 			//printf("Stop  Thread %d on move %d\n", prm->threadID, moveIndex);

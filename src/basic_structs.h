@@ -79,7 +79,6 @@ typedef struct {
 	int CaptureIndex;
 	GameState PreviousGameState;
 	bool Invalid;
-	int PreviousPositionScore;
 	U64 PreviousHash;
 } PlayerMove;
 
@@ -92,7 +91,6 @@ typedef struct {
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
-	short PositionScore;
 	U64 Hash;
 	U64 PositionHistory[2000];
 	int PositionHistoryLength;

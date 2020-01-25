@@ -19,9 +19,7 @@ DWORD WINAPI BestMoveDeepening(void * params);
 void CreateMoves(Game * game, int depth);
 void RemoveInvalidMoves(Game* game);
 int MakeMove(Move move, Game * mainGame);
-void UnMakeMove(Move move,int captIndex,GameState prevGameState, short prevPositionScore, Game * game, U64 prevHash);
-
-void SwitchSignOfWhitePositionValue();
+void UnMakeMove(Move move,int captIndex,GameState prevGameState, Game * game, U64 prevHash);
 void InitGame();
 void InitScores();
 
@@ -31,6 +29,5 @@ void InitScores();
 void InitHash();
 Move Search(bool async);
 DWORD WINAPI TimeLimitWatch(void* pms);
-void AdjustPositionImportance();
 void DefaultSearch();
 void AssertGame(Game* game);

@@ -219,12 +219,11 @@ int Perft(depth) {
 		}
 
 		GameState prevGameState = g_mainGame.State;
-		int prevPositionScore = g_mainGame.PositionScore;
 		U64 prevHash = g_mainGame.Hash;
 
 		int captIndex = MakeMove(move, &g_mainGame);
 		nodeCount += Perft(depth - 1);
-		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &g_mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, &g_mainGame, prevHash);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -279,12 +278,11 @@ void PerftSaveHash(depth) {
 	{
 		Move move = localMoves[i];
 		GameState prevGameState = g_mainGame.State;
-		int prevPositionScore = g_mainGame.PositionScore;
 		U64 prevHash = g_mainGame.Hash;
 
 		int captIndex = MakeMove(move, &g_mainGame);
 		PerftSaveHash(depth - 1);
-		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &g_mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, &g_mainGame, prevHash);
 	}
 	free(localMoves);
 }
@@ -330,12 +328,11 @@ int PerftHashDb(int depth) {
 	{
 		Move move = localMoves[i];
 		GameState prevGameState = g_mainGame.State;
-		int prevPositionScore = g_mainGame.PositionScore;
 		U64 prevHash = g_mainGame.Hash;
 
 		int captIndex = MakeMove(move, &g_mainGame);
 		nodeCount += PerftHashDb(depth - 1);
-		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &g_mainGame, prevHash);
+		UnMakeMove(move, captIndex, prevGameState, &g_mainGame, prevHash);
 	}
 	free(localMoves);
 	return nodeCount;
@@ -570,49 +567,11 @@ void EnPassantMaterial() {
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void PositionScorePawns() {
-	printf("\n");printf(__func__);
-	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	ReadFen(startFen);
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	MakePlayerMove("d2-d4");
-	AssertAreEqualInts(-40, g_mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("d7d5");
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	UnMakePlayerMove(m2);
-	AssertAreEqualInts(-40, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
-void PositionScoreKnights() {
-	printf("\n");printf(__func__);
-	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	ReadFen(startFen);
-	MakePlayerMove("b1-c3");
-	AssertAreEqualInts(-50, g_mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("g8f6");
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	UnMakePlayerMove(m2);
-	AssertAreEqualInts(-50, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
-void PositionScoreCastling() {
-	printf("\n");printf(__func__);
-	char * startFen = "r3k2r/p1qnbppp/bpp2n2/3pp3/B2P4/2N1PN2/PPPBQPPP/R3K2R w KQkq - 0 1";
-	ReadFen(startFen);
-	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
-
-	MakePlayerMove("e1g1");
-	AssertAreEqualInts(-45, g_mainGame.PositionScore, "Position Score Missmatch");
-
-	MakePlayerMove("e8g8");
-	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
 void TestEvalOpenFile() {
 	printf("\n");printf(__func__);
 	char* startFen = "r3kb1r/ppp1nppp/5n2/8/8/4BN2/PPP2PPP/RN1R2K1 b kq - 0 12";
 	ReadFen(startFen);
-	int score = GetEval(&g_mainGame, 0);
+	int score = GetMoveScore(&g_mainGame);
 }
 
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
@@ -719,49 +678,6 @@ void DeepTest() {
 	AssertBestMove(7, __func__, fen, "b1d2");
 }
 
-void OpenFileTest() {
-	char * fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
-	ReadFen(fen);
-	short score = OpenRookFile(3, &g_mainGame);
-	AssertAreEqualInts(30, score, "Open file score missmatch");
-}
-
-void SemiOpenFileTest() {
-	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
-	ReadFen(fen);
-	short score = OpenRookFile(3, &g_mainGame);
-	AssertAreEqualInts(15, score, "Open file score missmatch");
-}
-
-void DoublePawnsTest()
-{
-	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
-	ReadFen(fen);
-	short score = DoublePawns(12, &g_mainGame, PAWN | WHITE);
-	AssertAreEqualInts(9, score, "Double pawns score missmatch");
-	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
-}
-
-void KingExposureTest() {
-	char * protected = "rnbq1rk1/pppppppp/4bn2/8/8/3B1N2/PPPPPPPP/RNBQ1RK1 w - - 0 1";
-	ReadFen(protected);
-	AssertAreEqualInts(6, g_mainGame.KingSquares[0], "White king is not on square 1");
-	AssertAreEqualInts(62, g_mainGame.KingSquares[1], "Black king is not on square 62");
-
-	short whiteScore = KingExposed(1, &g_mainGame);
-	short blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(0, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(0, blackScore, "Not the expected exposure score for black");
-
-	char * unprotected = "rnbq1rk1/ppppp3/4b3/8/8/3B4/1PPPP3/RNBQ1RK1 w - - 0 1";
-	ReadFen(unprotected);
-	whiteScore = KingExposed(6, &g_mainGame);
-	blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(40, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(40, blackScore, "Not the expected exposure score for black");
-
-}
-
 void indexOfTest() {
 	char* s2 = "Kristian Ekman";
 	Assert(indexOf(s2, "Ekman") == 9, "index of failed");
@@ -814,12 +730,6 @@ void runAllTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
-	OpenFileTest();SemiOpenFileTest();
-	DoublePawnsTest();
-	KingExposureTest();
-	/*PositionScorePawns();
-	PositionScoreKnights();
-	PositionScoreCastling();*/
 	
 	clock_t start = clock();
 
