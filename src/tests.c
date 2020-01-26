@@ -715,11 +715,13 @@ void BestMoveByWhite3() {
 
 //rr6/p1p2p1p/3bpk2/6p1/3Pp3/2P1P1P1/PP3PNP/2KR3R w - - 2 18 
 void DeepTest() {
+	printf("%s\n", __func__);
 	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
 	AssertBestMove(7, __func__, fen, "b1d2");
 }
 
 void OpenFileTest() {
+	printf("%s\n", __func__);
 	char * fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	short score = OpenRookFile(3, &g_mainGame);
@@ -727,6 +729,7 @@ void OpenFileTest() {
 }
 
 void SemiOpenFileTest() {
+	printf("%s\n", __func__);
 	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	short score = OpenRookFile(3, &g_mainGame);
@@ -735,6 +738,7 @@ void SemiOpenFileTest() {
 
 void DoublePawnsTest()
 {
+	printf("%s\n", __func__);
 	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	short score = DoublePawns(12, &g_mainGame, PAWN | WHITE);
@@ -743,6 +747,7 @@ void DoublePawnsTest()
 }
 
 void KingExposureTest() {
+	printf("%s\n", __func__);
 	char * protected = "rnbq1rk1/pppppppp/4bn2/8/8/3B1N2/PPPPPPPP/RNBQ1RK1 w - - 0 1";
 	ReadFen(protected);
 	AssertAreEqualInts(6, g_mainGame.KingSquares[0], "White king is not on square 1");
@@ -757,10 +762,64 @@ void KingExposureTest() {
 	ReadFen(unprotected);
 	whiteScore = KingExposed(6, &g_mainGame);
 	blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(40, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(40, blackScore, "Not the expected exposure score for black");
+	AssertAreEqualInts(46, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(46, blackScore, "Not the expected exposure score for black");
 
 }
+
+void PassedPawnTest() {
+	printf("%s\n", __func__);
+	char* fen = "rnbqkbnr/3p3p/2p3p1/5p2/P7/1P5P/2PP4/RNBQKBNR w KQkq - 0 1";
+	ReadFen(fen);
+	short score = PassedPawn(24, &g_mainGame);
+	AssertAreEqualInts(23, score, "Passed pawns score missmatch");
+	
+	score = PassedPawn(17, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(17, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(10, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(11, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(23, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	//black
+	score = PassedPawn(42, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(51, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(37, &g_mainGame);
+	AssertAreEqualInts(23, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(46, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	score = PassedPawn(55, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
+
+	ReadFen("rnbqkbnr/7p/8/5p2/1pP1P3/7P/8/RNBQKBNR w KQkq - 0 1");
+	score = PassedPawn(25, &g_mainGame);
+	AssertAreEqualInts(23, score, "Passed pawns score missmatch  square 25");
+
+	score = PassedPawn(26, &g_mainGame);
+	AssertAreEqualInts(23, score, "Passed pawns score missmatch  square 36");
+
+	score = PassedPawn(28, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch  square 28");
+
+	score = PassedPawn(37, &g_mainGame);
+	AssertAreEqualInts(0, score, "Passed pawns score missmatch square 37");
+
+}
+
 
 void indexOfTest() {
 	char* s2 = "Kristian Ekman";
@@ -780,12 +839,11 @@ void _runTests() {
 }
 
 void runAllTests() {
-	
-	//if (_failedAsserts == 0)
-	//	printGreen("Success! Tests are good!\n");
-	//printf("Press any key to continue.\n");
-	//int c = _getch();
-	//return;
+	/*if (_failedAsserts == 0)
+		printGreen("Success! Tests are good!\n");
+	printf("Press any key to continue.\n");
+	int c = _getch();
+	return;*/
 	_failedAsserts = 0;
 
 #ifdef _DEBUG
@@ -817,6 +875,7 @@ void runAllTests() {
 	OpenFileTest();SemiOpenFileTest();
 	DoublePawnsTest();
 	KingExposureTest();
+	PassedPawnTest();
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/

@@ -23,3 +23,5 @@ bool DrawByRepetition(Game* game);
 
 short KingExposed(int square, Game* game);
 
+short PassedPawn(int square, Game* game);
+

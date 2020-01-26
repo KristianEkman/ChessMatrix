@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
 	ResetDepthTimes();
-	AdjustPositionImportance();
+	//AdjustPositionImportance();
 	GenerateZobritsKeys();
 	Allocate(1024);
 	ClearHashTable();

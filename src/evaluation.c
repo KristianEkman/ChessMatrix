@@ -2,6 +2,15 @@
 #include "evaluation.h"
 #include <stdlib.h>
 
+#define CASTLED 40
+#define OPEN_ROOK_FILE 30
+#define SEMI_OPEN_FILE 15
+#define DOUBLE_PAWN 9
+#define KING_PROTECTED 1500
+#define KING_EXPOSED_INFRONT 22
+#define KING_EXPOSED_DIAGONAL 12
+#define PASSED_PAWN 23
+
 //white, black, (flipped, starts at A1)
 //[type][side][square]
 short PositionValueMatrix[7][2][64] = {
@@ -40,12 +49,12 @@ short PositionValueMatrix[7][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
-			30,30,30,30,30,30,30,30,
+			20,20,20,20,20,20,20,20,
 			0, 0, 0, 0, 0, 0, 0, 0,
 		},
 		{
 			0, 0, 0, 0, 0, 0, 0, 0,
-		   30,30,30,30,30,30,30,30,
+		   20,20,20,20,20,20,20,20,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -83,8 +92,8 @@ short PositionValueMatrix[7][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 5, 5, 0, 0, 0,
-			3, 3, 3,30,30, 3, 3, 3,
-			6, 6, 6,20,20, 6, 6, 6,
+			3, 3, 3,20,20, 3, 3, 3,
+			6, 6, 6,10,10, 6, 6, 6,
 			9, 9, 9, 9, 9, 9, 9, 9,
 			12,12,12,12,12,12,12,12,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -93,8 +102,8 @@ short PositionValueMatrix[7][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 		   12,12,12,12,12,12,12,12,
 			9, 9, 9, 9, 9, 9, 9, 9,
-			6, 6, 6,20,20, 6, 6, 6,
-			3, 3, 3,30,30, 3, 3, 3,
+			6, 6, 6,10,10, 6, 6, 6,
+			3, 3, 3,20,20, 3, 3, 3,
 			0, 0, 0, 5, 5, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -103,23 +112,23 @@ short PositionValueMatrix[7][2][64] = {
 	//char knightPositionsValues[2][64] =
 	{
 		{
-			-50,-40,-30,-30,-30,-30,-40,-50,
-			-40,-20,  0,  5,  5,  0,-20,-40,
-			-30,  5, 10, 15, 15, 10,  5,-30,
-			-30,  0, 15, 20, 20, 15,  0,-30,
-			-30,  5, 15, 20, 20, 15,  5,-30,
-			-30,  0, 10, 15, 15, 10,  0,-30,
-			-40,-20,  0,  0,  0,  0,-20,-40,
-			-50,-40,-30,-30,-30,-30,-40,-50
+			-20,-10,-10,-10,-10,-10,-10,-20,
+			-10,-10,  0,  5,  5,  0,-10,-10,
+			-10,  5, 10, 15, 15, 10,  5,-10,
+			-10,  0, 15, 20, 20, 15,  0,-10,
+			-10,  5, 15, 20, 20, 15,  5,-10,
+			-10,  0, 10, 15, 15, 10,  0,-10,
+			-10,-10,  0,  0,  0,  0,-10,-10,
+			-20,-10,-10,-10,-10,-10,-10,-20
 		},{
-			-50,-40,-30,-30,-30,-30,-40,-50,
-			-40,-20,  0,  0,  0,  0,-20,-40,
-			-30,  0, 10, 15, 15, 10,  0,-30,
-			-30,  5, 15, 20, 20, 15,  5,-30,
-			-30,  0, 15, 20, 20, 15,  0,-30,
-			-30,  5, 10, 15, 15, 10,  5,-30,
-			-40,-20,  0,  5,  5,  0,-20,-40,
-			-50,-40,-30,-30,-30,-30,-40,-50
+			-20,-10,-10,-10,-10,-10,-10,-20,
+			-10,-10,  0,  5,  5,  0,-10,-10,
+			-10,  5, 10, 15, 15, 10,  5,-10,
+			-10,  0, 15, 20, 20, 15,  0,-10,
+			-10,  5, 15, 20, 20, 15,  5,-10,
+			-10,  0, 10, 15, 15, 10,  0,-10,
+			-10,-10,  0,  0,  0,  0,-10,-10,
+			-20,-10,-10,-10,-10,-10,-10,-20
 		}
 	},
 	//filler for kings. they depend on age of game. i.e. end game
@@ -157,50 +166,49 @@ short KingPositionValueMatrix[2][2][64] = {
 	//kingEndGamePositionValues[2][64] = 
 	{
 		{
-			-40,-30,-30,-30,-30,-30,-30,-40,
-			-30,-30,  0,  0,  0,  0,-30,-30,
-			-30,-10, 20, 30, 30, 20,-10,-30,
-			-30,-10, 30, 40, 40, 30,-10,-30,
-			-30,-10, 30, 40, 40, 30,-10,-30,
-			-30,-10, 20, 30, 30, 20,-10,-30,
-			-30,-20,-10,  0,  0,-10,-20,-30,
-			-40,-30,-30,-20,-20,-30,-30,-40
+			-20,-10,-10,-10,-10,-10,-10,-20,
+			-10,-10,  0,  0,  0,  0,-10,-10,
+			-10,  0, 20, 30, 30, 20,  0,-10,
+			-10,  5, 30, 40, 40, 30,  5,-10,
+			-10,  5, 30, 40, 40, 30,  5,-10,
+			-10,  0, 20, 30, 30, 20,  0,-10,
+			-10,-10,  0,  5,  5,  0,-10,-10,
+			-20,-10,-10,-10,-10,-10,-10,-20
 		},{
-			-40,-30,-30,-20,-20,-30,-30,-40,
-			-30,-20,-10,  0,  0,-10,-20,-30,
-			-30,-10, 20, 30, 30, 20,-10,-30,
-			-30,-10, 30, 40, 40, 30,-10,-30,
-			-30,-10, 30, 40, 40, 30,-10,-30,
-			-30,-10, 20, 30, 30, 20,-10,-30,
-			-30,-30,  0,  0,  0,  0,-30,-30,
-			-40,-30,-30,-30,-30,-30,-30,-40
+			-20,-10,-10,-10,-10,-10,-10,-20,
+			-10,-10,  0,  0,  0,  0,-10,-10,
+			-10,  0, 20, 30, 30, 20,  0,-10,
+			-10,  5, 30, 40, 40, 30,  5,-10,
+			-10,  5, 30, 40, 40, 30,  5,-10,
+			-10,  0, 20, 30, 30, 20,  0,-10,
+			-10,-10,  0,  5,  5,  0,-10,-10,
+			-20,-10,-10,-10,-10,-10,-10,-20
 		}
 	}
 };
 
-short CastlingPoints[2] = { -40, 40 };
-
+short CastlingPoints[2] = { -CASTLED, CASTLED };
 
 short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
-	short open = 30;
+	short open = OPEN_ROOK_FILE;
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
 		if ((game->Squares[file] & PAWN)) //semi open
-			open -= 15;
+			open -= SEMI_OPEN_FILE;
 	}
 	return open;
 }
 
 short DoublePawns(int square, Game* game, PieceType pawn) {
 	int file = square % 8;
-	short score = -9; //Always one pawn
+	short score = -DOUBLE_PAWN; //Always one pawn
 	for (int i = 0; i < 7; i++)
 	{
 		file += 8;
 		if ((game->Squares[file] == pawn))
-			score += 9;
+			score += DOUBLE_PAWN;
 	}
 	return score;
 }
@@ -208,7 +216,7 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 bool DrawByRepetition(Game* game) {
 	if (game->PositionHistoryLength < 50) //This draw can happen early also
 		return false;
-	int start = game->PositionHistoryLength - 10; //Only checking back some moves. Possible to miss repetions but must be very rare.
+	int start = game->PositionHistoryLength - 10; //Only checking back some moves. Possible to miss repetions but must be quite rare.
 	int end = game->PositionHistoryLength - (int)2;
 	for (size_t i = start; i < end; i++)
 	{
@@ -231,34 +239,77 @@ short KingExposed(int square, Game* game) {
 
 	PieceType kingColor = game->Squares[square] & (BLACK | WHITE);
 	int otherSide = (kingColor >> 4) ^ 1;
-	if (abs(game->Material[otherSide]) < 1500)
+	if (abs(game->Material[otherSide]) < KING_PROTECTED)
 		return 0;
 	short score = 0;
 	// King should be on back rank.
 	// Points for placement of king is handled by main position score lookup.
-	if (kingColor == BLACK ) {
+	if (kingColor == BLACK) {
 		if (square < 56 && square != 59 && square != 60) //back rank not center
 			return 0;
 		PieceType blackPawn = (BLACK | PAWN);
 		if (game->Squares[square - 7] != blackPawn && square != 63)
-			score += 10;
+			score += KING_EXPOSED_DIAGONAL;
 		if (game->Squares[square - 8] != blackPawn)
-			score += 20;
+			score += KING_EXPOSED_INFRONT;
 		if (game->Squares[square - 9] != blackPawn && square != 56)
-			score += 10;
+			score += KING_EXPOSED_DIAGONAL;
 	}
 	else { // WHITE
 		if (square > 7 && square != 3 && square != 4) //back rank not center
 			return 0;
 		PieceType whitePawn = (WHITE | PAWN);
 		if (game->Squares[square + 7] != whitePawn && square != 0)
-			score += 10;
+			score += KING_EXPOSED_DIAGONAL;
 		if (game->Squares[square + 8] != whitePawn)
-			score += 20;
+			score += KING_EXPOSED_INFRONT;
 		if (game->Squares[square + 9] != whitePawn && square != 7)
-			score += 10;
+			score += KING_EXPOSED_DIAGONAL;
 	}
 	return score;
+}
+
+short PassedPawn(int square, Game* game) {
+	//No opponent pawn on files left right and infron
+	int file = square % 8;
+	int rank = square / 8;
+	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
+	PieceType opponentPawn = PAWN | (pieceColor ^ 24);
+	if (pieceColor == WHITE) {
+		for (int i = 7 - 1; i > rank; i--) // starts at rank 7
+		{
+			// to left
+			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
+				return 0;
+			}
+			// infron
+			if (game->Squares[(i * 8) + file] == opponentPawn) {
+				return 0;
+			}
+			//toright
+			if (file < 7 && game->Squares[(i * 8) + file + 1] == opponentPawn) {
+				return 0;
+			}
+		}
+	}
+	else { //black
+		for (int i = 0; i < rank; i++)
+		{
+			// to left
+			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
+				return 0;
+			}
+			// infron
+			if (game->Squares[(i * 8) + file] == opponentPawn) {
+				return 0;
+			}
+			//toright
+			if (file < 7 && game->Squares[(i * 8) + file + 1] == opponentPawn) {
+				return 0;
+			}
+		}
+	}
+	return PASSED_PAWN;
 }
 
 short GetEval(Game* game, short moveScore) {
@@ -298,8 +349,7 @@ short GetEval(Game* game, short moveScore) {
 			// break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
-
-				// passed pawns
+				score -= neg * PassedPawn(i, game, pieceType);
 			}
 					 break;
 			case KING: {
