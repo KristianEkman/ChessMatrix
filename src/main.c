@@ -1411,8 +1411,8 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-	
 	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+
 
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
@@ -1487,7 +1487,7 @@ MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
 			break;
 		}
 	}
-	Move firstKiller = game->KillerMoves[deep_in][1];
+	Move firstKiller = game->KillerMoves[deep_in][0];
 	for (size_t i = 0; i < moveListLength; i++)
 	{
 		if (moveList[i].From == firstKiller.From && moveList[i].To == firstKiller.To) {
@@ -1658,7 +1658,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				if (score < beta) {
 					if (score <= alpha) {
 						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
-						if (captIndex != -1) {
+						if (captIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
 						}
@@ -1700,7 +1700,7 @@ Game* CopyMainGame(int threadNo) {
 	memcpy(g_mainGame.Squares, g_threadGames[threadNo].Squares, 64 * sizeof(PieceType));
 	memcpy(g_mainGame.PositionHistory, g_threadGames[threadNo].PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(g_mainGame.Pieces, g_threadGames[threadNo].Pieces, 32 * sizeof(Piece));
-	memset(g_threadGames[threadNo].KillerMoves, 0, 2 * 100 * sizeof(Move));
+	memset(g_threadGames[threadNo].KillerMoves, 0, 2 * 31 * sizeof(Move));
 	return &g_threadGames[threadNo];
 }
 
