@@ -1,5 +1,5 @@
 #pragma once
-#include "basic_structs.h"
+#include "commons.h"
 
 //[type][side][square]
 short PositionValueMatrix[7][2][64];
@@ -24,4 +24,7 @@ bool DrawByRepetition(Game* game);
 short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
+
+short TotalMaterial(Game* game);
+
 

@@ -1,8 +1,11 @@
 #pragma once
-#include "common.h"
+#include <stdbool.h>
 
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
+
+typedef unsigned long long U64;
+typedef unsigned int uint;
 
 typedef enum  {
 	NOPIECE,
@@ -18,11 +21,6 @@ typedef enum Side {
 	WHITE = 8, //01000 >> 4 ger 0
 	BLACK = 16 //10000 >> 4 ger 1
 } Side;
-
-typedef enum {
-	false,
-	true
-} bool;
 
 typedef enum {
 	PlainMove = 0,
@@ -124,4 +122,4 @@ typedef struct {
 	Move BestMove;
 } TopSearchParams;
 
-TopSearchParams g_topSearchParams;
+Game g_mainGame;

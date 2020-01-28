@@ -1,5 +1,6 @@
-#include "basic_structs.h"
+#include "commons.h"
 #include "utils.h"
+#include "search.h"
 #include <stdio.h>
 
 int DepthTimeHistory[1024][32];

@@ -1,4 +1,4 @@
-#include "basic_structs.h"
+#include "commons.h"
 
 char PieceTypeSquarePatterns[6][64][9] =
 { 
