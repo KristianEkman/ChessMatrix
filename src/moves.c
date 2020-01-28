@@ -777,3 +777,16 @@ void UnMakePlayerMove(PlayerMove playerMove) {
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
 	UnMakeMove(playerMove.Move, playerMove.CaptureIndex, playerMove.PreviousGameState, playerMove.PreviousPositionScore, game, playerMove.PreviousHash);
 }
+
+
+void MoveToString(Move move, char* sMove) {
+	char fromFile = (move.From & 7) + 'a';
+	char fromRank = (move.From >> 3) + '1';
+	char toFile = (move.To & 7) + 'a';
+	char toRank = (move.To >> 3) + '1';
+	sMove[0] = fromFile;
+	sMove[1] = fromRank;
+	sMove[2] = toFile;
+	sMove[3] = toRank;
+	sMove[4] = '\0';
+}

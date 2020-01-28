@@ -9,6 +9,17 @@
 #include <stdio.h>
 
 
+void DefaultSearch() {
+	g_topSearchParams.BlackIncrement = 0;
+	g_topSearchParams.BlackTimeLeft = 0;
+	g_topSearchParams.MaxDepth = 30;
+	g_topSearchParams.MoveTime = 0;
+	g_topSearchParams.TimeControl = false;
+	g_topSearchParams.WhiteIncrement = 0;
+	g_topSearchParams.BlackIncrement = 0;
+	g_topSearchParams.MovesTogo = 0;
+}
+
 void MoveToTop(Move move, Move* list, int length) {
 	for (size_t i = 0; i < length; i++)
 	{
@@ -327,7 +338,6 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return beta;
 	}
 }
-
 
 Game* CopyMainGame(int threadNo) {
 	g_threadGames[threadNo] = g_mainGame;

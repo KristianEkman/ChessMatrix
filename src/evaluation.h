@@ -25,3 +25,6 @@ short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
 
+short TotalMaterial(Game* game);
+
+

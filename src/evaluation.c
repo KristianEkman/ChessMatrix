@@ -365,3 +365,7 @@ short GetEval(Game* game, short moveScore) {
 	return score;
 
 }
+
+short TotalMaterial(Game* game) {
+	return game->Material[0] + game->Material[1];
+}

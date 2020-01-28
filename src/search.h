@@ -12,5 +12,5 @@ Game g_threadGames[SEARCH_THREADS];
 GlobalRootMoves g_rootMoves;
 HANDLE g_MutexFreeMove;
 
-short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in);
+void DefaultSearch();
 Move Search(bool async);

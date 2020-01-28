@@ -33,17 +33,6 @@ void ManualMove() {
 	MakePlayerMove(sMove);
 }
 
-void DefaultSearch() {
-	g_topSearchParams.BlackIncrement = 0;
-	g_topSearchParams.BlackTimeLeft = 0;
-	g_topSearchParams.MaxDepth = 30;
-	g_topSearchParams.MoveTime = 0;
-	g_topSearchParams.TimeControl = false;
-	g_topSearchParams.WhiteIncrement = 0;
-	g_topSearchParams.BlackIncrement = 0;
-	g_topSearchParams.MovesTogo = 0;
-}
-
 void InitPieceList() {
 	char side[2] = { WHITE, BLACK };
 	for (int s = 0; s < 2; s++)
@@ -496,18 +485,6 @@ void ReadFen(char* fen) {
 	InitHash();
 }
 
-void MoveToString(Move move, char sMove[5]) {
-	char fromFile = (move.From & 7) + 'a';
-	char fromRank = (move.From >> 3) + '1';
-	char toFile = (move.To & 7) + 'a';
-	char toRank = (move.To >> 3) + '1';
-	sMove[0] = fromFile;
-	sMove[1] = fromRank;
-	sMove[2] = toFile;
-	sMove[3] = toRank;
-	sMove[4] = '\0';
-}
-
 void WriteFen(char* fenBuffer) {
 	int index = 0;
 	for (int rank = 8 - 1; rank >= 0; rank--)
@@ -551,10 +528,6 @@ void WriteFen(char* fenBuffer) {
 		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
 	}
 	fenBuffer[index] = '\0';
-}
-
-short TotalMaterial(Game* game) {
-	return game->Material[0] + game->Material[1];
 }
 
 void AdjustPositionImportance() {
