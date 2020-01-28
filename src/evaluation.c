@@ -2,14 +2,15 @@
 #include "evaluation.h"
 #include <stdlib.h>
 
-#define CASTLED 40
-#define OPEN_ROOK_FILE 30
-#define SEMI_OPEN_FILE 15
+#define CASTLED 32
+#define OPEN_ROOK_FILE 12
+#define SEMI_OPEN_FILE 8
 #define DOUBLE_PAWN 9
 #define KING_PROTECTED 1500
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 23
+#define CONNECTED_ROOKS 13
 
 //white, black, (flipped, starts at A1)
 //[type][side][square]
@@ -312,10 +313,41 @@ short PassedPawn(int square, Game* game) {
 	return PASSED_PAWN;
 }
 
+short ConnectedRooks(Game* game, int rook1, int rook2) {
+	int sq1 = min(rook1, rook2);
+	int sq2 = max(rook1, rook2);
+
+	int rank1 = sq1 / 8;
+	int rank2 = sq2 / 8;
+	if (rank1 == rank2) {
+		for (size_t i = sq1 + 1; i < sq2; i++)
+		{
+			if (game->Squares[i] != NOPIECE)
+				return 0;
+		}
+		return CONNECTED_ROOKS;
+	}
+	else {
+		int file1 = sq1 % 8;
+		int file2 = sq2 % 8;
+		if (file1 == file2) {
+			for (size_t i = sq1 + 8; i < sq2; i += 8)
+			{
+				if (game->Squares[i] != NOPIECE)
+					return 0;
+			}
+			return CONNECTED_ROOKS;
+		}
+	}
+	return 0;
+}
+
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
 	int neg = -1;
+	int rookSquares[2][10]; //It is teoretical possible to have 10 rooks whn promoted but only two will be.
+	int rookCounts[2] = { 0, 0 };
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -333,6 +365,8 @@ short GetEval(Game* game, short moveScore) {
 			case ROOK:
 			{
 				score += neg * OpenRookFile(i, game);
+				rookSquares[s][rookCounts[s]] = i;
+				rookCounts[s]++;
 				// todo connected rooks, no king between
 			}
 			break;
@@ -359,6 +393,9 @@ short GetEval(Game* game, short moveScore) {
 			default:
 				break;
 			}
+		}
+		if (rookCounts[s] == 2) {
+			score += ConnectedRooks(game, rookSquares[s][0], rookSquares[s][1]);
 		}
 		neg += 2; // -1 --> 1 // White then black
 	}

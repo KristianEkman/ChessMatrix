@@ -25,3 +25,4 @@ short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
 
+short ConnectedRooks(Game* game, int rook1, int rook2);

@@ -725,7 +725,21 @@ void OpenFileTest() {
 	char * fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	short score = OpenRookFile(3, &g_mainGame);
-	AssertAreEqualInts(30, score, "Open file score missmatch");
+	AssertAreEqualInts(12, score, "Open file score missmatch");
+}
+
+void ConnectedRooksTest() {
+	ReadFen("5k2/7r/8/8/3R4/7r/4K3/2R5 w - - 0 1");
+	Assert(g_mainGame.Squares[2] == (ROOK | WHITE), "Not a rook on square 2");
+	Assert(g_mainGame.Squares[27] == (ROOK | WHITE), "Not a rook on square 27");
+	short score = ConnectedRooks(&g_mainGame, 2, 27);
+	AssertAreEqualInts(0, score, "Connected rooks score missmatch");
+
+	Assert(g_mainGame.Squares[23] == (ROOK | BLACK), "Not a rook on square 23");
+	Assert(g_mainGame.Squares[55] == (ROOK | BLACK), "Not a rook on square 55");
+	score = ConnectedRooks(&g_mainGame, 23, 55);
+	AssertAreEqualInts(13, score, "Connected rooks score missmatch");
+
 }
 
 void SemiOpenFileTest() {
@@ -839,11 +853,13 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*if (_failedAsserts == 0)
+	ConnectedRooksTest();
+
+	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
+	return;
 	_failedAsserts = 0;
 
 #ifdef _DEBUG
@@ -876,6 +892,8 @@ void runAllTests() {
 	DoublePawnsTest();
 	KingExposureTest();
 	PassedPawnTest();
+	ConnectedRooksTest();
+
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/
