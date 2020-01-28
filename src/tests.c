@@ -5,10 +5,12 @@
 #include <conio.h>
 
 #include "main.h"
-#include "basic_structs.h"
+#include "commons.h"
 #include "utils.h"
 #include "hashTable.h"
 #include "evaluation.h"
+#include "search.h"
+#include "moves.h"
 
 #pragma region TestsHelpers
 

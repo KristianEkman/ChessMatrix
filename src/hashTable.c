@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <Windows.h>
 
-#include "basic_structs.h"
+#include "commons.h"
 #include "utils.h"
 #include "hashTable.h"
 

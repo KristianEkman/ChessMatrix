@@ -1,6 +1,8 @@
 #pragma once
+#include "commons.h"
+#include <stdbool.h>
 
-bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, int side);
+bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side);
 
 void RegisterDepthTime(int moveNo, int depth, int time);
 

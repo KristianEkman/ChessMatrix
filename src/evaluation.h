@@ -1,5 +1,5 @@
 #pragma once
-#include "basic_structs.h"
+#include "commons.h"
 
 //[type][side][square]
 short PositionValueMatrix[7][2][64];

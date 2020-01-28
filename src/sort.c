@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "sort.h"
-#include "basic_structs.h"
+#include "commons.h"
 
 int partition(Move[], int, int);
 int partitionDescending(Move[], int, int);
