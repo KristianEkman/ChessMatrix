@@ -1,7 +1,7 @@
 #pragma once
 #include <stdlib.h>
-#include "commons.h"
 #include <Windows.h>
+#include "commons.h"
 
 #define SEARCH_THREADS 7
 

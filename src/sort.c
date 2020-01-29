@@ -1,11 +1,10 @@
 #include <stdio.h>
-
 #include "sort.h"
 #include "commons.h"
 
 int partition(Move[], int, int);
-int partitionDescending(Move[], int, int);
 
+int partitionDescending(Move[], int, int);
 
 void QuickSort(Move moves[], int left, int right)
 {

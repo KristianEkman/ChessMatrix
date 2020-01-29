@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
 	ResetDepthTimes();
 	//AdjustPositionImportance();
 	GenerateZobritsKeys();
-	Allocate(1024);
+	AllocateHashTable(1024);
 	ClearHashTable();
 	InitGame();
 	printf("initialized\n");
@@ -101,7 +101,7 @@ void EnterUciMode() {
 					token = strtok(NULL, " ");
 					int mb = atoi(token);
 					if (mb >= 1 && mb <= 2048) { // actual limit is 32760mb
-						Allocate(mb);
+						AllocateHashTable(mb);
 						stdout_wl("info string New hash size set");
 					}
 					else {
