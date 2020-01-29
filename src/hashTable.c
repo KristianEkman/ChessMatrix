@@ -149,7 +149,7 @@ void GenerateZobritsKeys() {
 		ZobritsEnpassantFile[i] = llrand();
 }
 
-void Allocate(uint megabytes) {
+void AllocateHashTable(uint megabytes) {
 	free(H_Table.Entries);
 	H_Table.EntryCount = (megabytes * 0x100000ULL) / sizeof(EntrySlot);
 	H_Table.Entries = malloc(H_Table.EntryCount * sizeof(EntrySlot));

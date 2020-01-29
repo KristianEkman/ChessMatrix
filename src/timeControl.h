@@ -1,6 +1,5 @@
 #pragma once
 #include "commons.h"
-#include <stdbool.h>
 
 bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side);
 

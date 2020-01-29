@@ -6,7 +6,7 @@
 #define OPEN_ROOK_FILE 30
 #define SEMI_OPEN_FILE 15
 #define DOUBLE_PAWN 9
-#define KING_PROTECTED 1500
+#define KING_NEEDS_PROTECTION 1500
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 23
@@ -239,7 +239,7 @@ short KingExposed(int square, Game* game) {
 
 	PieceType kingColor = game->Squares[square] & (BLACK | WHITE);
 	int otherSide = (kingColor >> 4) ^ 1;
-	if (abs(game->Material[otherSide]) < KING_PROTECTED)
+	if (abs(game->Material[otherSide]) < KING_NEEDS_PROTECTION)
 		return 0;
 	short score = 0;
 	// King should be on back rank.

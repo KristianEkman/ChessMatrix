@@ -183,7 +183,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	}
 
 	//NULL move check
-	int r = 3; //todo: tests att sätta till 
+	int r = 3;
 	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
@@ -384,9 +384,9 @@ int GetNextFreeMove() {
 	return ret;
 }
 
-// Entry point for a thread that ttarts the alphabeta tree search for a given depth and a given move.
+// Entry point for a thread that starts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
-// Sets the score on the root move pointer. They are all common for all threads.
+// Sets the score on the root move. They are all common for all threads.
 DWORD WINAPI SearchThread(ThreadParams* prm) {
 	int moveIndex = GetNextFreeMove();
 	do
@@ -409,9 +409,6 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
-
-		//if (prm->depth > 7)
-			//printf("Stop  Thread %d on move %d\n", prm->threadID, moveIndex);
 
 		moveIndex = GetNextFreeMove();
 

@@ -1,15 +1,9 @@
 
-behöver hashen va så komprimerad?
 pruning
 
+testa nullmove r=4, benchmark.
 
 Testa lvamvv istf move score.
-
-hämta bestmove från hash så kan alphabeta börja tidigare
-
-Timing
-	- Öka max fallback tid om det finns tid.
-	- Tänka längre om score har sjunkit mkt.
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
