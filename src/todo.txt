@@ -18,12 +18,8 @@ Books
 
 Eval: 
     ANN
-	konstanter för allt
-	open file on king before endgame is bad
-	passed pawns is good.
+	mobility
 	Isolated pawns is bad.
-    connected rooks on file and rank is good
-	piecetypepositionpoints? Är det bra?
 	mobility?
 	early queen, minor piece count
 
