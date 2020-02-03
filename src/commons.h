@@ -84,6 +84,7 @@ typedef struct {
 
 typedef struct {
 	Side Side;
+	int Side01;
 	int MovesBufferLength;
 	Move MovesBuffer[100];
 	int KingSquares[2];

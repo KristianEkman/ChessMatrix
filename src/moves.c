@@ -70,7 +70,7 @@ int MakeMove(Move move, Game* game) {
 
 	PieceType captType = game->Squares[t];
 	int captColor = captType >> 4;
-	int side01 = game->Side >> 4;
+	int side01 = game->Side01;
 
 	//removing piece from square removes its position score
 	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
@@ -239,6 +239,7 @@ int MakeMove(Move move, Game* game) {
 	hash ^= ZobritsSides[side01];
 	game->Hash = hash;
 	game->Side ^= 24;
+	game->Side01 = game->Side >> 4;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 	AssertGame(game);
 	return captIndex;
@@ -313,12 +314,13 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 	game->PositionScore = prevPositionScore;
 	game->Hash = prevHash;
 	game->Side ^= 24;
+	game->Side01 = game->Side >> 4;
 	game->PositionHistoryLength--;
 	AssertGame(game);
 }
 
 void MakeNullMove(Game* game) {
-	int side01 = game->Side >> 4;
+	int side01 = game->Side01;
 	U64 hash = ZobritsEnpassantFile[game->State & 15];
 	//resetting en passant
 	game->State &= ~15;
@@ -326,6 +328,7 @@ void MakeNullMove(Game* game) {
 	hash ^= ZobritsSides[side01];
 	game->Hash ^= hash;
 	game->Side ^= 24;
+	game->Side01 = game->Side >> 4;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 }
 
@@ -335,6 +338,7 @@ void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 	game->State = prevGameState;
 	game->Hash = prevHash;
 	game->Side ^= 24;
+	game->Side01 = game->Side >> 4;
 	game->PositionHistoryLength--;
 }
 
@@ -435,10 +439,9 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 
 void CreateMoves(Game* game, int depth) {
 	game->MovesBufferLength = 0;
-	int side01 = game->Side >> 4;
 	for (size_t pi = 0; pi < 16; pi++)
 	{
-		Piece* piece = &game->Pieces[side01][pi];
+		Piece* piece = &game->Pieces[game->Side01][pi];
 		if (piece->Off)
 			continue;
 		int i = piece->SquareIndex;
@@ -448,7 +451,7 @@ void CreateMoves(Game* game, int depth) {
 		{
 		case PAWN:
 		{
-			int pat = PawnPattern[game->Side >> 4];
+			int pat = PawnPattern[game->Side01];
 			int pawnPatLength = PieceTypeSquarePatterns[pat][i][0];
 			for (int pp = 1; pp <= pawnPatLength; pp++)
 			{
@@ -469,7 +472,7 @@ void CreateMoves(Game* game, int depth) {
 				}
 			}
 
-			int captPat = PawnCapturePattern[game->Side >> 4];
+			int captPat = PawnCapturePattern[game->Side01];
 			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
 			for (int pc = 1; pc <= pawnCapPatLength; pc++)
 			{
@@ -492,7 +495,7 @@ void CreateMoves(Game* game, int depth) {
 					if (enpFile > -1) {
 						int toFile = toSquare & 7;
 						int toRank = toSquare >> 3;
-						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side >> 4])
+						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side01])
 							CreateMove(i, toSquare, EnPassantCapture, game, pi);
 					}
 				}
@@ -522,7 +525,7 @@ void CreateMoves(Game* game, int depth) {
 				}
 			}
 
-			int castleBlackOffset = CastlesOffset[game->Side >> 4];
+			int castleBlackOffset = CastlesOffset[game->Side01];
 			if (i == castleBlackOffset + 4) { //King on origin pos
 				if ((game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort)) {
 					if ((game->Squares[castleBlackOffset + 7] & 7) == ROOK &&

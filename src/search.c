@@ -151,8 +151,9 @@ MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
 }
 
 int Reduction(int moveNo) {
+	return 1;
 	//removes one depth for moves 9 and later
-	return min(moveNo / 8 + 1, 2);
+	//return min(moveNo / 15 + 1, 2);
 }
 
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
@@ -169,7 +170,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		return 0;
 
 	//In check extension
-	int side01 = game->Side >> 4;
+	int side01 = game->Side01;
 	int otherSide = game->Side ^ 24;
 	bool incheck = SquareAttacked(game->KingSquares[side01], otherSide, game);
 	if (incheck)

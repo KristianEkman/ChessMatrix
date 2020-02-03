@@ -289,6 +289,7 @@ void InitGame() {
 	for (int i = 0; i < 8; i++)
 		InitPiece(i, 6, PAWN, BLACK);
 	g_mainGame.Side = WHITE;
+	g_mainGame.Side01 = 0;
 
 	g_mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
 	g_mainGame.Material[0] = 0;
@@ -344,8 +345,8 @@ void PrintGame(Game* game) {
 void KingPositionScore(Move move, Game* game) {
 	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
 	int endGame = game->Material[1] - game->Material[0] < 1800 ? 1 : 0;
-	game->PositionScore += KingPositionValueMatrix[endGame][game->Side >> 4][move.To];
-	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side >> 4][move.From];
+	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
+	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
 }
 
 PieceType parsePieceType(char c) {
@@ -403,7 +404,7 @@ void InitHash() {
 	g_mainGame.Hash = 0;
 	for (int i = 0; i < 64; i++)
 		g_mainGame.Hash ^= ZobritsPieceTypesSquares[g_mainGame.Squares[i]][i];
-	g_mainGame.Hash ^= ZobritsSides[g_mainGame.Side >> 4];
+	g_mainGame.Hash ^= ZobritsSides[g_mainGame.Side01];
 	if (g_mainGame.State & WhiteCanCastleLong)
 		g_mainGame.Hash ^= ZobritsCastlingRights[0];
 	if (g_mainGame.State & WhiteCanCastleShort)
@@ -447,6 +448,7 @@ void ReadFen(char* fen) {
 
 	index++;
 	g_mainGame.Side = parseSide(fen[index]);
+	g_mainGame.Side01 = g_mainGame.Side >> 4;
 	index++;
 	index++;
 	g_mainGame.State = 0;
