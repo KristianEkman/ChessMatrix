@@ -1,16 +1,9 @@
 
 pruning
 
-testa nullmove r=4, benchmark.
-
 Testa lvamvv istf move score.
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
-
-Refactor main
-	Flytta ut globala variabler. Magic strings and numbers.
-	Flytta ut search, game, movegen, uci, evaluation
-	Enums for color01
 
 Books
 	slå av och på.
@@ -18,13 +11,9 @@ Books
 
 Eval: 
     ANN
-	mobility
 	Isolated pawns is bad.
-	mobility?
-	early queen, minor piece count
 
 	Tempo
-		Not move queen in opening
 		Not move piece twice
 
 	Bad bishops -- performance ??
@@ -36,14 +25,10 @@ Fifty move rule, unsufficient material
 
 Räkna på hur stor hash som behövs.
 
-Prioritera pv moves read i movegen
-
 Mer pruning
 	Aspiration window
 	Futilty pruning
 	Razoring
-	Killer moves
-	killer-heuristic
 
 Refactor main
 	Flytta ut globala variabler.
@@ -57,9 +42,6 @@ Linux kompatibel.
 time control
 ==================
 
-Alla färdiga trådar borde kunna användas även om hela djupet inte är klart.
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)
-
-abc
