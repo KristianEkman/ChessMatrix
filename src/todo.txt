@@ -1,4 +1,6 @@
 
+Kolla att hashning är rätt mot c# motorn.
+
 pruning
 
 Testa lvamvv istf move score.
