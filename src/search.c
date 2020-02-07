@@ -151,9 +151,8 @@ MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
 }
 
 int Reduction(int moveNo) {
-	return 1;
 	//removes one depth for moves 9 and later
-	//return min(moveNo / 15 + 1, 2);
+	return min(moveNo / 15 + 1, 2);
 }
 
 short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
@@ -249,8 +248,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			int red = Reduction(i); 
-			score = AlphaBeta(alpha, beta, depth - red, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
+			//int red = Reduction(i); 
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
 			if (score > bestScore && !g_Stopped) {
@@ -308,8 +307,8 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				continue;
 			}
 			legalCount++;
-			int red = Reduction(i);
-			score = AlphaBeta(alpha, beta, depth - red, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
+			//int red = Reduction(i);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
 			if (score < bestScore && !g_Stopped) {

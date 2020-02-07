@@ -665,7 +665,7 @@ void CreateCaptureMoves(Game* game) {
 			}
 			break;
 		}
-		default:
+		default: // rooks bishops and queens
 		{
 			int pat = pt - 1;
 			int raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
@@ -679,6 +679,8 @@ void CreateCaptureMoves(Game* game) {
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 					if (toPiece & otherSide) {
 						CreateMove(i, toSquare, moveInfo, game, pi);
+						break;
+					} else if ( toPiece ) { // own piece
 						break;
 					}
 				}
