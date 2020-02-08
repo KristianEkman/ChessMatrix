@@ -82,7 +82,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth, deep_in + 1);
+			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (score > alpha) {
 				if (score >= beta) {
@@ -112,7 +112,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.ScoreAtDepth, deep_in + 1);
+			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 			if (score < beta) {
 				if (score <= alpha) {
@@ -249,7 +249,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			}
 			legalCount++;
 			//int red = Reduction(i); 
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
 			if (score > bestScore && !g_Stopped) {
@@ -308,7 +308,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			}
 			legalCount++;
 			//int red = Reduction(i);
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.ScoreAtDepth, deep_in + 1);
+			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
 			if (score < bestScore && !g_Stopped) {
@@ -404,10 +404,10 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		int captIndex = MakeMove(move, game);
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.ScoreAtDepth, 0);
+		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.Score, 0);
 
 		if (!g_Stopped)
-			g_rootMoves.moves[moveIndex].ScoreAtDepth = score;
+			g_rootMoves.moves[moveIndex].Score = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
 
 		moveIndex = GetNextFreeMove();
@@ -489,7 +489,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	int nps = (float)g_SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
-	short score = move.ScoreAtDepth;
+	short score = move.Score;
 	if (game->Side == WHITE)
 		score = -score;
 	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", score, depth, g_SearchedNodes, time, nps, buffer);
@@ -518,7 +518,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		SetMovesScoreAtDepth(depth, moveCount);
 		if (!g_Stopped) { // avbrutna depths ger felaktigt resultat.
 			g_topSearchParams.BestMove = g_rootMoves.moves[0];
-			bestScore = g_rootMoves.moves[0].ScoreAtDepth;
+			bestScore = g_rootMoves.moves[0].Score;
 			MoveToString(g_rootMoves.moves[0], bestMove);
 			depth++;
 			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;

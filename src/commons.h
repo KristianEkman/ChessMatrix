@@ -44,8 +44,8 @@ typedef struct Move {
 	char From; //0-63, 6bit, mask 3F
 	char To; //0-63, 6bit, mask FC0, 4032
 	char MoveInfo; //4 bits, 13-16
-	short ScoreAtDepth; //14 bits
-	char PieceIdx;
+	short Score; //14 bits
+	char PieceIdx; // 0 -15, 4 bits
 } Move;
 
 typedef enum  {

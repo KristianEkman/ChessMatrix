@@ -430,8 +430,8 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	U64 prevHash = game->Hash;
 
 	int captIndex = MakeMove(move, game);
-	move.ScoreAtDepth = GetMoveScore(game);
-	//move.ScoreAtDepth = GetEval(game, move.ScoreAtDepth);
+	move.Score = GetMoveScore(game);
+	//move.Score = GetEval(game, move.Score);
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
