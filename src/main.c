@@ -211,11 +211,12 @@ int EnterInteractiveMode() {
 	char scan = 0;
 	while (scan != 'q')
 	{
-		system("@cls||clear");
+		//system("@cls||clear");
 		PrintGame(&g_mainGame);
 		printf("m: make move\n");
 		printf("c: computer move\n");
 		printf("t: run tests\n");
+		printf("e: eval\n");
 		printf("q: quit\n");
 		scanf_s(" %c", &scan, 1);
 		switch (scan)
@@ -227,15 +228,16 @@ int EnterInteractiveMode() {
 			ComputerMove();
 			break;
 		case 't':
-
 			runAllTests();
+			break;
+		case 'e':
+			printf("Eval: %d\n", GetEval(&g_mainGame, 0));
 			break;
 		case 'q':
 			break;
 		default:
 			break;
 		}
-		PrintGame(&g_mainGame);
 	}
 
 	return 0;

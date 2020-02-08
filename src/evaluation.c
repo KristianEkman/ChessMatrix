@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #define CASTLED 40
-#define OPEN_ROOK_FILE 30
+#define OPEN_ROOK_FILE 19
 #define SEMI_OPEN_FILE 15
 #define DOUBLE_PAWN 9
 #define KING_NEEDS_PROTECTION 1500
@@ -349,7 +349,7 @@ short GetEval(Game* game, short moveScore) {
 			// break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
-				score -= neg * PassedPawn(i, game);
+				score += neg * PassedPawn(i, game);
 			}
 					 break;
 			case KING: {
