@@ -1,9 +1,11 @@
 
-Kolla att hashning är rätt mot c# motorn.
+hitta bug när den räknar ut material fel.
+
+test om lmr funkar bättr nu.
+
+komprimera move till int.
 
 pruning
-
-Testa lvamvv istf move score.
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
