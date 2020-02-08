@@ -151,7 +151,7 @@ MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
 }
 
 int Reduction(int moveNo) {
-	//removes one depth for moves 9 and later
+	//removes one depth for moves n and later
 	return min(moveNo / 15 + 1, 2);
 }
 
