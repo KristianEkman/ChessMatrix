@@ -10,6 +10,7 @@
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 23
+#define MOBILITY 3 // for every square a rook or bishop can go to
 
 //white, black, (flipped, starts at A1)
 //[type][side][square]
@@ -92,7 +93,7 @@ short PositionValueMatrix[7][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 5, 5, 0, 0, 0,
-			3, 3, 3,20,20, 3, 3, 3,
+			3, 3, 3,28,28, 3, 3, 3,
 			6, 6, 6,10,10, 6, 6, 6,
 			9, 9, 9, 9, 9, 9, 9, 9,
 			12,12,12,12,12,12,12,12,
@@ -103,7 +104,7 @@ short PositionValueMatrix[7][2][64] = {
 		   12,12,12,12,12,12,12,12,
 			9, 9, 9, 9, 9, 9, 9, 9,
 			6, 6, 6,10,10, 6, 6, 6,
-			3, 3, 3,20,20, 3, 3, 3,
+			3, 3, 3,28,28, 3, 3, 3,
 			0, 0, 0, 5, 5, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -315,6 +316,7 @@ short PassedPawn(int square, Game* game) {
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
+	int mobil = 0;
 	int neg = -1;
 	for (size_t s = 0; s < 2; s++)
 	{
@@ -332,19 +334,18 @@ short GetEval(Game* game, short moveScore) {
 			{
 			case ROOK:
 			{
-				score += neg * OpenRookFile(i, game);
-				// todo connected rooks, no king between
+				//score += neg * OpenRookFile(i, game);
+				mobil += piece.Mobility;
 			}
 			break;
-			//case BISHOP:
-			//{
-			//	//todo: bad bishops
-
-			//	//outposts, protected by a pawn?
-			//}
-			// break;
+			case BISHOP:
+			{
+				mobil += piece.Mobility;
+			}
+			 break;
 			//case KNIGHT: {
 			//	//outposts, protected by a pawn?
+			// Mobility of knights is set by piecetypeposition matrix
 			//}
 			// break;
 			case PAWN: {
@@ -360,6 +361,7 @@ short GetEval(Game* game, short moveScore) {
 				break;
 			}
 		}
+		score += neg * mobil * MOBILITY;
 		neg += 2; // -1 --> 1 // White then black
 	}
 	return score;

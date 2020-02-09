@@ -1,5 +1,8 @@
 testa att mer att transpositioner ger samma hash
 
+pawn center
+bishop mobility
+
 testa om lmr funkar bättre nu.
 
 komprimera move till int/long

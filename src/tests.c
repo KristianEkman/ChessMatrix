@@ -610,13 +610,6 @@ void PositionScoreCastling() {
 	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
 }
 
-void TestEvalOpenFile() {
-	printf("\n");printf(__func__);
-	char* startFen = "r3kb1r/ppp1nppp/5n2/8/8/4BN2/PPP2PPP/RN1R2K1 b kq - 0 12";
-	ReadFen(startFen);
-	int score = GetEval(&g_mainGame, 0);
-}
-
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
@@ -722,21 +715,16 @@ void DeepTest() {
 	AssertBestMove(7, __func__, fen, "b1d2");
 }
 
-void OpenFileTest() {
+void MobilityRookTest() {
 	printf("%s\n", __func__);
 	char * fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
-	short score = OpenRookFile(3, &g_mainGame);
-	AssertAreEqualInts(30, score, "Open file score missmatch");
+	g_topSearchParams.MaxDepth = 1;
+	Search(true); // mobility is calculated in movegenearion and alphabeta ... incheck
+	short score = GetEval(&g_mainGame, 0);
+	// no asserts, just entrypoint for debugging.
 }
 
-void SemiOpenFileTest() {
-	printf("%s\n", __func__);
-	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
-	ReadFen(fen);
-	short score = OpenRookFile(3, &g_mainGame);
-	AssertAreEqualInts(15, score, "Open file score missmatch");
-}
 
 void DoublePawnsTest()
 {
@@ -841,14 +829,16 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*if (_failedAsserts == 0)
+	/*MobilityRookTest();
+
+	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
-	_failedAsserts = 0;
+	return;
+	_failedAsserts = 0;*/
 
-#ifdef _DEBUG
+#ifdef DEBUG
 	EnpassantCollisionsTest();
 
 	PerftSaveHashTest();
@@ -874,7 +864,7 @@ void runAllTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
-	OpenFileTest();SemiOpenFileTest();
+	//MobilityRookTest();
 	DoublePawnsTest();
 	KingExposureTest();
 	PassedPawnTest();

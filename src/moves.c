@@ -349,6 +349,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
+		piece->Mobility = 0;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
@@ -372,6 +373,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 			for (int p = 1; p <= length; p++)
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
+				piece->Mobility++;
 				if (toSquare == square)
 					return true;
 			}
@@ -398,6 +400,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 				for (int rr = 1; rr <= rayLength; rr++)
 				{
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
+					piece->Mobility++;
 					if (toSquare == square)
 						return true;
 					if (game->Squares[toSquare] > NOPIECE)
@@ -444,6 +447,7 @@ void CreateMoves(Game* game, int depth) {
 		Piece* piece = &game->Pieces[game->Side01][pi];
 		if (piece->Off)
 			continue;
+		piece->Mobility = 0;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
@@ -558,6 +562,7 @@ void CreateMoves(Game* game, int depth) {
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
 				for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
 				{
+					piece->Mobility++;
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
@@ -591,6 +596,7 @@ void CreateCaptureMoves(Game* game) {
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
+		piece->Mobility = 0;
 		int i = piece->SquareIndex;
 
 		PieceType pieceType = game->Squares[i];
@@ -674,6 +680,7 @@ void CreateCaptureMoves(Game* game) {
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
 				for (int rr = 1; rr <= rayLength; rr++)
 				{
+					piece->Mobility++;
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;

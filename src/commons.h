@@ -69,7 +69,8 @@ typedef struct {
 typedef struct Piece {
 	PieceType Type;
 	bool Off;
-	int SquareIndex;
+	unsigned char SquareIndex;
+	unsigned char Mobility;
 } Piece;
 
 typedef struct {
