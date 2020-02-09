@@ -1,11 +1,8 @@
+testa att mer att transpositioner ger samma hash
 
-hitta bug när den räknar ut material fel.
+testa om lmr funkar bättre nu.
 
-test om lmr funkar bättr nu.
-
-komprimera move till int.
-
-pruning
+komprimera move till int/long
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
@@ -19,6 +16,7 @@ Eval:
 
 	Tempo
 		Not move piece twice
+		Not move queen
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
@@ -34,17 +32,9 @@ Mer pruning
 	Futilty pruning
 	Razoring
 
-Refactor main
-	Flytta ut globala variabler.
-	Flytta ut search, movegen, uci, evaluation
-	Enums for color01
-
 Fler testafall.
 
 Linux kompatibel.
-
-time control
-==================
 
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
