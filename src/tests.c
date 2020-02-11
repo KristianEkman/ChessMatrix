@@ -237,6 +237,7 @@ int Perft(depth) {
 
 int perftSaveHashCount = 0;
 int collisionCount = 0;
+int hashSplits = 0;
 
 typedef struct {
 	U64 Hash;
@@ -248,19 +249,31 @@ void PerftSaveHash(depth) {
 	char hasHash = FALSE;
 	char fen[100];
 	WriteFen(fen);
+
+	// checking all previous fens
 	for (size_t i = 0; i < perftSaveHashCount; i++)
 	{
 		if (HashFenDb[i].Hash == g_mainGame.Hash) {
 			hasHash = TRUE;
 			
-			if (strcmp(fen, HashFenDb[i].Fen)) {
+			if (strcmp(fen, HashFenDb[i].Fen)) { // same hash but different fen
 				collisionCount++;
 				printf("\ncollision %d:\n%s\n%s\nHash: %llu", collisionCount ,fen, HashFenDb[i].Fen, g_mainGame.Hash);
 			}
 		}
+		// also check that the fen does not exists with other hash
+		if (strcmp(fen, HashFenDb[i].Fen) == 0 ) {
+			if (HashFenDb[i].Hash != g_mainGame.Hash) {
+				hashSplits++;
+				printf("\nHash Splits: %d\nFen: %s\n", hashSplits, fen);
+			}
+		}
 	}
 
+	
+
 	if (!hasHash) {
+		// adding the hash and fen to last entry
 		HashFenDb[perftSaveHashCount].Hash = g_mainGame.Hash;
 		strcpy_s(HashFenDb[perftSaveHashCount].Fen, 100, fen);
 		perftSaveHashCount++;
@@ -268,6 +281,7 @@ void PerftSaveHash(depth) {
 			printf("\n%d", perftSaveHashCount);
 	}
 
+	//below is regular Perft
 	if (depth == 0)
 		return;
 	CreateMoves(&g_mainGame, 0);
@@ -829,7 +843,7 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*MobilityRookTest();
+	/*PerftSaveHashTest();
 
 	if (_failedAsserts == 0)
 		printGreen("Success! Tests are good!\n");
@@ -840,7 +854,6 @@ void runAllTests() {
 
 #ifdef DEBUG
 	EnpassantCollisionsTest();
-
 	PerftSaveHashTest();
 #endif // _DEBUG
 

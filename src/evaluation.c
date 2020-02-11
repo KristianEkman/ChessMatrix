@@ -316,7 +316,7 @@ short PassedPawn(int square, Game* game) {
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
-	int mobil = 0;
+	//int mobil = 0;
 	int neg = -1;
 	for (size_t s = 0; s < 2; s++)
 	{
@@ -334,13 +334,13 @@ short GetEval(Game* game, short moveScore) {
 			{
 			case ROOK:
 			{
-				//score += neg * OpenRookFile(i, game);
-				mobil += piece.Mobility;
+				score += neg * OpenRookFile(i, game);
+				//mobil += piece.Mobility;
 			}
 			break;
 			case BISHOP:
 			{
-				mobil += piece.Mobility;
+				//mobil += piece.Mobility;
 			}
 			 break;
 			//case KNIGHT: {
@@ -361,7 +361,7 @@ short GetEval(Game* game, short moveScore) {
 				break;
 			}
 		}
-		score += neg * mobil * MOBILITY;
+		//score += neg * mobil * MOBILITY;
 		neg += 2; // -1 --> 1 // White then black
 	}
 	return score;

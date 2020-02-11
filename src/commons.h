@@ -70,7 +70,7 @@ typedef struct Piece {
 	PieceType Type;
 	bool Off;
 	unsigned char SquareIndex;
-	unsigned char Mobility;
+	//unsigned char Mobility; // this performed bad, but nice idea
 } Piece;
 
 typedef struct {

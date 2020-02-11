@@ -83,6 +83,5 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />
-    <Text Include="Prestanda.txt" />
   </ItemGroup>
 </Project>

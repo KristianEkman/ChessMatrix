@@ -195,9 +195,13 @@ int MakeMove(Move move, Game* game) {
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+
+		//gör inte detta om det redan är gjort
+		if ((game->Side == WHITE && game->State & WhiteCanCastleLong) || (game->Side == BLACK && BlackCanCastleLong))
+			hash ^= ZobritsCastlingRights[side01 * 2]; // 0 eller 2, white long, black long
+
+		hash ^= ZobritsCastlingRights[side01 * 2 + 1]; // 1 eller 3, white short, black short
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-		hash ^= ZobritsCastlingRights[side01 * 2];
-		hash ^= ZobritsCastlingRights[side01 * 2 + 1];
 	}
 	break;
 	case CastleLong:
@@ -214,9 +218,12 @@ int MakeMove(Move move, Game* game) {
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+		
+		hash ^= ZobritsCastlingRights[side01 * 2]; //long
+		if ((game->Side == WHITE && game->State & WhiteCanCastleShort) || (game->Side == BLACK && BlackCanCastleShort))
+			hash ^= ZobritsCastlingRights[side01 * 2 + 1]; //short
+
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-		hash ^= ZobritsCastlingRights[side01 * 2];
-		hash ^= ZobritsCastlingRights[side01 * 2 + 1];
 	}
 	break;
 	case EnPassant:
@@ -229,7 +236,7 @@ int MakeMove(Move move, Game* game) {
 		game->Squares[behind] = NOPIECE;
 		captIndex = SetCaptureOff(game, !side01, behind);
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
-		hash ^= ZobritsPieceTypesSquares[PAWN | captColor][behind];
+		hash ^= ZobritsPieceTypesSquares[PAWN | (game->Side ^ 24)][behind];
 	}
 	break;
 	default:
@@ -349,7 +356,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
-		piece->Mobility = 0;
+		//piece->Mobility = 0;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
@@ -373,7 +380,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 			for (int p = 1; p <= length; p++)
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
-				piece->Mobility++;
+				//piece->Mobility++;
 				if (toSquare == square)
 					return true;
 			}
@@ -400,7 +407,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 				for (int rr = 1; rr <= rayLength; rr++)
 				{
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
-					piece->Mobility++;
+					//piece->Mobility++;
 					if (toSquare == square)
 						return true;
 					if (game->Squares[toSquare] > NOPIECE)
@@ -447,7 +454,7 @@ void CreateMoves(Game* game, int depth) {
 		Piece* piece = &game->Pieces[game->Side01][pi];
 		if (piece->Off)
 			continue;
-		piece->Mobility = 0;
+		//piece->Mobility = 0;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
@@ -562,7 +569,7 @@ void CreateMoves(Game* game, int depth) {
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
 				for (int rnd_seed = 1; rnd_seed <= rayLength; rnd_seed++)
 				{
-					piece->Mobility++;
+					//piece->Mobility++;
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
@@ -596,7 +603,7 @@ void CreateCaptureMoves(Game* game) {
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
 			continue;
-		piece->Mobility = 0;
+		//piece->Mobility = 0;
 		int i = piece->SquareIndex;
 
 		PieceType pieceType = game->Squares[i];
@@ -680,7 +687,7 @@ void CreateCaptureMoves(Game* game) {
 				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
 				for (int rr = 1; rr <= rayLength; rr++)
 				{
-					piece->Mobility++;
+					//piece->Mobility++;
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
