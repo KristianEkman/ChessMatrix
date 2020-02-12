@@ -35,17 +35,15 @@ typedef enum {
 	EnPassant = 9,
 	EnPassantCapture = 10,
 	NotAMove = 11
-	//Bishop or Knight
-	//Queen
-	//
-}MoveInfo;
+} MoveInfo;
 
 typedef struct Move {
-	char From; // 0-63, 6bit, mask 3F
-	char To; // 0-63, 6bit, << 6
-	char MoveInfo; // 4 bits, 13-16
-	short Score; // 16 bits
-	char PieceIdx; // 0 -15, 4 bits
+	char From;
+	char To;
+	char MoveInfo;
+	short Score;
+	// Index of the piece moved in Pieces List.
+	char PieceIdx;
 } Move;
 
 typedef enum  {
@@ -64,7 +62,6 @@ typedef struct {
 	int Checks;
 	int CheckMates;
 } PerftResult;
-
 
 typedef struct Piece {
 	PieceType Type;

@@ -1,9 +1,7 @@
-testa att mer att transpositioner ger samma hash
+report hash full to uci
 
 testa om lmr funkar bättre nu.
 	- läs på, mer komplicerat
-
-komprimera move till int/long
 
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
@@ -13,8 +11,8 @@ Books
 
 Eval: 
     ANN
-	Isolated pawns is bad.
-
+	Isolated pawns are bad.
+	
 	Tempo
 		Not move piece twice
 		Not move queen

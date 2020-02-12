@@ -132,7 +132,7 @@ bool getBestMoveFromHash(U64 hash, Move* move) {
 }
 
 void GenerateZobritsKeys() {
-	for (int i = 0; i < 23; i++) //only using 16 of these, but King | BLACK is 22 and some are not use. See also PieceType enum.
+	for (int i = 0; i < 23; i++) //only using 16 of these, but King | BLACK is 22. See also PieceType enum.
 		for (int s = 0; s < 64; s++)
 			ZobritsPieceTypesSquares[i][s] = llrand();
 	//Setting nopiece to zeros. Will not affect hash.

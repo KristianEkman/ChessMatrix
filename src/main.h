@@ -1,7 +1,6 @@
 #pragma once
 #include "commons.h"
 
-
 void PrintGame(Game * game);
 void ReadFen(char * fen);
 void WriteFen(char * fen);

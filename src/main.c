@@ -62,13 +62,11 @@ int main(int argc, char* argv[]) {
 	SwitchSignOfWhitePositionValue();
 	DefaultSearch();
 	ResetDepthTimes();
-	//AdjustPositionImportance();
 	GenerateZobritsKeys();
 	AllocateHashTable(1024);
 	ClearHashTable();
 	InitGame();
 	printf("initialized\n");
-
 	EnterUciMode();
 	return 0;
 }
@@ -151,9 +149,6 @@ void EnterUciMode() {
 				g_topSearchParams.TimeControl = false;
 				Search(true);
 			}
-			// else search with time control
-			// Sök i 1/50 av kvarstående tid i middle game (efter book opening)
-			// I end game?
 			else {
 				char* token = strtok(buf, " ");
 				while (token != NULL) {

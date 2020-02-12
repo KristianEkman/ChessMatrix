@@ -10,7 +10,7 @@
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 23
-#define MOBILITY 3 // for every square a rook or bishop can go to
+//#define MOBILITY 3 // for every square a rook or bishop can go to
 
 //white, black, (flipped, starts at A1)
 //[type][side][square]
@@ -215,7 +215,7 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 }
 
 bool DrawByRepetition(Game* game) {
-	if (game->PositionHistoryLength < 50) //This draw can happen early also
+	if (game->PositionHistoryLength < 50) //This draw can happen early also, but cheating for performance reasons.
 		return false;
 	int start = game->PositionHistoryLength - 10; //Only checking back some moves. Possible to miss repetions but must be quite rare.
 	int end = game->PositionHistoryLength - (int)2;
@@ -229,14 +229,15 @@ bool DrawByRepetition(Game* game) {
 	// todo 50 move rule.
 }
 
+// Move score is much faster than evaluation. It is used during move generation to get good sortting of moves.
 short GetMoveScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
 short KingExposed(int square, Game* game) {
-	// If opponent has atleast 1500 material, the king should be protected by pawns.
-	// 10p for square infront
-	// 5p for diagonals.
+	// If opponent has alot of material, the king should be protected by pawns.
+	// More points for square infront
+	// less for diagonals.
 
 	PieceType kingColor = game->Squares[square] & (BLACK | WHITE);
 	int otherSide = (kingColor >> 4) ^ 1;
@@ -271,7 +272,7 @@ short KingExposed(int square, Game* game) {
 }
 
 short PassedPawn(int square, Game* game) {
-	//No opponent pawn on files left right and infron
+	//No opponent pawn on files left right and infront
 	int file = square % 8;
 	int rank = square / 8;
 	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
@@ -283,7 +284,7 @@ short PassedPawn(int square, Game* game) {
 			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
 				return 0;
 			}
-			// infron
+			// infront
 			if (game->Squares[(i * 8) + file] == opponentPawn) {
 				return 0;
 			}
@@ -300,7 +301,7 @@ short PassedPawn(int square, Game* game) {
 			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
 				return 0;
 			}
-			// infron
+			// infront
 			if (game->Squares[(i * 8) + file] == opponentPawn) {
 				return 0;
 			}
@@ -338,11 +339,11 @@ short GetEval(Game* game, short moveScore) {
 				//mobil += piece.Mobility;
 			}
 			break;
-			case BISHOP:
-			{
-				//mobil += piece.Mobility;
-			}
-			 break;
+			//case BISHOP:
+			//{
+			//	//mobil += piece.Mobility;
+			//}
+			// break;
 			//case KNIGHT: {
 			//	//outposts, protected by a pawn?
 			// Mobility of knights is set by piecetypeposition matrix
