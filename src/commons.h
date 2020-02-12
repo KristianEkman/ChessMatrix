@@ -34,7 +34,8 @@ typedef enum {
 	CastleLong = 8,
 	EnPassant = 9,
 	EnPassantCapture = 10,
-	NotAMove = 11
+	NotAMove = 11,
+	QueenMove = 12
 } MoveInfo;
 
 typedef struct Move {

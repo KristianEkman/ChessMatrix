@@ -1,4 +1,4 @@
-report hash full to uci
+testa att slå av killer moves. Ger de något?
 
 testa om lmr funkar bättre nu.
 	- läs på, mer komplicerat
@@ -13,7 +13,7 @@ Eval:
     ANN
 	Isolated pawns are bad.
 	
-	Tempo
+	Opening
 		Not move piece twice
 		Not move queen
 
