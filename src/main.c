@@ -154,7 +154,9 @@ void EnterUciMode() {
 				while (token != NULL) {
 					if (streq(token, "depth")) {
 						char* depth = strtok(NULL, " ");
-						sscanf(depth, "%d", &g_topSearchParams.MaxDepth);
+						uint dep;
+						sscanf(depth, "%d", &dep);
+						g_topSearchParams.MaxDepth = dep - 1;
 					}
 					else if (streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");

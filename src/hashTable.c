@@ -18,7 +18,6 @@
 HashTable H_Table;
 int HashTableEntries;
 int HashTableOverWrites;
-int HashTableFull;
 
 void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
 	uint key2 = hash & 0x7FFFFFFF; // The scond key is just 31 bit but it seems to be sufficient.
@@ -42,6 +41,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 			HashTableEntries++;
 			return;
 		}
+		// not usefull info here when depth is less than before.
 	}
 	else if (entry == 0) { // empty, just store
 		slot->EntrySlots[0] = pack;
@@ -52,16 +52,11 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 		// move away the older ones one position
 		memmove(&slot->EntrySlots[1], slot->EntrySlots, sizeof(U64) * (SLOTS - 1));
 		slot->EntrySlots[0] = pack;
+		HashTableEntries++;
 
-#ifdef _DEBUG
-		if (slot->EntrySlots[SLOTS - 1] != 0) {
+		/*if (slot->EntrySlots[SLOTS - 1] != 0) {
 			HashTableOverWrites++;
-		}
-		else {
-			HashTableEntries++;
-		}
-#endif
-
+		}*/
 	}
 }
 
@@ -159,12 +154,13 @@ void ClearHashTable() {
 	memset(H_Table.Entries, 0, H_Table.EntryCount * sizeof(EntrySlot));
 	HashTableEntries = 0;
 	HashTableOverWrites = 0;
-	HashTableFull = 0;
 }
 
 void PrintHashStats() {
 	printf("Entries:    %d\n", HashTableEntries);
-	printf("Overwrites: %d\n", HashTableOverWrites);
-	printf("Full:       %d\n", HashTableFull);
+	//printf("Overwrites: %d\n", HashTableOverWrites);
 	printf("Capacity:   %d\n", H_Table.EntryCount * SLOTS);
+	double d = (double)HashTableEntries / ((double)H_Table.EntryCount * SLOTS);
+	printf("info hashfull %d\n", (uint)(d * 1000000));
+	fflush(stdout);
 }
