@@ -15,7 +15,6 @@ Eval:
 	
 	Opening
 		Not move piece twice
-		Not move queen
 
 	Bad bishops -- performance ??
 	Outposts -- performance ??
