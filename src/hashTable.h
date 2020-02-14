@@ -40,3 +40,4 @@ void GenerateZobritsKeys();
 void ClearHashTable();
 bool getBestMoveFromHash(U64 hash, Move* move);
 void PrintHashStats();
+uint HashFull();

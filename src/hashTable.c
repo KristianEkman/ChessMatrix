@@ -157,10 +157,15 @@ void ClearHashTable() {
 }
 
 void PrintHashStats() {
-	printf("Entries:    %d\n", HashTableEntries);
+	//printf("Entries:    %d\n", HashTableEntries);
 	//printf("Overwrites: %d\n", HashTableOverWrites);
-	printf("Capacity:   %d\n", H_Table.EntryCount * SLOTS);
+	//printf("Capacity:   %d\n", H_Table.EntryCount * SLOTS);
+	/*double d = (double)HashTableEntries / ((double)H_Table.EntryCount * SLOTS);
+	printf("info hashfull %d\n", HashFull());
+	fflush(stdout);*/
+}
+
+uint HashFull() {
 	double d = (double)HashTableEntries / ((double)H_Table.EntryCount * SLOTS);
-	printf("info hashfull %d\n", (uint)(d * 1000000));
-	fflush(stdout);
+	return (uint)(d * 1000);
 }

@@ -138,7 +138,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-				printf("info string position parsed\n");
+				printf("string position parsed\n");
 				AssertGame(&g_mainGame);
 			}
 		}

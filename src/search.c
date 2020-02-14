@@ -492,7 +492,8 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	short score = move.Score;
 	if (game->Side == WHITE)
 		score = -score;
-	printf("info score cp %d depth %d nodes %d time %d nps %d pv %s\n", score, depth, g_SearchedNodes, time, nps, buffer);
+
+	printf("info score cp %d depth %d nodes %d time %d nps %d hashfull %d pv %s\n", score, depth, g_SearchedNodes, time, nps,HashFull(), buffer);
 	fflush(stdout);
 	return 0;
 }
