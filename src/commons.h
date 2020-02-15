@@ -94,7 +94,6 @@ typedef struct {
 	U64 Hash;
 	U64 PositionHistory[2000];
 	int PositionHistoryLength;
-	int ThreadIndex;
 	Piece Pieces[2][16];
 	//Move KillerMoves[31][2];
 } Game;

@@ -6,7 +6,7 @@ void ReadFen(char * fen);
 void WriteFen(char * fen);
 
 void SwitchSignOfWhitePositionValue();
-void InitGame();
+void StartPosition();
 void InitScores();
 void InitHash();
 

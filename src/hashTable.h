@@ -1,6 +1,7 @@
 #pragma once
 #define SLOTS 3
 
+U64 StartHash;
 U64 ZobritsPieceTypesSquares[23][64];
 U64 ZobritsSides[2];
 U64 ZobritsCastlingRights[4];

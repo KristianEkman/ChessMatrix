@@ -1,6 +1,16 @@
 #pragma once
 #include "commons.h"
 
+#define CASTLED 40
+#define OPEN_ROOK_FILE 19
+#define SEMI_OPEN_FILE 15
+#define DOUBLE_PAWN 9
+#define KING_NEEDS_PROTECTION 1500
+#define KING_EXPOSED_INFRONT 22
+#define KING_EXPOSED_DIAGONAL 12
+#define PASSED_PAWN 23
+#define ENDGAME 1800
+
 //[type][side][square]
 short PositionValueMatrix[7][2][64];
 

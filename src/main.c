@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	AllocateHashTable(1024);
 	ClearHashTable();
-	InitGame();
+	StartPosition();
 	printf("initialized\n");
 	EnterUciMode();
 	return 0;
@@ -112,7 +112,6 @@ void EnterUciMode() {
 		}
 		else if (startsWith(buf, "position ")) {
 			//postion fen | moves
-			InitGame();
 			int movesPos = indexOf(buf, " moves");
 			if (contains(buf, " fen "))
 			{
@@ -128,6 +127,10 @@ void EnterUciMode() {
 				memcpy(fen, pFen + 5, fenLength);
 				fen[fenLength + 1] = "\0";
 				ReadFen(fen);
+			}
+
+			if (contains(buf, "startpos")) {
+				StartPosition();
 			}
 
 			if (contains(buf, " moves "))
@@ -172,13 +175,16 @@ void EnterUciMode() {
 						g_topSearchParams.TimeControl = true;
 						char* btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
-					} else if (streq(token, "winc")) {
+					}
+					else if (streq(token, "winc")) {
 						char* winc = strtok(NULL, " ");
 						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
-					} else if (streq(token, "binc")) {
+					}
+					else if (streq(token, "binc")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
-					} else if (streq(token, "movestogo")) {
+					}
+					else if (streq(token, "movestogo")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.MovesTogo);
 					}
@@ -256,7 +262,7 @@ void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
 
-void InitGame() {
+void StartPosition() {
 	InitPieceList();
 
 	for (int i = 0; i < 64; i++)
@@ -294,6 +300,7 @@ void InitGame() {
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
 	g_mainGame.PositionHistoryLength = 0;
+	
 	InitHash();
 	InitScores();
 }
@@ -343,7 +350,7 @@ void PrintGame(Game* game) {
 
 void KingPositionScore(Move move, Game* game) {
 	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = game->Material[1] - game->Material[0] < 1800 ? 1 : 0;
+	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
 	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
 	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
 }
@@ -384,25 +391,39 @@ void InitScores() {
 	g_mainGame.Material[1] = 0;
 	g_mainGame.PositionScore = 0;
 
-	for (int i = 0; i < 64; i++)
+	for (size_t s = 0; s < 2; s++)
 	{
-		PieceType pt = g_mainGame.Squares[i] & 7;
-		int colorSide = (g_mainGame.Squares[i] & (WHITE | BLACK)) >> 4;
-		g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
-		g_mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
+		for (size_t p = 0; p < 16; p++)
+		{
+			Piece piece = g_mainGame.Pieces[s][p];
+			if (piece.Off)
+				continue;
+			int i = piece.SquareIndex;
+			PieceType pt = piece.Type & 7;
+			int colorSide = (piece.Type & (WHITE | BLACK)) >> 4;
+			g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
+			g_mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
+		}
 	}
-
-	//aproximation that endgame starts att 1900.
-	int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < 1900 ? 1 : 0;
-
+	int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < ENDGAME ? 1 : 0;
 	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][0][g_mainGame.KingSquares[0]];
 	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][1][g_mainGame.KingSquares[1]];
+
 }
 
 void InitHash() {
-	g_mainGame.Hash = 0;
-	for (int i = 0; i < 64; i++)
-		g_mainGame.Hash ^= ZobritsPieceTypesSquares[g_mainGame.Squares[i]][i];
+	g_mainGame.Hash = StartHash;
+	for (size_t s = 0; s < 2; s++)
+	{
+		for (size_t p = 0; p < 16; p++)
+		{
+			Piece piece = g_mainGame.Pieces[s][p];
+			if (piece.Off)
+				continue;
+			int i = piece.SquareIndex;
+			g_mainGame.Hash ^= ZobritsPieceTypesSquares[piece.Type][i];
+		}
+	}
 	g_mainGame.Hash ^= ZobritsSides[g_mainGame.Side01];
 	if (g_mainGame.State & WhiteCanCastleLong)
 		g_mainGame.Hash ^= ZobritsCastlingRights[0];
@@ -439,8 +460,6 @@ void ReadFen(char* fen) {
 		else {
 			PieceType pt = parsePieceType(c);
 			InitPiece(file, rank, pt & 7, pt & 24);
-			//mainGame.Squares[rank * 8 + file] = pt;
-
 			file++;
 		}
 	}

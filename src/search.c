@@ -353,7 +353,6 @@ Game* CopyMainGame(int threadNo) {
 	g_threadGames[threadNo].KingSquares[1] = g_mainGame.KingSquares[1];
 	g_threadGames[threadNo].Material[0] = g_mainGame.Material[0];
 	g_threadGames[threadNo].Material[1] = g_mainGame.Material[1];
-	g_threadGames[threadNo].ThreadIndex = threadNo;
 
 	memcpy(g_mainGame.MovesBuffer, g_threadGames[threadNo].MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(g_mainGame.Squares, g_threadGames[threadNo].Squares, 64 * sizeof(PieceType));
@@ -493,7 +492,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	if (game->Side == WHITE)
 		score = -score;
 
-	printf("info score cp %d depth %d nodes %d time %d nps %d hashfull %d pv %s\n", score, depth, g_SearchedNodes, time, nps,HashFull(), buffer);
+	printf("info score cp %d depth %d nodes %d time %d nps %d hashfull %d pv %s\n", score, depth, g_SearchedNodes, time, nps, HashFull(), buffer);
 	fflush(stdout);
 	return 0;
 }
@@ -523,7 +522,8 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 			MoveToString(g_rootMoves.moves[0], bestMove);
 			depth++;
 			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
-			PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
+			if (depth > 4)
+				PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 			if ((g_mainGame.Side == WHITE && bestScore < -7000) || (g_mainGame.Side == BLACK && bestScore > 7000))
 			{
 				g_Stopped = true;
@@ -541,9 +541,8 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 
 	} while (depth <= maxDepth && !g_Stopped);
-	PrintHashStats();
-
-
+	float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
+	PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
 
