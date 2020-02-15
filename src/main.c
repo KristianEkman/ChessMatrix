@@ -163,7 +163,9 @@ void EnterUciMode() {
 					}
 					else if (streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");
-						sscanf(movetime, "%d", &g_topSearchParams.MoveTime);
+						int time = 0;
+						sscanf(movetime, "%d", &time);
+						g_topSearchParams.MoveTime = time;
 					}
 					else if (streq(token, "wtime")) {
 						g_topSearchParams.TimeControl = true;
