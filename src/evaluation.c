@@ -270,6 +270,7 @@ short PassedPawn(int square, Game* game) {
 	int rank = square / 8;
 	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
 	PieceType opponentPawn = PAWN | (pieceColor ^ 24);
+	int steps = 0;
 	if (pieceColor == WHITE) {
 		for (int i = 7 - 1; i > rank; i--) // starts at rank 7
 		{
@@ -286,6 +287,7 @@ short PassedPawn(int square, Game* game) {
 				return 0;
 			}
 		}
+		steps = rank - 1;
 	}
 	else { //black
 		for (int i = 0; i < rank; i++)
@@ -303,8 +305,9 @@ short PassedPawn(int square, Game* game) {
 				return 0;
 			}
 		}
+		steps = 6 - rank;
 	}
-	return PASSED_PAWN;
+	return PASSED_PAWN * steps;
 }
 
 short GetEval(Game* game, short moveScore) {

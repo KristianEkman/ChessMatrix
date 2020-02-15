@@ -68,6 +68,7 @@ typedef struct Piece {
 	PieceType Type;
 	bool Off;
 	unsigned char SquareIndex;
+	unsigned char MoveCount;
 	//unsigned char Mobility; // this performed bad, but nice idea
 } Piece;
 

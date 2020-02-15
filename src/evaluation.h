@@ -8,7 +8,7 @@
 #define KING_NEEDS_PROTECTION 1500
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
-#define PASSED_PAWN 23
+#define PASSED_PAWN 7
 #define ENDGAME 1800
 
 //[type][side][square]
