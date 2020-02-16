@@ -64,19 +64,10 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 
 	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
 
-	if (game->Side == BLACK) {
-		if (score >= beta)
-			return beta;
-		if (score > alpha)
-			alpha = score;
-	}
-	else {
-		if (score <= alpha)
-			return alpha;
-		if (score < beta)
-			beta = score;
-	}
-
+	if (score >= beta)
+		return beta;
+	if (score > alpha)
+		alpha = score;
 
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
@@ -87,66 +78,34 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
-	if (game->Side == BLACK) { //maximizing
-		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
+	score = MIN_SCORE;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move childMove = localMoves[i];
+		GameState state = game->State;
+		int prevPosScore = game->PositionScore;
+		U64 prevHash = game->Hash;
 
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score > alpha) {
-				if (score >= beta) {
-					free(localMoves);
-					return beta;
-				}
-				alpha = score;
-			}
-		}
-		free(localMoves);
-		return alpha;
-	}
-	else { //minimizing
-		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
+		int captIndex = MakeMove(childMove, game);
+		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+		bool legal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!legal)
 		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-			if (score < beta) {
-				if (score <= alpha) {
-					free(localMoves);
-					return alpha;
-				}
-				beta = score;
-			}
+			continue;
 		}
-		free(localMoves);
-		return beta;
+		score = -AlphaBetaQuite(-beta, -alpha, game, childMove.Score, deep_in + 1);
+		UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+		if (score > alpha) {
+			if (score >= beta) {
+				free(localMoves);
+				return beta;
+			}
+			alpha = score;
+		}
 	}
+	free(localMoves);
+	return alpha;
 }
 
 
@@ -183,30 +142,20 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	}
 
 	//NULL move check
+	// if opponent cannot improve its position moving twice no need to search deeper.
 	int r = 3;
-	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
+	if ((game->Side == WHITE && game->Material[side01] < -500) ||
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
 			GameState prevState = game->State;
 			U64 prevHash = game->Hash;
 			MakeNullMove(game);
-			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
-				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
-					return alpha;
-				}
-			}
-			else //(game->Side == WHITE)
-			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore, deep_in + 1);
-				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
-					return beta;
-				}
-			}
+			int nullScore = -AlphaBeta(-beta, -beta + 1, 2, captIndex, game, false, moveScore, deep_in + 1);
 			UnMakeNullMove(prevState, game, prevHash);
+			if (nullScore >= beta && nullScore > -7000 && nullScore < 7000) {
+				return beta;
+			}
 		}
 	}
 
@@ -221,130 +170,69 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		MoveToTop(pvMove, localMoves, moveCount);
 	}
 
-
 	// alpha beta pruning
 	short bestScore = 0;
 	int legalCount = 0;
 	short oldAlpha = alpha;
 	short oldBeta = beta;
 	Move bestMove;
-	if (game->Side == BLACK) { //maximizing, black
-		bestScore = MIN_SCORE;
-		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
+	bestScore = MIN_SCORE;
+	score = MIN_SCORE;
+	for (int i = 0; i < moveCount; i++)
+	{
+		Move childMove = localMoves[i];
+		GameState state = game->State;
+		int prevPosScore = game->PositionScore;
+		U64 prevHash = game->Hash;
+		int captIndex = MakeMove(childMove, game);
+		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];  //todo: use otherside variable above
+		bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!isLegal)
 		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
-
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			legalCount++;
-			//int red = Reduction(i); 
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
 			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			continue;
+		}
+		legalCount++;
+		//int red = Reduction(i); 
+		score = -AlphaBeta(-beta, -alpha, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
+		UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
-			if (score > bestScore && !g_Stopped) {
-				bestScore = score;
-				bestMove = childMove;
-				if (score > alpha) {
-					if (score >= beta) {
-						addHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
-						free(localMoves);
+		if (score > bestScore && !g_Stopped) {
+			bestScore = score;
+			bestMove = childMove;
+			if (score > alpha) {
+				if (score >= beta) {
+					addHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
+					free(localMoves);
 
-						/*if (captIndex == -1) {
-							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
-							game->KillerMoves[deep_in][0] = childMove;
-						}*/
-						return beta;
-					}
-					alpha = score;
+					/*if (captIndex == -1) {
+						game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
+						game->KillerMoves[deep_in][0] = childMove;
+					}*/
+					return beta;
 				}
+				alpha = score;
 			}
 		}
+	}
 
-		free(localMoves);
-		if (legalCount == 0) {
-			if (incheck)
-				return -8000 + deep_in;
-			else
-				return 0;
-		}
-
-		if (g_Stopped)
-			return alpha;
-
-		if (alpha != oldAlpha)
-			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+	free(localMoves);
+	if (legalCount == 0) {
+		if (incheck)
+			return -8000 + deep_in;
 		else
-			addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+			return 0;
+	}
 
+	if (g_Stopped)
 		return alpha;
-	}
-	else { //minimizing, white
-		bestScore = MAX_SCORE;
-		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
-			Move childMove = localMoves[i];
-			GameState state = game->State;
-			short prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-			int captIndex = MakeMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
-				continue;
-			}
-			legalCount++;
-			//int red = Reduction(i);
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
 
-			if (score < bestScore && !g_Stopped) {
-				bestScore = score;
-				bestMove = childMove;
-				if (score < beta) {
-					if (score <= alpha) {
-						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
-						/*if (captIndex == -1) {
-							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
-							game->KillerMoves[deep_in][0] = childMove;
-						}*/
-						free(localMoves);
-						return alpha;
-					}
-					beta = score;
-				}
-			}
-		}
-		free(localMoves);
-		if (legalCount == 0) {
-			if (incheck)
-				return 8000 - deep_in; //mate
-			else
-				return 0; //stale mate
-		}
+	if (alpha != oldAlpha)
+		addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+	else
+		addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
 
-		if (g_Stopped)
-			return beta;
-
-		if (beta != oldBeta)
-			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
-		else
-			addHashScore(game->Hash, beta, depth, BETA, bestMove.From, bestMove.To);
-		return beta;
-	}
+	return alpha;
 }
 
 Game* CopyMainGame(int threadNo) {
@@ -489,9 +377,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	int nps = (float)g_SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
 	short score = move.Score;
-	if (game->Side == WHITE)
-		score = -score;
-
+	
 	printf("info score cp %d depth %d nodes %d time %d nps %d hashfull %d pv %s\n", score, depth, g_SearchedNodes, time, nps, HashFull(), buffer);
 	fflush(stdout);
 	return 0;
@@ -542,7 +428,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 
 	} while (depth <= maxDepth && !g_Stopped);
 	float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
-	PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
+	//PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
 

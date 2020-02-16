@@ -422,11 +422,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 }
 
 void SortMoves(Move* moves, int moveCount, Side side) {
-
-	if (side == WHITE)
-		QuickSort(moves, 0, moveCount - 1);
-	else
-		QuickSortDescending(moves, 0, moveCount - 1);
+	QuickSort(moves, 0, moveCount - 1);
 }
 
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {

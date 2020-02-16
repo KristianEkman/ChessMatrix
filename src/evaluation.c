@@ -224,6 +224,9 @@ bool DrawByRepetition(Game* game) {
 
 // Move score is much faster than evaluation. It is used during move generation to get good sortting of moves.
 short GetMoveScore(Game* game) {
+	if (game->Side == WHITE)
+		return -(game->Material[0] + game->Material[1] + game->PositionScore);
+
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
@@ -312,7 +315,7 @@ short PassedPawn(int square, Game* game) {
 
 short GetEval(Game* game, short moveScore) {
 
-	int score = moveScore;
+	int score = 0;
 	//int mobil = 0;
 	int neg = -1;
 	for (size_t s = 0; s < 2; s++)
@@ -361,7 +364,10 @@ short GetEval(Game* game, short moveScore) {
 		//score += neg * mobil * MOBILITY;
 		neg += 2; // -1 --> 1 // White then black
 	}
-	return score;
+	if (game->Side == WHITE)
+		score = -score;
+
+	return score + moveScore;
 
 }
 
