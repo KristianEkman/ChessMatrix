@@ -125,7 +125,7 @@ void HashKeyTest() {
 }
 
 void HashTableRoundTrip() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 	short expected = 3000;
@@ -307,7 +307,7 @@ void PerftSaveHash(depth) {
 
 
 void PerftSaveHashTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	perftSaveHashCount = 0;
 	collisionCount = 0;
 	ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"); //quite complicated position
@@ -317,7 +317,7 @@ void PerftSaveHashTest() {
 }
 
 void EnpassantCollisionsTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	perftSaveHashCount = 0;
 	collisionCount = 0;
 	ReadFen("rnbqkbnr/ppp2pp1/3p4/1P2p3/7p/3PP3/P1P2PPP/RNBQKBNR w KQkq - 0 1"); //quite complicated position
@@ -406,7 +406,7 @@ void FenTest() {
 }
 
 void FenEnppasantTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	MakePlayerMove("d2d4");
 	char fen[100];
@@ -429,7 +429,7 @@ void TimedTest(int iterations, void(*func)(int)) {
 }
 
 void PerfTestPosition2() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	PerftTest(fen, 4);
 	AssertAreEqualInts(757163, perftResult.Captures, "Captures missmatch");
@@ -439,7 +439,7 @@ void PerfTestPosition2() {
 }
 
 void PerftTestStart() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	int count = PerftTest(startFen, 5);
 	AssertAreEqualInts(4865609, count, "Perft Count missmatch");
@@ -457,7 +457,7 @@ bool MovesContains(Move * moves, int count, Move move) {
 }
 
 void ValidMovesPromotionCaptureAndCastling() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * fen = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 	Move moves[100];
 	ReadFen(fen);
@@ -471,7 +471,7 @@ void ValidMovesPromotionCaptureAndCastling() {
 }
 
 void LongCastling() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	Move moves[100];
 	ReadFen(fen);
@@ -485,7 +485,7 @@ void LongCastling() {
 }
 
 void EnPassantFromFenTest() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * fen = "8/5k2/8/3Pp3/8/8/8/4K3 w - e6 0 3";
 	ReadFen(fen);
 	Move moves[100];
@@ -498,7 +498,7 @@ void EnPassantFromFenTest() {
 }
 
 void EnPassantAfterMove() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
 	ReadFen(fen);
 	AssertNot(MakePlayerMove("e7e5").Invalid, "Move was not valid");
@@ -511,7 +511,7 @@ void EnPassantAfterMove() {
 
 
 void BlackCastlingRightsAfterKingMove() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char* fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
 	ReadFen(fen);
 	AssertNot(MakePlayerMove("e1f1").Invalid, "Move was not valid");
@@ -525,7 +525,7 @@ void BlackCastlingRightsAfterKingMove() {
 }
 
 void WhiteCastlingRightsAfterKingMove() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char* fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
 	ReadFen(fen);
 	AssertNot(MakePlayerMove("e1f1").Invalid, "Move was not valid");
@@ -540,7 +540,7 @@ void WhiteCastlingRightsAfterKingMove() {
 }
 
 void MaterialBlackPawnCapture() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
 	AssertAreEqualInts(-510, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d4e5").Invalid, "Move was not valid");
@@ -548,7 +548,7 @@ void MaterialBlackPawnCapture() {
 }
 
 void MaterialWhiteQueenCapture() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d5e4").Invalid, "Move was not valid");
@@ -556,7 +556,7 @@ void MaterialWhiteQueenCapture() {
 }
 
 void MaterialCaptureAndPromotion() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	PlayerMove pm = MakePlayerMove("b7c8");
@@ -567,7 +567,7 @@ void MaterialCaptureAndPromotion() {
 }
 
 void MaterialPromotion() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
 	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("b7b8").Invalid, "Move was not valid");
@@ -575,7 +575,7 @@ void MaterialPromotion() {
 }
 
 void EnPassantMaterial() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d7d5").Invalid, "Move was not valid");
@@ -587,7 +587,7 @@ void EnPassantMaterial() {
 }
 
 void PositionScorePawns() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	ReadFen(startFen);
 	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
@@ -600,7 +600,7 @@ void PositionScorePawns() {
 }
 
 void PositionScoreKnights() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 	ReadFen(startFen);
 	MakePlayerMove("b1-c3");
@@ -612,7 +612,7 @@ void PositionScoreKnights() {
 }
 
 void PositionScoreCastling() {
-	printf("\n");printf(__func__);
+	printf("%s\n", __func__);
 	char * startFen = "r3k2r/p1qnbppp/bpp2n2/3pp3/B2P4/2N1PN2/PPPBQPPP/R3K2R w KQkq - 0 1";
 	ReadFen(startFen);
 	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
