@@ -78,7 +78,7 @@ void EnterUciMode() {
 	while (!streq(buf, "quit\n"))
 	{
 		if (startsWith(buf, "ucinewgame")) {
-			//ClearHashTable();  // the reason is that estimation of next move is much easier.
+			ClearHashTable();  // the reason is that estimation of next move is much easier.
 			ResetDepthTimes();
 			stdout_wl("new game");
 		}

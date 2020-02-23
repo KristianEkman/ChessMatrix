@@ -227,7 +227,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 	int legalCount = 0;
 	short oldAlpha = alpha;
 	short oldBeta = beta;
-	Move bestMove;
+	Move bestMove = localMoves[0];
 	if (game->Side == BLACK) { //maximizing, black
 		bestScore = MIN_SCORE;
 		score = MIN_SCORE;

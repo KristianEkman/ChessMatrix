@@ -218,7 +218,7 @@ int MakeMove(Move move, Game* game) {
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
-		
+
 		hash ^= ZobritsCastlingRights[side01 * 2]; //long
 		if ((game->Side == WHITE && game->State & WhiteCanCastleShort) || (game->Side == BLACK && BlackCanCastleShort))
 			hash ^= ZobritsCastlingRights[side01 * 2 + 1]; //short
@@ -252,7 +252,7 @@ int MakeMove(Move move, Game* game) {
 	return captIndex;
 }
 
-int MakeMoveLight(Move move, Game* game) {
+void SetLightScore(Move move, Game* game) {
 	char f = move.From;
 	char t = move.To;
 
@@ -269,130 +269,40 @@ int MakeMoveLight(Move move, Game* game) {
 	game->PositionScore -= PositionValueMatrix[pt][side01][f];
 	game->PositionScore += PositionValueMatrix[pt][side01][t];
 
-	game->Squares[t] = game->Squares[f];
-	game->Squares[f] = NOPIECE;
-
-	int captIndex = -1;
 	if (captType && move.MoveInfo != EnPassantCapture)
-	{
-		captIndex = SetCaptureOff(game, !side01, t);
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
-	}
-	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
-
-	//resetting en passant every move
-	game->State &= ~15;
 
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
-		game->Squares[t] = QUEEN | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
-		game->Pieces[side01][move.PieceIdx].Type = (QUEEN | game->Side);
-
 		break;
 	case PromotionRook:
-		game->Squares[t] = ROOK | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
-		game->Pieces[side01][move.PieceIdx].Type = (ROOK | game->Side);
-
 		break;
 	case PromotionBishop:
-		game->Squares[t] = BISHOP | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
-		game->Pieces[side01][move.PieceIdx].Type = (BISHOP | game->Side);
-
 		break;
 	case PromotionKnight:
-		game->Squares[move.To] = KNIGHT | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
-		game->Pieces[side01][move.PieceIdx].Type = (KNIGHT | game->Side);
-
 		break;
 	case KingMove:
-		game->KingSquares[side01] = t;
-		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-
 		KingPositionScore(move, game);
-		break;
-	case RookMove:
-		switch (move.From)
-		{
-		case 0:
-			if (game->State & WhiteCanCastleLong) {
-				game->State &= ~WhiteCanCastleLong;
-			}
-			break;
-		case 7:
-			if (game->State & WhiteCanCastleShort) {
-				game->State &= ~WhiteCanCastleShort;
-			}
-			break;
-		case 56:
-			if (game->State & BlackCanCastleLong) {
-				game->State &= ~BlackCanCastleLong;
-			}
-			break;
-		case 63:
-			if (game->State & BlackCanCastleShort) {
-				game->State &= ~BlackCanCastleShort;
-			}
-			break;
-		default:
-			break;
-		}
 		break;
 	case CastleShort:
-	{
-		game->KingSquares[side01] = t;
-		char rookFr = 7 + CastlesOffset[side01];
-		char rookTo = 5 + CastlesOffset[side01];
-		PieceType rook = ROOK | game->Side;
-		game->Squares[rookFr] = NOPIECE;
-		game->Squares[rookTo] = rook;
-		MovePiece(game, side01, rookFr, rookTo);
-
 		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
-
-		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-	}
-	break;
+		break;
 	case CastleLong:
-	{
-		game->KingSquares[side01] = t;
-		char rookFr = CastlesOffset[side01];
-		char rookTo = 3 + CastlesOffset[side01];
-		PieceType rook = ROOK | game->Side;
-		game->Squares[rookFr] = NOPIECE;
-		game->Squares[rookTo] = ROOK | game->Side;
-		MovePiece(game, side01, rookFr, rookTo);
-
 		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
-		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-	}
-	break;
-	case EnPassant:
-		game->State |= ((f & 7) + 1); //Sets the file. a to h. File is 1 to 8.
 		break;
 	case EnPassantCapture:
-	{
-		char behind = t + Behind[side01];
-		game->Squares[behind] = NOPIECE;
-		captIndex = SetCaptureOff(game, !side01, behind);
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
-	}
-	break;
+		break;
 	default:
 		break;
 	}
-
-	game->Side ^= 24;
-	game->Side01 = game->Side >> 4;
-	game->PositionHistoryLength++;
-	AssertGame(game);
-	return captIndex;
 }
 
 void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, U64 prevHash) {
@@ -468,6 +378,7 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 	game->PositionHistoryLength--;
 	AssertGame(game);
 }
+
 
 void MakeNullMove(Game* game) {
 	int side01 = game->Side01;
@@ -573,20 +484,24 @@ void SortMoves(Move* moves, int moveCount, Side side) {
 }
 
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {
-	GameState prevGameState = game->State;
 	Move move;
 	move.From = fromSquare;
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 	short prevPosScore = game->PositionScore;
-	U64 prevHash = game->Hash;
+	short material0 = game->Material[0];
+	short material1 = game->Material[1];
 
-	int captIndex = MakeMoveLight(move, game);
-	move.Score = GetMoveScore(game);
+	SetLightScore(move, game);
+	move.Score = game->Material[0] + game->Material[1] + game->PositionScore;
 	//move.Score = GetEval(game, move.Score);
-	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
+	game->Material[0] = material0;
+	game->Material[1] = material1;
+	game->PositionScore = prevPosScore;
+
 	game->MovesBuffer[game->MovesBufferLength++] = move;
+	AssertGame(game);
 }
 
 void CreateMoves(Game* game, int depth) {
@@ -836,7 +751,8 @@ void CreateCaptureMoves(Game* game) {
 					if (toPiece & otherSide) {
 						CreateMove(i, toSquare, moveInfo, game, pi);
 						break;
-					} else if ( toPiece ) { // own piece
+					}
+					else if (toPiece) { // own piece
 						break;
 					}
 				}
