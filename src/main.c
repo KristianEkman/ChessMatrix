@@ -80,7 +80,7 @@ void EnterUciMode() {
 		if (startsWith(buf, "ucinewgame")) {
 			//ClearHashTable();  // the reason is that estimation of next move is much easier.
 			ResetDepthTimes();
-			stdout_wl("info string New game");
+			stdout_wl("new game");
 		}
 		else if (startsWith(buf, "uci")) {
 			stdout_wl("id name CChess");
@@ -100,10 +100,10 @@ void EnterUciMode() {
 					int mb = atoi(token);
 					if (mb >= 1 && mb <= 2048) { // actual limit is 32760mb
 						AllocateHashTable(mb);
-						stdout_wl("info string New hash size set");
+						stdout_wl("new hash size set");
 					}
 					else {
-						stdout_wl("info string Invalid Hash size value (1 - 2048)");
+						stdout_wl("invalid Hash size value (1 - 2048)");
 					}
 					break;
 				}
@@ -206,7 +206,7 @@ void EnterUciMode() {
 			EnterInteractiveMode();
 		}
 		else {
-			stdout_wl("info string unknown command");
+			stdout_wl("unknown command");
 		}
 		fgets(buf, UCI_BUF_SIZE, stdin);
 	}

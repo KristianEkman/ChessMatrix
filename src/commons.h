@@ -96,7 +96,7 @@ typedef struct {
 	U64 PositionHistory[2000];
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
-	//Move KillerMoves[31][2];
+	Move KillerMoves[31][2];
 } Game;
 
 typedef struct {
