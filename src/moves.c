@@ -443,14 +443,6 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	move.Score = GetMoveScore(game);
 	//move.Score = GetEval(game, move.Score);
 	UnMakeMove(move, captIndex, prevGameState, prevPosScore, game, prevHash);
-
-	// penalty for moving queen early
-	if (moveInfo == QueenMove && game->PositionHistoryLength < 12) {
-		if (game->Side == WHITE)
-			move.Score += 20;
-		else
-			move.Score -= 20;
-	}
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 }
 
@@ -580,8 +572,6 @@ void CreateMoves(Game* game, int depth) {
 					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rnd_seed];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
-					if (pt == QUEEN)
-						moveInfo = QueenMove;
 
 					if (toPiece != NOPIECE) {
 						if (!(toPiece & game->Side)) {
