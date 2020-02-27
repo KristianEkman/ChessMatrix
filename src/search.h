@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include "commons.h"
 
-#define SEARCH_THREADS 7
+#define SEARCH_THREADS 1
 
 uint g_SearchedNodes;
 bool g_Stopped;

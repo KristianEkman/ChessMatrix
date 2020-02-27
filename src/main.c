@@ -17,12 +17,25 @@
 #include "timeControl.h"
 #include "moves.h"
 #include "search.h"
+#include "ANN.h"
 
 
-void ComputerMove() {
-	g_topSearchParams.MoveTime = 5000;
+bool ComputerMove() {
 	Move move = Search(false);
-	int captIndex = MakeMove(move, &g_mainGame);
+	char sMove[5];
+	MoveToString(move, sMove);
+	printf("%s\n", sMove);
+
+	// todo: check draw
+	//  - repetition
+	//  - by material
+	//  - by 50 move rule	
+
+	if (move.MoveInfo != NotAMove && !DrawByRepetition(&g_mainGame)) {
+		int captIndex = MakeMove(move, &g_mainGame);
+		return true;
+	}
+	return false;
 }
 
 void ManualMove() {
@@ -66,6 +79,8 @@ int main(int argc, char* argv[]) {
 	AllocateHashTable(1024);
 	ClearHashTable();
 	StartPosition();
+	NewAnn();
+	Ann.LearnRate = 0.001;
 	printf("initialized\n");
 	EnterUciMode();
 	return 0;
@@ -212,6 +227,33 @@ void EnterUciMode() {
 	}
 }
 
+void Learn() {
+	DefaultSearch();
+	g_topSearchParams.MaxDepth = 2;
+	//ReadFen("8/8/8/8/8/3k4/8/3K1r2 w - - 0 1");
+	//char scan = ' ';
+
+	while (true)//scan != 'q')
+	{
+		//StartPosition();
+		ReadFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+		bool running = true;
+		while (running)
+		{
+			running = ComputerMove();
+
+			if (g_mainGame.PositionHistoryLength > 150) {
+				// instead of checking for draws
+				running = false;
+			}
+		}
+		PrintGame(&g_mainGame);
+		printf("Press a key for next game\n");
+		//scanf_s(" %c", &scan, 1);
+	}
+
+}
+
 int EnterInteractiveMode() {
 	char scan = 0;
 	while (scan != 'q')
@@ -231,6 +273,9 @@ int EnterInteractiveMode() {
 			break;
 		case 'c':
 			ComputerMove();
+			break;
+		case 'l':
+			Learn();
 			break;
 		case 't':
 			runAllTests();

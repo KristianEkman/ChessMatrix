@@ -1,7 +1,7 @@
 #include "commons.h"
 
 char PieceTypeSquarePatterns[6][64][9] =
-{ 
+{
 	{
 	{ 2,17,10 },
 	{ 3,16,18,11 },
@@ -604,6 +604,8 @@ short MaterialMatrix[2][12] = {
 	/*white*/{0, -305,-500,-1010,-100,-295,  0, -205, -400, -910, 0, -195},
 	/*black*/{0,  305, 500, 1010, 100, 295,  0,  205,  400,  910, 0,  195}
 };
+//                         NOPIECE,                  wB,   wR,    wQ,   wP,    wN,	  wK,          bB,    bR,  bQ,  bP,   bN,   bK
+double AnnPieceValue[23] = { 0.0001,0,0,0,0,0,0,0,0, -0.15, -0.25, -0.5, -0.05, -0.14, -0.99, 0, 0, 0.15, 0.25, 0.5, 0.05, 0.14, 0.99 };
 
 //white, black
 short PawnCapturePattern[2] = { 3, 5 };

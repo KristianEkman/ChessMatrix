@@ -8,4 +8,5 @@ extern const short EnpassantRankPattern[2];
 extern const char CastlesOffset[2];
 extern const int SideCastlingRights[2];
 extern const int Behind[2];
+double AnnPieceValue[23];
 

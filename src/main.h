@@ -10,6 +10,7 @@ void StartPosition();
 void InitScores();
 void InitHash();
 
+
 void EnterUciMode();
 int EnterInteractiveMode();
 void AdjustPositionImportance();

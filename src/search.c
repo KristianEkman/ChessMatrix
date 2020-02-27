@@ -7,6 +7,8 @@
 #include "timeControl.h"
 #include <time.h>
 #include <stdio.h>
+#include "ANN.h"
+#include "AnnMapper.h"
 
 
 void DefaultSearch() {
@@ -62,7 +64,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 	if (DrawByRepetition(game))
 		return 0;
 
-	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
+	int score = GetEval(game, moveScore);
 
 	if (game->Side == BLACK) {
 		if (score >= beta)
@@ -401,10 +403,9 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 		U64 prevHash = game->Hash;
 
 		int captIndex = MakeMove(move, game);
-		short g_alpha = MIN_SCORE;
-		short g_beta = MAX_SCORE;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.Score, 0);
-
+		
+		int score = AlphaBeta(MIN_SCORE, MAX_SCORE, prm->depth, captIndex, game, true, move.Score, 0);
+		
 		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].Score = score;
 		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
@@ -541,6 +542,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		}
 
 	} while (depth <= maxDepth && !g_Stopped);
+
 	float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
 	//PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 	printf("bestmove %s\n", bestMove);
@@ -591,6 +593,24 @@ Move Search(bool async) {
 		WaitForSingleObject(handle, INFINITE);
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
+
+		// learning algorithm
+		double annInput[69];
+		double output[1];
+		MapGameToAnnInput(&g_mainGame, &annInput);
+		// send game to ANN
+		double annValue = Compute(annInput, 69);
+
+		// range -8000 to 8000
+		// Scaling down score because dont want the ANN handle to big number. It might blow up.
+		short bestScore = g_topSearchParams.BestMove.Score;
+		if (bestScore != 0)
+		{
+			int i = 0;
+		}
+		double target[] = { (double)bestScore / (double)4000 };
+		BackProp(target, 1);
+
 		return g_topSearchParams.BestMove;
 	}
 

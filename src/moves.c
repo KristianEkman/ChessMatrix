@@ -31,7 +31,7 @@ void MovePiece(Game* game, int side01, int from, int to) {
 }
 
 void AssertGame(Game* game) {
-#ifdef _DEBUG
+#ifdef _DEBUGc
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -261,13 +261,13 @@ void SetLightScore(Move move, Game* game) {
 	int side01 = game->Side01;
 
 	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
+	//game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
 
-	PieceType pieceType = game->Squares[f];
+	//PieceType pieceType = game->Squares[f];
 
-	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
+	//char pt = pieceType & 7;
+	//game->PositionScore -= PositionValueMatrix[pt][side01][f];
+	//game->PositionScore += PositionValueMatrix[pt][side01][t];
 
 	if (captType && move.MoveInfo != EnPassantCapture)
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
@@ -285,17 +285,6 @@ void SetLightScore(Move move, Game* game) {
 		break;
 	case PromotionKnight:
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
-		break;
-	case KingMove:
-		KingPositionScore(move, game);
-		break;
-	case CastleShort:
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
-		break;
-	case CastleLong:
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
 		break;
 	case EnPassantCapture:
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
@@ -494,7 +483,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	short material1 = game->Material[1];
 
 	SetLightScore(move, game);
-	move.Score = game->Material[0] + game->Material[1] + game->PositionScore;
+	move.Score = game->Material[0] + game->Material[1];
 	//move.Score = GetEval(game, move.Score);
 	game->Material[0] = material0;
 	game->Material[1] = material1;

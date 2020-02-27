@@ -145,6 +145,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ANN.c" />
+    <ClCompile Include="AnnMapper.c" />
     <ClCompile Include="evaluation.c" />
     <ClCompile Include="hashTable.c" />
     <ClCompile Include="main.c" />
@@ -157,6 +159,8 @@
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ANN.h" />
+    <ClInclude Include="AnnMapper.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashTable.h" />
     <ClInclude Include="main.h" />

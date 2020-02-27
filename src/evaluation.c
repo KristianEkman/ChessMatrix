@@ -1,7 +1,8 @@
 #include "commons.h"
 #include "evaluation.h"
 #include <stdlib.h>
-
+#include "ANN.h"
+#include "AnnMapper.h"
 
 //#define MOBILITY 3 // for every square a rook or bishop can go to
 
@@ -311,58 +312,14 @@ short PassedPawn(int square, Game* game) {
 }
 
 short GetEval(Game* game, short moveScore) {
+	double annInput[69];
+	double output[1];
+	MapGameToAnnInput(game, &annInput);
+	// send game to ANN
+	double annScore = Compute(annInput, 69) * (double)4000; //Scaling up to centipawns
 
-	int score = moveScore;
-	//int mobil = 0;
-	int neg = -1;
-	for (size_t s = 0; s < 2; s++)
-	{
-		for (size_t p = 0; p < 16; p++)
-		{
-			Piece piece = game->Pieces[s][p];
-			if (piece.Off)
-				continue;
-			int i = piece.SquareIndex;
-			PieceType pieceType = piece.Type;
-			PieceType color = pieceType & (BLACK | WHITE);
-			PieceType pt = pieceType & 7;
-
-			switch (pt)
-			{
-			case ROOK:
-			{
-				score += neg * OpenRookFile(i, game);
-				//mobil += piece.Mobility;
-			}
-			break;
-			//case BISHOP:
-			//{
-			//	//mobil += piece.Mobility;
-			//}
-			// break;
-			//case KNIGHT: {
-			//	//outposts, protected by a pawn?
-			// Mobility of knights is set by piecetypeposition matrix
-			//}
-			// break;
-			case PAWN: {
-				score -= neg * DoublePawns(i, game, pieceType);
-				score += neg * PassedPawn(i, game);
-			}
-					 break;
-			case KING: {
-				score -= neg * KingExposed(i, game, color);
-			}
-					 break;
-			default:
-				break;
-			}
-		}
-		//score += neg * mobil * MOBILITY;
-		neg += 2; // -1 --> 1 // White then black
-	}
+	int score = moveScore + annScore;
 	return score;
-
 }
 
 short TotalMaterial(Game* game) {
