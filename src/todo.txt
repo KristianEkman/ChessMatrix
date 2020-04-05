@@ -1,3 +1,5 @@
+Se till så att draw by rep funkar.
+
 testa att slå av killer moves. Ger de något?
 
 testa om lmr funkar bättre nu.

@@ -884,7 +884,7 @@ void runAllTests() {
 	//MobilityRookTest();
 	DoublePawnsTest();
 	KingExposureTest();
-	PassedPawnTest();
+	//PassedPawnTest();
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/

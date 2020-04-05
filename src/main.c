@@ -125,7 +125,7 @@ void EnterUciMode() {
 				int fenLength = movesPos - fenPos; //position fen xxx...yyy moves
 				char fen[256];
 				memcpy(fen, pFen + 5, fenLength);
-				fen[fenLength + 1] = "\0";
+				fen[fenLength + 1] = '\0';
 				ReadFen(fen);
 			}
 
@@ -158,14 +158,14 @@ void EnterUciMode() {
 					if (streq(token, "depth")) {
 						char* depth = strtok(NULL, " ");
 						uint dep;
-						sscanf(depth, "%d", &dep);
-						g_topSearchParams.MaxDepth = dep - 1;
+						if (sscanf(depth, "%d", &dep) == 1)
+							g_topSearchParams.MaxDepth = dep - 1;
 					}
 					else if (streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");
 						int time = 0;
-						sscanf(movetime, "%d", &time);
-						g_topSearchParams.MoveTime = time;
+						if (sscanf(movetime, "%d", &time) == 1)
+							g_topSearchParams.MoveTime = time;
 					}
 					else if (streq(token, "wtime")) {
 						g_topSearchParams.TimeControl = true;
@@ -302,7 +302,7 @@ void StartPosition() {
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
 	g_mainGame.PositionHistoryLength = 0;
-	
+
 	InitHash();
 	InitScores();
 }
@@ -348,13 +348,6 @@ void PrintGame(Game* game) {
 	char fen[100];
 	WriteFen(fen);
 	printf("%s\n", fen);
-}
-
-void KingPositionScore(Move move, Game* game) {
-	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
-	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
-	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
 }
 
 PieceType parsePieceType(char c) {

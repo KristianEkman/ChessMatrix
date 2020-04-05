@@ -16,6 +16,7 @@ int SetCaptureOff(Game* game, int side, int squareIndex) {
 	}
 
 	printf("Invalid SetCaptureOff parameters\n");
+	return -1;
 }
 
 void MovePiece(Game* game, int side01, int from, int to) {
@@ -62,6 +63,13 @@ void AssertGame(Game* game) {
 		}
 	}
 #endif // _DEBUG
+}
+
+void KingPositionScore(Move move, Game* game) {
+	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
+	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
+	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
+	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
 }
 
 int MakeMove(Move move, Game* game) {

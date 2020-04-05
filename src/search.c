@@ -471,7 +471,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 		if (!getBestMoveFromHash(game->Hash, &bestMove))
 			break;
 
-		char* sMove[5];
+		char sMove[5];
 		MoveToString(bestMove, sMove);
 
 		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);

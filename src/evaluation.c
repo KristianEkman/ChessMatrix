@@ -351,7 +351,7 @@ short GetEval(Game* game, short moveScore) {
 			}
 					 break;
 			case KING: {
-				score -= neg * KingExposed(i, game, color);
+				score -= neg * KingExposed(i, game);
 			}
 					 break;
 			default:
