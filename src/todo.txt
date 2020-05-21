@@ -1,3 +1,17 @@
+Skapa en bra bok
+
+Inte välja drag med negativ ratio
+UCI info
+Stänga av med UCI
+
+Öppningsregler
+Center pawns
+Flytta en pjäs en gång.
+Inte flytta dam
+Rokad
+Minska öppningsreglernas betydelse gradvis efter 3ply
+
+
 Se till så att draw by rep funkar.
 
 testa att slå av killer moves. Ger de något?

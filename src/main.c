@@ -17,6 +17,7 @@
 #include "timeControl.h"
 #include "moves.h"
 #include "search.h"
+#include "book.h"
 
 
 void ComputerMove() {
@@ -66,6 +67,8 @@ int main(int argc, char* argv[]) {
 	AllocateHashTable(1024);
 	ClearHashTable();
 	StartPosition();
+	OwnBook = true;
+	loadBook("openings.abk");
 	printf("initialized\n");
 	EnterUciMode();
 	return 0;
@@ -78,7 +81,7 @@ void EnterUciMode() {
 	while (!streq(buf, "quit\n"))
 	{
 		if (startsWith(buf, "ucinewgame")) {
-			ClearHashTable();  // the reason is that estimation of next move is much easier.
+			ClearHashTable();
 			ResetDepthTimes();
 			stdout_wl("new game");
 		}
@@ -86,6 +89,7 @@ void EnterUciMode() {
 			stdout_wl("id name CChess");
 			stdout_wl("id author Kristian Ekman");
 			stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
+			stdout_wl("option name OwnBook type check default true");
 			stdout_wl("uciok");
 		}
 		else if (startsWith(buf, "isready")) {
@@ -105,6 +109,25 @@ void EnterUciMode() {
 					else {
 						stdout_wl("invalid Hash size value (1 - 2048)");
 					}
+					break;
+				}
+				token = strtok(NULL, " ");
+			}
+		}
+		else if (startsWith(buf, "setoption name OwnBook value")) {
+			//setoption name OwnBook value false
+			char* token = strtok(buf, " ");
+			while (token != NULL) {
+				if (streq(token, "value")) {
+					token = strtok(NULL, " ");
+					if (streq("true\n", token)) {
+						OwnBook = true;
+						stdout_wl("Opening book switched on");
+					}
+					else if (streq("false\n", token)) {
+						OwnBook = false;
+						stdout_wl("Opening book switched off");
+					}					
 					break;
 				}
 				token = strtok(NULL, " ");

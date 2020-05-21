@@ -17,7 +17,7 @@ typedef enum  {
 	KING, // 6	
 } PieceType;
 
-typedef enum Side {
+typedef enum {
 	WHITE = 8, //01000 >> 4 ger 0
 	BLACK = 16 //10000 >> 4 ger 1
 } Side;
@@ -38,7 +38,12 @@ typedef enum {
 	QueenMove = 12
 } MoveInfo;
 
-typedef struct Move {
+typedef struct {
+	char From;
+	char To;
+} MoveCoordinates;
+
+typedef struct {
 	char From;
 	char To;
 	char MoveInfo;
@@ -64,7 +69,7 @@ typedef struct {
 	int CheckMates;
 } PerftResult;
 
-typedef struct Piece {
+typedef struct {
 	PieceType Type;
 	bool Off;
 	unsigned char SquareIndex;

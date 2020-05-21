@@ -143,8 +143,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(ProjectDir)openings.abk $(OutputPath)openings.abk</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="book.c" />
     <ClCompile Include="evaluation.c" />
     <ClCompile Include="hashTable.c" />
     <ClCompile Include="main.c" />
@@ -157,6 +161,7 @@
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashTable.h" />
     <ClInclude Include="main.h" />
@@ -171,6 +176,12 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="openings.abk">
+      <DeploymentContent>true</DeploymentContent>
+      <FileType>Resx</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

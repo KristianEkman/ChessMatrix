@@ -59,7 +59,7 @@ void AssertGame(Game* game) {
 			}
 		}
 		if (pt != NOPIECE && !found) {
-			printf("Invalid game. Square piec not found.\n");
+			printf("Invalid game. Square piece not found.\n");
 		}
 	}
 #endif // _DEBUG

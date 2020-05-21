@@ -7,13 +7,13 @@ U64 ZobritsSides[2];
 U64 ZobritsCastlingRights[4];
 U64 ZobritsEnpassantFile[9];
 
-typedef enum HashEntryType {
+typedef enum {
 	EXACT,
 	ALPHA,
 	BETA
 } HashEntryType;
 
-typedef struct HashEntry {
+typedef struct {
 	int Key2;
 	short Score;
 	HashEntryType Type;
@@ -22,11 +22,11 @@ typedef struct HashEntry {
 	char To;
 } HashEntry;
 
-typedef struct EntrySlot {
+typedef struct {
 	U64 EntrySlots[SLOTS];
 } EntrySlot;
 
-typedef struct HashTable {
+typedef struct {
 	uint EntryCount;
 	EntrySlot* Entries;
 } HashTable;

@@ -5,6 +5,7 @@
 #include "moves.h"
 #include "hashTable.h"
 #include "timeControl.h"
+#include "book.h"
 #include <time.h>
 #include <stdio.h>
 
@@ -577,6 +578,17 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
 Move Search(bool async) {
+
+	Move bookMove = bestBookMove(&g_mainGame);
+	if (bookMove.MoveInfo != NotAMove) {
+		char sMove[5];
+		MoveToString(bookMove, sMove);
+		printf("bestmove %s\n", sMove);
+		fflush(stdout);
+		return bookMove;
+	}
+
+
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);

@@ -144,7 +144,7 @@ void HashTableRoundTrip() {
 	getScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	
-	getScoreFromHash(hash, 1, &score, &move, 0 , 0);
+	getScoreFromHash(hash, 1, &score, &move, 0, 0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
