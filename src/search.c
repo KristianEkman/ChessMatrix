@@ -142,7 +142,6 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 	}
 }
 
-
 int Reduction(int moveNo) {
 	//removes one depth for moves n and later
 	return min(moveNo / 15 + 1, 2);
@@ -444,7 +443,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
-	PlayerMove moves[400];
+	PlayerMove moves[350];
 	int movesCount = 0;
 	while (movesCount < depth)
 	{
@@ -520,7 +519,6 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 				break;
 			}
 		}
-
 	} while (depth <= maxDepth && !g_Stopped);
 	float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
 	//PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
@@ -567,7 +565,6 @@ Move Search(bool async) {
 		fflush(stdout);
 		return bookMove;
 	}
-
 
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
