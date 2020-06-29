@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 	AllocateHashTable(1024);
 	ClearHashTable();
 	StartPosition();
-	OwnBook = true;
+	OwnBook = false;
 	loadBook("openings.abk");
 	printf("initialized\n");
 	EnterUciMode();
@@ -92,7 +92,7 @@ void EnterUciMode() {
 			stdout_wl("id name CChess");
 			stdout_wl("id author Kristian Ekman");
 			stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
-			stdout_wl("option name OwnBook type check default true");
+			stdout_wl("option name OwnBook type check default false");
 			stdout_wl("uciok");
 		}
 		else if (startsWith(buf, "isready")) {
