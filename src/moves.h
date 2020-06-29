@@ -2,12 +2,20 @@
 #include <stdlib.h>
 #include "commons.h"
 
+
+typedef struct {
+	int CaptIndex;
+	GameState PrevGameState;
+	short PrevPositionScore;
+	U64 PrevHash;
+} Undos;
+
 void CreateMoves(Game* game, int depth);
 void CreateCaptureMoves(Game* game);
 void RemoveInvalidMoves(Game* game);
 int ValidMoves(Move* moves);
-int MakeMove(Move move, Game* mainGame);
-void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPositionScore, Game* game, U64 prevHash);
+Undos DoMove(Move move, Game* mainGame);
+void UndoMove(Game* game, Move move, Undos undos);
 void MakeNullMove(Game* game);
 void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash);
 

@@ -23,7 +23,7 @@
 void ComputerMove() {
 	g_topSearchParams.MoveTime = 5000;
 	Move move = Search(false);
-	int captIndex = MakeMove(move, &g_mainGame);
+	DoMove(move, &g_mainGame);
 }
 
 void ManualMove() {

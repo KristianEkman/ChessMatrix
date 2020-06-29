@@ -93,20 +93,16 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
+			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UndoMove(game, childMove, undos);
 				continue;
 			}
 			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UndoMove(game, childMove, undos);
 			if (score > alpha) {
 				if (score >= beta) {
 					free(localMoves);
@@ -123,20 +119,16 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
+			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UndoMove(game, childMove, undos);
 				continue;
 			}
 			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			UndoMove(game, childMove, undos);
 			if (score < beta) {
 				if (score <= alpha) {
 					free(localMoves);
@@ -156,7 +148,7 @@ int Reduction(int moveNo) {
 	return min(moveNo / 15 + 1, 2);
 }
 
-short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, bool doNull, short moveScore, int deep_in) {
+short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (g_Stopped)
 		return moveScore; // should not be used;
 
@@ -193,7 +185,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			U64 prevHash = game->Hash;
 			MakeNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, captIndex, game, false, moveScore, deep_in + 1);
+				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, game, false, moveScore, deep_in + 1);
 				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return alpha;
@@ -201,7 +193,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 			}
 			else //(game->Side == WHITE)
 			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, captIndex, game, false, moveScore, deep_in + 1);
+				int nullScore = AlphaBeta(beta - 1, beta, depth - r, game, false, moveScore, deep_in + 1);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
 					UnMakeNullMove(prevState, game, prevHash);
 					return beta;
@@ -235,23 +227,19 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			GameState state = game->State;
-			int prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-
-			int captIndex = MakeMove(childMove, game);
+			Undos undos = DoMove(childMove, game);
 
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UndoMove(game, childMove, undos);
 				continue;
 			}
 			legalCount++;
 			//int red = Reduction(i); 
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			score = AlphaBeta(alpha, beta, depth - 1, game, true, childMove.Score, deep_in + 1);
+			UndoMove(game, childMove, undos);
 
 			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
@@ -261,7 +249,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 						addHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
 						free(localMoves);
 
-						if (captIndex == -1) {
+						if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
 						}
@@ -296,21 +284,18 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 		for (int i = 0; i < moveCount; i++)
 		{
 			Move childMove = localMoves[i];
-			GameState state = game->State;
-			short prevPosScore = game->PositionScore;
-			U64 prevHash = game->Hash;
-			int captIndex = MakeMove(childMove, game);
+			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
-				UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+				UndoMove(game, childMove, undos);
 				continue;
 			}
 			legalCount++;
 			//int red = Reduction(i);
-			score = AlphaBeta(alpha, beta, depth - 1, captIndex, game, true, childMove.Score, deep_in + 1);
-			UnMakeMove(childMove, captIndex, state, prevPosScore, game, prevHash);
+			score = AlphaBeta(alpha, beta, depth - 1, game, true, childMove.Score, deep_in + 1);
+			UndoMove(game, childMove, undos);
 
 			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
@@ -318,7 +303,7 @@ short AlphaBeta(short alpha, short beta, int depth, int captIndex, Game* game, b
 				if (score < beta) {
 					if (score <= alpha) {
 						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
-						if (captIndex == -1) {
+						if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
 						}
@@ -397,21 +382,16 @@ DWORD WINAPI SearchThread(ThreadParams* prm) {
 
 		Game* game = &(g_threadGames[prm->threadID]);
 		Move move = g_rootMoves.moves[moveIndex];
-		GameState gameState = game->State;
-		int positionScore = game->PositionScore;
-		U64 prevHash = game->Hash;
 
-		int captIndex = MakeMove(move, game);
+		Undos undos = DoMove(move, game);
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, captIndex, game, true, move.Score, 0);
+		int score = AlphaBeta(g_alpha, g_beta, prm->depth, game, true, move.Score, 0);
 
 		if (!g_Stopped)
 			g_rootMoves.moves[moveIndex].Score = score;
-		UnMakeMove(move, captIndex, gameState, positionScore, game, prevHash);
-
+		UndoMove(game, move, undos);
 		moveIndex = GetNextFreeMove();
-
 	} while (moveIndex < prm->moveCount);
 	ExitThread(0);
 	return 0;
