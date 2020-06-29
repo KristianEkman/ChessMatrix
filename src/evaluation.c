@@ -315,6 +315,10 @@ short GetEval(Game* game, short moveScore) {
 	int score = moveScore;
 	//int mobil = 0;
 	int neg = -1;
+	int opening = 0;
+	if (game->MovesBufferLength < 12) {
+		opening = 1;
+	}
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -322,6 +326,16 @@ short GetEval(Game* game, short moveScore) {
 			Piece piece = game->Pieces[s][p];
 			if (piece.Off)
 				continue;
+
+			// penalty for moving a piece more than once in the opening.
+			if (opening)
+			{
+				if (piece.MoveCount > 1)
+					score -= (neg * SAME_TWICE);
+				if (piece.Type == QUEEN)
+					score -= (neg * QUEEN_EARLY);
+			}
+
 			int i = piece.SquareIndex;
 			PieceType pieceType = piece.Type;
 			PieceType color = pieceType & (BLACK | WHITE);
@@ -361,6 +375,8 @@ short GetEval(Game* game, short moveScore) {
 		//score += neg * mobil * MOBILITY;
 		neg += 2; // -1 --> 1 // White then black
 	}
+
+
 	return score;
 
 }

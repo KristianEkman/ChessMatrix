@@ -99,6 +99,7 @@ int MakeMove(Move move, Game* game) {
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
+	game->Pieces[side01][move.PieceIdx].MoveCount++;
 
 	U64 hash = game->Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
@@ -329,6 +330,7 @@ void UnMakeMove(Move move, int captIndex, GameState prevGameState, short prevPos
 		game->Squares[move.To] = capture;
 
 	game->Pieces[otherSide01][move.PieceIdx].SquareIndex = move.From;
+	game->Pieces[otherSide01][move.PieceIdx].MoveCount--;
 	if (capture)
 		game->Pieces[!otherSide01][captIndex].Off = false;
 

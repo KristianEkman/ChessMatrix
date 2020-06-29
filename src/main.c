@@ -54,7 +54,10 @@ void InitPieceList() {
 		g_mainGame.Pieces[s][15].Type = KING | side[s];
 
 		for (int p = 0; p < 16; p++)
+		{
 			g_mainGame.Pieces[s][p].Off = true;
+			g_mainGame.Pieces[s][p].MoveCount = 0;
+		}
 	}
 }
 

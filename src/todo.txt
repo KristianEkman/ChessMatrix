@@ -1,16 +1,9 @@
-Skapa en bra bok
-
-Inte välja drag med negativ ratio
-UCI info
-Stänga av med UCI
 
 Öppningsregler
-Center pawns
 Flytta en pjäs en gång.
 Inte flytta dam
 Rokad
 Minska öppningsreglernas betydelse gradvis efter 3ply
-
 
 Se till så att draw by rep funkar.
 
@@ -29,9 +22,6 @@ Eval:
     ANN
 	Isolated pawns are bad.
 	
-	Opening
-		Not move piece twice
-
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 
