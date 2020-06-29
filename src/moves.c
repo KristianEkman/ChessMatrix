@@ -840,13 +840,9 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	{
 		if (validMoves[i].From == move.From && validMoves[i].To == move.To) {
 			playerMove.Move = validMoves[i];
-			playerMove.PreviousGameState = game->State;
 			playerMove.Invalid = false;
-			playerMove.PreviousPositionScore = game->PositionScore;
-			playerMove.PreviousHash = game->Hash;
-
 			Undos undos = DoMove(validMoves[i], game);
-			playerMove.CaptureIndex = undos.CaptIndex;
+			playerMove.Undos = undos;
 			return playerMove;
 		}
 	}
@@ -858,22 +854,12 @@ PlayerMove MakePlayerMove(char* sMove) {
 	return MakePlayerMoveOnThread(&g_mainGame, sMove);
 }
 
-void UnMakePlayerMove(PlayerMove playerMove) {
-	Undos undos;
-	undos.CaptIndex = playerMove.CaptureIndex;
-	undos.PrevGameState = playerMove.PreviousGameState;
-	undos.PrevHash = playerMove.PreviousHash;
-	undos.PrevPositionScore = playerMove.PreviousPositionScore;
-	UndoMove(&g_mainGame, playerMove.Move, undos);
+void UnMakePlayerMove(PlayerMove playerMove) {	
+	UndoMove(&g_mainGame, playerMove.Move, playerMove.Undos);
 }
 
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove) {
-	Undos undos;
-	undos.CaptIndex = playerMove.CaptureIndex;
-	undos.PrevGameState = playerMove.PreviousGameState;
-	undos.PrevHash = playerMove.PreviousHash;
-	undos.PrevPositionScore = playerMove.PreviousPositionScore;
-	UndoMove(game, playerMove.Move, undos);
+	UndoMove(game, playerMove.Move, playerMove.Undos);
 }
 
 

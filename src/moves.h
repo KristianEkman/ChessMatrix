@@ -2,14 +2,6 @@
 #include <stdlib.h>
 #include "commons.h"
 
-
-typedef struct {
-	int CaptIndex;
-	GameState PrevGameState;
-	short PrevPositionScore;
-	U64 PrevHash;
-} Undos;
-
 void CreateMoves(Game* game, int depth);
 void CreateCaptureMoves(Game* game);
 void RemoveInvalidMoves(Game* game);

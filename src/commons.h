@@ -77,13 +77,18 @@ typedef struct {
 	//unsigned char Mobility; // this performed bad, but nice idea
 } Piece;
 
+
+typedef struct {
+	int CaptIndex;
+	GameState PrevGameState;
+	short PrevPositionScore;
+	U64 PrevHash;
+} Undos;
+
 typedef struct {
 	Move Move;
-	int CaptureIndex;
-	GameState PreviousGameState;
+	Undos Undos;
 	bool Invalid;
-	int PreviousPositionScore;
-	U64 PreviousHash;
 } PlayerMove;
 
 
