@@ -441,12 +441,11 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	strcpy(pv, " ");
 	pv++;
 	Game* game = &g_mainGame;
-
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
 	PlayerMove moves[350];
 	int movesCount = 0;
-	while (movesCount < depth)
+	while (movesCount < (depth + 10)) // hack: shows moves found when extending search (checks), but not going into cycles.
 	{
 		Move bestMove;
 		if (!getBestMoveFromHash(game->Hash, &bestMove))
@@ -521,11 +520,8 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 			}
 		}
 	} while (depth <= maxDepth && !g_Stopped);
-	float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
-	//PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
 	printf("bestmove %s\n", bestMove);
 	fflush(stdout);
-
 	ExitThread(0);
 	return 0;
 }
