@@ -32,13 +32,13 @@ typedef struct {
 } HashTable;
 
 
-void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
-bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta);
-bool getBestMoveFromHash(U64 hash, Move* move);
+void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
+bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta);
+bool GetBestMoveFromHash(U64 hash, Move* move);
 
 void AllocateHashTable(uint megabytes);
 void GenerateZobritsKeys();
 void ClearHashTable();
-bool getBestMoveFromHash(U64 hash, Move* move);
+bool GetBestMoveFromHash(U64 hash, Move* move);
 void PrintHashStats();
 uint HashFull();

@@ -1,7 +1,5 @@
 
 Öppningsregler
-Flytta en pjäs en gång.
-Inte flytta dam
 Rokad
 Minska öppningsreglernas betydelse gradvis efter 3ply
 
@@ -15,7 +13,6 @@ testa om lmr funkar bättre nu.
 global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
 Books
-	slå av och på.
 	Endgame tablebases
 
 Eval: 
@@ -29,8 +26,6 @@ Testa negamax igen.
 
 Fifty move rule, unsufficient material
 
-Räkna på hur stor hash som behövs.
-
 Mer pruning
 	Aspiration window
 	Futilty pruning
@@ -39,7 +34,6 @@ Mer pruning
 Fler testafall.
 
 Linux kompatibel.
-
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)

@@ -110,13 +110,13 @@ typedef struct {
 } Game;
 
 typedef struct {
-	int threadID;
-	int moveCount;
-	int depth;
+	int ThreadID;
+	int MoveCount;
+	int Depth;
 } ThreadParams;
 
 typedef struct {
-	Move moves[100];
+	Move Moves[100];
 	int Length;
 } GlobalRootMoves;
 

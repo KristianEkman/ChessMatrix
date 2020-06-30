@@ -129,22 +129,22 @@ void HashTableRoundTrip() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	addHashScore(hash, expected, 1, EXACT, 1, 2);
+	AddHashScore(hash, expected, 1, EXACT, 1, 2);
 	int depth = 0;
 	short score = 0;
 	Move move;
-	getScoreFromHash(hash, 1, &score, &move, 3000 ,0);
+	GetScoreFromHash(hash, 1, &score, &move, 3000 ,0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	U64 hash2 = hash + 1;
 	short expected2 = -4000;
-	addHashScore(hash2, expected2, 1, EXACT, 10, 12);
+	AddHashScore(hash2, expected2, 1, EXACT, 10, 12);
 
 	short score2;
-	getScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
+	GetScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	
-	getScoreFromHash(hash, 1, &score, &move, 0, 0);
+	GetScoreFromHash(hash, 1, &score, &move, 0, 0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
@@ -153,27 +153,27 @@ void HashTableDepthTest() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 
-	addHashScore(hash, 3000, 2, EXACT, 40, 50 );
+	AddHashScore(hash, 3000, 2, EXACT, 40, 50 );
 	int depth = 2;
 	short score;
 	Move move;
-	getScoreFromHash(hash, depth, &score, &move, 100, 200);
+	GetScoreFromHash(hash, depth, &score, &move, 100, 200);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	addHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
+	AddHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
 	short score2 = 0;
-	getScoreFromHash(hash, 2,  &score2, &move, 30, 60);
+	GetScoreFromHash(hash, 2,  &score2, &move, 30, 60);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	addHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
-	getScoreFromHash(hash, 3, &score, &move, 30, 31);
+	AddHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
+	GetScoreFromHash(hash, 3, &score, &move, 30, 31);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
 void HashTablePerformance(int iterations) {
 	printf("%s\n", __func__);
 	ClearHashTable();
-	U64 hash = llrand();
+	U64 hash = Llrand();
 	short expected = MIN_SCORE;
 	int depth = 1;
 	short score = 0;
@@ -185,8 +185,8 @@ void HashTablePerformance(int iterations) {
 		if (expected > MAX_SCORE)
 			expected = MIN_SCORE;
 		hash++;
-		addHashScore(hash, expected, 1, EXACT, 1, 1);		
-		Assert(getScoreFromHash(hash, depth, &score, &move, 100, 200), "No score returned from hash");
+		AddHashScore(hash, expected, 1, EXACT, 1, 1);		
+		Assert(GetScoreFromHash(hash, depth, &score, &move, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
@@ -822,12 +822,12 @@ void PassedPawnTest() {
 
 void indexOfTest() {
 	char* s2 = "Kristian Ekman";
-	Assert(indexOf(s2, "Ekman") == 9, "index of failed");
+	Assert(IndexOf(s2, "Ekman") == 9, "index of failed");
 }
 
 void containsNotTest() {
 	char* s2 = "Kristian Ekman";
-	AssertNot(contains(s2, "annika"), "containsNotTest failed");
+	AssertNot(Contains(s2, "annika"), "containsNotTest failed");
 }
 
 void _runTests() {

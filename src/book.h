@@ -19,7 +19,7 @@ typedef struct {
 	BookEntry bookEntry;
 } HashBookEntry;
 
-void loadBook(char* fileName);
-void closeBook();
-Move bestBookMove(Game* game);
+void LoadBook(char* fileName);
+void CloseBook();
+Move BestBookMove(Game* game);
 bool OwnBook;

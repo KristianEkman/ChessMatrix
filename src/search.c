@@ -170,7 +170,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 	//Probe hash
 	short score = 0; Move pvMove;
 	pvMove.MoveInfo = NotAMove;
-	if (getScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta)) {
+	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta)) {
 		return score;
 	}
 
@@ -245,7 +245,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 				bestMove = childMove;
 				if (score > alpha) {
 					if (score >= beta) {
-						addHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
+						AddHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
 						free(localMoves);
 
 						if (undos.CaptIndex == -1) {
@@ -271,9 +271,9 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			return alpha;
 
 		if (alpha != oldAlpha)
-			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
 
 		return alpha;
 	}
@@ -301,7 +301,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 				bestMove = childMove;
 				if (score < beta) {
 					if (score <= alpha) {
-						addHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+						AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
 						if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
@@ -325,9 +325,9 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			return beta;
 
 		if (beta != oldBeta)
-			addHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			addHashScore(game->Hash, beta, depth, BETA, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, beta, depth, BETA, bestMove.From, bestMove.To);
 		return beta;
 	}
 }
@@ -380,19 +380,19 @@ DWORD WINAPI ScoreRootMoves(ThreadParams* prm) {
 		//if (prm->depth > 7)
 			//printf("Start Thread %d on move %d\n", prm->threadID, moveIndex);
 
-		Game* game = &(g_threadGames[prm->threadID]);
-		Move move = g_rootMoves.moves[moveIndex];
+		Game* game = &(g_threadGames[prm->ThreadID]);
+		Move move = g_rootMoves.Moves[moveIndex];
 
 		Undos undos = DoMove(move, game);
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
-		int score = AlphaBeta(g_alpha, g_beta, prm->depth, game, true, move.Score, 0);
+		int score = AlphaBeta(g_alpha, g_beta, prm->Depth, game, true, move.Score, 0);
 
 		if (!g_Stopped)
-			g_rootMoves.moves[moveIndex].Score = score;
+			g_rootMoves.Moves[moveIndex].Score = score;
 		UndoMove(game, move, undos);
 		moveIndex = GetNextFreeMove();
-	} while (moveIndex < prm->moveCount);
+	} while (moveIndex < prm->MoveCount);
 	ExitThread(0);
 	return 0;
 }
@@ -418,15 +418,15 @@ void StartSearchThreads(int depth, int moveCount) {
 		if (i > moveCount - 1) //in case more threads than moves
 			threadHandles[i] = CreateThread(NULL, 0, DoNothingThread, NULL, 0, NULL);
 		else {
-			tps->threadID = i;
-			tps->depth = depth;
-			tps->moveCount = moveCount;
+			tps->ThreadID = i;
+			tps->Depth = depth;
+			tps->MoveCount = moveCount;
 			threadHandles[i] = CreateThread(NULL, 0, ScoreRootMoves, tps, 0, NULL);
 			tps++;
 		}
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, g_mainGame.Side);
+	SortMoves(g_rootMoves.Moves, moveCount, g_mainGame.Side);
 	//free(tps);
 }
 
@@ -447,7 +447,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	while (movesCount < (depth + 10)) // hack: shows moves found when extending search (checks), but not going into cycles.
 	{
 		Move bestMove;
-		if (!getBestMoveFromHash(game->Hash, &bestMove))
+		if (!GetBestMoveFromHash(game->Hash, &bestMove))
 			break;
 
 		char sMove[5];
@@ -486,7 +486,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	RemoveInvalidMoves(&g_mainGame);
 	int moveCount = g_mainGame.MovesBufferLength;
 	g_rootMoves.Length = moveCount;
-	memcpy(g_rootMoves.moves, g_mainGame.MovesBuffer, moveCount * sizeof(Move));
+	memcpy(g_rootMoves.Moves, g_mainGame.MovesBuffer, moveCount * sizeof(Move));
 
 	int depth = 1;
 	char bestMove[5];
@@ -496,13 +496,13 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 		clock_t depStart = clock();
 		StartSearchThreads(depth, moveCount);
 		if (!g_Stopped) { // avbrutna depths ger felaktigt resultat.
-			g_topSearchParams.BestMove = g_rootMoves.moves[0];
-			bestScore = g_rootMoves.moves[0].Score;
-			MoveToString(g_rootMoves.moves[0], bestMove);
+			g_topSearchParams.BestMove = g_rootMoves.Moves[0];
+			bestScore = g_rootMoves.Moves[0].Score;
+			MoveToString(g_rootMoves.Moves[0], bestMove);
 			depth++;
 			float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
 			if (depth > 3)
-				PrintBestLine(g_rootMoves.moves[0], depth, ellapsed);
+				PrintBestLine(g_rootMoves.Moves[0], depth, ellapsed);
 			if ((g_mainGame.Side == WHITE && bestScore < -7000) || (g_mainGame.Side == BLACK && bestScore > 7000))
 			{
 				g_Stopped = true;
@@ -553,7 +553,7 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 // When async is set the result is printed to stdout. Not returned.
 Move Search(bool async) {
 
-	Move bookMove = bestBookMove(&g_mainGame);
+	Move bookMove = BestBookMove(&g_mainGame);
 	if (bookMove.MoveInfo != NotAMove) {
 		char sMove[5];
 		MoveToString(bookMove, sMove);

@@ -1,16 +1,16 @@
 #pragma once
 #include "commons.h"
 
-int parseChar(char c);
+int ParseChar(char c);
 
-U64 llrand();
+U64 Llrand();
 
-bool streq(char s1[], char s2[]);
+bool Streq(char s1[], char s2[]);
 
-bool startsWith(char a[], char b[]);
+bool StartsWith(char a[], char b[]);
 
-void stdout_wl(char* text);
+void Stdout_wl(char* text);
 
-bool contains(char a[], char b[]);
+bool Contains(char a[], char b[]);
 
-int indexOf(char * a, char * b);
+int IndexOf(char * a, char * b);

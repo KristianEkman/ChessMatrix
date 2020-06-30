@@ -33,7 +33,7 @@ void ManualMove() {
 	fseek(stdin, 0, SEEK_END);
 	PlayerMove pm = MakePlayerMove(sMove);
 	if (pm.Invalid)
-		stdout_wl("Ivalid move");
+		Stdout_wl("Ivalid move");
 }
 
 void InitPieceList() {
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	StartPosition();
 	OwnBook = false;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
-	loadBook("openings.abk");
+	LoadBook("openings.abk");
 #endif // DEBUG
 
 	printf("initialized\n");
@@ -86,65 +86,65 @@ void EnterUciMode() {
 #define UCI_BUF_SIZE 5000
 	char buf[UCI_BUF_SIZE];
 	fgets(buf, 5000, stdin);
-	while (!streq(buf, "quit\n"))
+	while (!Streq(buf, "quit\n"))
 	{
-		if (startsWith(buf, "ucinewgame")) {
+		if (StartsWith(buf, "ucinewgame")) {
 			ClearHashTable();
 			ResetDepthTimes();
-			stdout_wl("new game");
+			Stdout_wl("new game");
 		}
-		else if (startsWith(buf, "uci")) {
-			stdout_wl("id name CChess");
-			stdout_wl("id author Kristian Ekman");
-			stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
-			stdout_wl("option name OwnBook type check default false");
-			stdout_wl("uciok");
+		else if (StartsWith(buf, "uci")) {
+			Stdout_wl("id name CChess");
+			Stdout_wl("id author Kristian Ekman");
+			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
+			Stdout_wl("option name OwnBook type check default false");
+			Stdout_wl("uciok");
 		}
-		else if (startsWith(buf, "isready")) {
-			stdout_wl("readyok");
+		else if (StartsWith(buf, "isready")) {
+			Stdout_wl("readyok");
 		}
-		else if (startsWith(buf, "setoption name Hash value")) {
+		else if (StartsWith(buf, "setoption name Hash value")) {
 			//setoption name Hash value 32
 			char* token = strtok(buf, " ");
 			while (token != NULL) {
-				if (streq(token, "value")) {
+				if (Streq(token, "value")) {
 					token = strtok(NULL, " ");
 					int mb = atoi(token);
 					if (mb >= 1 && mb <= 2048) { // actual limit is 32760mb
 						AllocateHashTable(mb);
-						stdout_wl("new hash size set");
+						Stdout_wl("new hash size set");
 					}
 					else {
-						stdout_wl("invalid Hash size value (1 - 2048)");
+						Stdout_wl("invalid Hash size value (1 - 2048)");
 					}
 					break;
 				}
 				token = strtok(NULL, " ");
 			}
 		}
-		else if (startsWith(buf, "setoption name OwnBook value")) {
+		else if (StartsWith(buf, "setoption name OwnBook value")) {
 			//setoption name OwnBook value false
 			char* token = strtok(buf, " ");
 			while (token != NULL) {
-				if (streq(token, "value")) {
+				if (Streq(token, "value")) {
 					token = strtok(NULL, " ");
-					if (streq("true\n", token)) {
+					if (Streq("true\n", token)) {
 						OwnBook = true;
-						stdout_wl("Opening book switched on");
+						Stdout_wl("Opening book switched on");
 					}
-					else if (streq("false\n", token)) {
+					else if (Streq("false\n", token)) {
 						OwnBook = false;
-						stdout_wl("Opening book switched off");
+						Stdout_wl("Opening book switched off");
 					}					
 					break;
 				}
 				token = strtok(NULL, " ");
 			}
 		}
-		else if (startsWith(buf, "position ")) {
+		else if (StartsWith(buf, "position ")) {
 			//postion fen | moves
-			int movesPos = indexOf(buf, " moves");
-			if (contains(buf, " fen "))
+			int movesPos = IndexOf(buf, " moves");
+			if (Contains(buf, " fen "))
 			{
 				char* pFen = strstr(buf, " fen ");
 				int fenPos = pFen - buf + 5;
@@ -160,11 +160,11 @@ void EnterUciMode() {
 				ReadFen(fen);
 			}
 
-			if (contains(buf, "startpos")) {
+			if (Contains(buf, "startpos")) {
 				StartPosition();
 			}
 
-			if (contains(buf, " moves "))
+			if (Contains(buf, " moves "))
 			{
 				char* pMoves = strstr(buf, " moves ");
 				char* token = strtok(pMoves, " ");
@@ -176,9 +176,9 @@ void EnterUciMode() {
 				AssertGame(&g_mainGame);
 			}
 		}
-		else if (startsWith(buf, "go ")) {
+		else if (StartsWith(buf, "go ")) {
 			SetSearchDefaults();
-			if (contains(buf, "infinite")) {
+			if (Contains(buf, "infinite")) {
 				g_topSearchParams.MaxDepth = 40;
 				g_topSearchParams.TimeControl = false;
 				Search(true);
@@ -186,38 +186,38 @@ void EnterUciMode() {
 			else {
 				char* token = strtok(buf, " ");
 				while (token != NULL) {
-					if (streq(token, "depth")) {
+					if (Streq(token, "depth")) {
 						char* depth = strtok(NULL, " ");
 						uint dep;
 						if (sscanf(depth, "%d", &dep) == 1)
 							g_topSearchParams.MaxDepth = dep - 1;
 					}
-					else if (streq(token, "movetime")) {
+					else if (Streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");
 						int time = 0;
 						if (sscanf(movetime, "%d", &time) == 1)
 							g_topSearchParams.MoveTime = time;
 					}
-					else if (streq(token, "wtime")) {
+					else if (Streq(token, "wtime")) {
 						g_topSearchParams.TimeControl = true;
 						char* wtime = strtok(NULL, " ");
 						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);
 						//go wtime 900000 btime 900000 winc 0 binc 0
 					}
-					else if (streq(token, "btime")) {
+					else if (Streq(token, "btime")) {
 						g_topSearchParams.TimeControl = true;
 						char* btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
 					}
-					else if (streq(token, "winc")) {
+					else if (Streq(token, "winc")) {
 						char* winc = strtok(NULL, " ");
 						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
 					}
-					else if (streq(token, "binc")) {
+					else if (Streq(token, "binc")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
 					}
-					else if (streq(token, "movestogo")) {
+					else if (Streq(token, "movestogo")) {
 						char* binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.MovesTogo);
 					}
@@ -230,18 +230,18 @@ void EnterUciMode() {
 				Search(true);
 			}
 		}
-		else if (streq(buf, "stop\n")) {
+		else if (Streq(buf, "stop\n")) {
 			g_Stopped = true;
 		}
-		else if (streq(buf, "i\n")) {
+		else if (Streq(buf, "i\n")) {
 			EnterInteractiveMode();
-			stdout_wl("In uci mode");
+			Stdout_wl("In uci mode");
 		}
-		else if (streq(buf, "\n")) {
+		else if (Streq(buf, "\n")) {
 			
 		}
 		else {
-			stdout_wl("unknown command");
+			Stdout_wl("unknown command");
 		}
 		fgets(buf, UCI_BUF_SIZE, stdin);
 	}
@@ -296,7 +296,7 @@ int EnterInteractiveMode() {
 		case 'q':
 			break;
 		default:
-			stdout_wl("Not an option");
+			Stdout_wl("Not an option");
 			break;
 		}
 	}
@@ -501,7 +501,7 @@ void ReadFen(char* fen) {
 		char c = fen[index];
 		index++;
 		if (isdigit(c)) {
-			int dig = parseChar(c);
+			int dig = ParseChar(c);
 			file += dig;
 		}
 		else if (c == '/') {

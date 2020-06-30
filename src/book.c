@@ -10,7 +10,7 @@ HashBookEntry* hashBook;
 int entryCount;
 char crap[25200];
 
-void loadBook(char* fileName) {
+void LoadBook(char* fileName) {
 	struct stat st;
 	unsigned long fileSize;
 	if (stat(fileName, &st) == 0)
@@ -44,7 +44,7 @@ void loadBook(char* fileName) {
 	}
 	free(bookFile);
 
-	playBookPosition(&g_mainGame, 0);
+	PlayBookPosition(&g_mainGame, 0);
 	int unresolved = 0;
 	for (int i = 0; i < entryCount; i++)
 		if (hashBook[i].positionHash == 0)
@@ -54,7 +54,7 @@ void loadBook(char* fileName) {
 	printf("book loaded\n");
 }
 
-playBookPosition(Game* game, int bookIndex) {
+PlayBookPosition(Game* game, int bookIndex) {
 	// plays all moves in book and stores its hash key for lookup later.
 	hashBook[bookIndex].positionHash = game->Hash;
 
@@ -72,19 +72,19 @@ playBookPosition(Game* game, int bookIndex) {
 	}
 
 	if (hbe.bookEntry.nextMove > -1)
-		playBookPosition(game, hbe.bookEntry.nextMove);
+		PlayBookPosition(game, hbe.bookEntry.nextMove);
 	UnMakePlayerMoveOnThread(game, pMove);
 
 	if (hbe.bookEntry.nextSibling > -1) {
-		playBookPosition(game, hbe.bookEntry.nextSibling);
+		PlayBookPosition(game, hbe.bookEntry.nextSibling);
 	}
 }
 
-void closeBook() {
+void CloseBook() {
 	free(hashBook);
 }
 
-Move bestBookMove(Game* game)
+Move BestBookMove(Game* game)
 {
 	Move foundMove;
 	foundMove.MoveInfo = NotAMove;

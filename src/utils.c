@@ -5,7 +5,7 @@
 
 
 
-int parseChar(char c) {
+int ParseChar(char c) {
 	switch (c)
 	{
 	case '0': return 0;
@@ -31,7 +31,7 @@ U64 _llrand() {
 	return rnd_seed * 2685821657736338717LL;
 }
 
-U64 llrand() {
+U64 Llrand() {
 	U64 r = 0;
 
 	for (int i = 0; i < 5; ++i) {
@@ -42,29 +42,29 @@ U64 llrand() {
 }
 
 
-bool streq(char s1[], char s2[])
+bool Streq(char s1[], char s2[])
 {
 	return strcmp(s1, s2) == 0;
 }
 
-bool startsWith(char a[], char b[])
+bool StartsWith(char a[], char b[])
 {
 	if (strncmp(a, b, strlen(b)) == 0) return true;
 	return false;
 }
 
-bool contains(char a[], char b[]) {
+bool Contains(char a[], char b[]) {
 	return strstr(a, b) != NULL;	
 }
 
-int indexOf(char * a, char * b) {
+int IndexOf(char * a, char * b) {
 	char * p = strstr(a, b);
 	if (p == NULL) return -1;
 	return p -  a;
 }
 
 
-void stdout_wl(char* text) {
+void Stdout_wl(char* text) {
 	printf("%s\n", text);
 	fflush(stdout);
 }

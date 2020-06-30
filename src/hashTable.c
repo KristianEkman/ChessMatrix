@@ -19,7 +19,7 @@ HashTable H_Table;
 int HashTableEntries;
 int HashTableOverWrites;
 
-void addHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
+void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to) {
 	uint key2 = hash & 0x7FFFFFFF; // The scond key is just 31 bit but it seems to be sufficient.
 	U64 pack = key2 & 0x7FFFFFFF;
 	pack |= (((U64)score + MAX_SCORE) << 31); //Make sure it is positive by adding max score.
@@ -61,7 +61,7 @@ void addHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 }
 
 
-bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
+bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
@@ -106,7 +106,7 @@ bool getScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short al
 	return false;
 }
 
-bool getBestMoveFromHash(U64 hash, Move* move) {
+bool GetBestMoveFromHash(U64 hash, Move* move) {
 	//uint idx = (uint)((hash >> 32) % H_Table.EntryCount);
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
@@ -127,22 +127,22 @@ bool getBestMoveFromHash(U64 hash, Move* move) {
 }
 
 void GenerateZobritsKeys() {
-	StartHash = llrand();
+	StartHash = Llrand();
 	for (int i = 0; i < 23; i++) //only using 16 of these, but King | BLACK is 22. See also PieceType enum.
 		for (int s = 0; s < 64; s++)
-			ZobritsPieceTypesSquares[i][s] = llrand();
+			ZobritsPieceTypesSquares[i][s] = Llrand();
 	//Setting nopiece to zeros. Will not affect hash.
 	for (int i = 0; i < 64; i++)
 		ZobritsPieceTypesSquares[0][i] = 0;
 
-	ZobritsSides[0] = llrand();
-	ZobritsSides[1] = llrand();
+	ZobritsSides[0] = Llrand();
+	ZobritsSides[1] = Llrand();
 	for (int i = 0; i < 4; i++)
-		ZobritsCastlingRights[i] = llrand();
+		ZobritsCastlingRights[i] = Llrand();
 
 	ZobritsEnpassantFile[0] = 0; //no enpassant file
 	for (int i = 1; i < 9; i++)
-		ZobritsEnpassantFile[i] = llrand();
+		ZobritsEnpassantFile[i] = Llrand();
 }
 
 void AllocateHashTable(uint megabytes) {
