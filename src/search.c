@@ -13,7 +13,7 @@
 void SetSearchDefaults() {
 	g_topSearchParams.BlackIncrement = 0;
 	g_topSearchParams.BlackTimeLeft = 0;
-	g_topSearchParams.MaxDepth = 30;
+	g_topSearchParams.MaxDepth = 40;
 	g_topSearchParams.MoveTime = 0;
 	g_topSearchParams.TimeControl = false;
 	g_topSearchParams.WhiteIncrement = 0;
@@ -176,7 +176,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 
 	//NULL move check
 	int r = 3;
-	if ((game->Side == WHITE && game->Material[side01] < -500) || // todo: check for pieces when piece list works
+	if ((game->Side == WHITE && game->Material[side01] < -500) ||
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
@@ -397,12 +397,12 @@ DWORD WINAPI ScoreRootMoves(ThreadParams* prm) {
 	return 0;
 }
 
-void SetMovesScoreAtDepth(int depth, int moveCount) {
+//Startar alla trådar för angivet djup.
+//En tråd per root move. när den är klar tar den nästa lediga root move.
+//När alla trådar är klara sorteras root moves och det bästa skrivs ut.
+void StartSearchThreads(int depth, int moveCount) {
 
 	int moveIndex = 0;
-	//Startar alla trådar för angivet djup.
-	//En tråd per root move. när den är klar tar den nästa lediga root move.
-	//När alla trådar är klara sorteras root moves oc det bästa skrivs ut.
 
 	HANDLE threadHandles[SEARCH_THREADS];
 
@@ -423,11 +423,10 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 			tps->moveCount = moveCount;
 			threadHandles[i] = CreateThread(NULL, 0, ScoreRootMoves, tps, 0, NULL);
 			tps++;
-
 		}
 	}
 	WaitForMultipleObjects(SEARCH_THREADS, threadHandles, TRUE, INFINITE);
-	SortMoves(g_rootMoves.moves, moveCount, g_mainGame.Side); //TODO: Why?
+	SortMoves(g_rootMoves.moves, moveCount, g_mainGame.Side);
 	//free(tps);
 }
 
@@ -477,8 +476,8 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	return 0;
 }
 
-// Starting point of one thread that evaluates best score for every 7th root move. (If there are 7 threads)
-// Increasing depth until given max depth.
+// Starting point main search thread that starts the 7 separet search threads.
+// Also increasing depth until given max depth.
 DWORD WINAPI  BestMoveDeepening(void* v) {
 	int maxDepth = g_topSearchParams.MaxDepth;
 	clock_t start = clock();
@@ -495,7 +494,7 @@ DWORD WINAPI  BestMoveDeepening(void* v) {
 	do
 	{
 		clock_t depStart = clock();
-		SetMovesScoreAtDepth(depth, moveCount);
+		StartSearchThreads(depth, moveCount);
 		if (!g_Stopped) { // avbrutna depths ger felaktigt resultat.
 			g_topSearchParams.BestMove = g_rootMoves.moves[0];
 			bestScore = g_rootMoves.moves[0].Score;

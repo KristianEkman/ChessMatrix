@@ -179,7 +179,7 @@ void EnterUciMode() {
 		else if (startsWith(buf, "go ")) {
 			SetSearchDefaults();
 			if (contains(buf, "infinite")) {
-				g_topSearchParams.MaxDepth = 30;
+				g_topSearchParams.MaxDepth = 40;
 				g_topSearchParams.TimeControl = false;
 				Search(true);
 			}
