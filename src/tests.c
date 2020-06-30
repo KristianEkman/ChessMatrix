@@ -621,7 +621,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	ClearHashTable();
 	g_SearchedNodes = 0;
 	clock_t start = clock();
-	DefaultSearch();
+	SetSearchDefaults();
 	g_topSearchParams.MaxDepth = depth;
 	Move bestMove = Search(false);
 	clock_t stop = clock();
@@ -641,7 +641,7 @@ void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	ReadFen(fen);
 	ClearHashTable();
 	g_SearchedNodes = 0;
-	DefaultSearch();
+	SetSearchDefaults();
 	g_topSearchParams.MoveTime = secs * 1000;
 	Move bestMove = Search(false);
 	char sMove[6];

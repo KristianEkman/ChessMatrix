@@ -66,7 +66,7 @@ void InitPieceList() {
 int main(int argc, char* argv[]) {
 	g_MutexFreeMove = CreateMutex(NULL, FALSE, NULL);
 	SwitchSignOfWhitePositionValue();
-	DefaultSearch();
+	SetSearchDefaults();
 	ResetDepthTimes();
 	GenerateZobritsKeys();
 	AllocateHashTable(1024);
@@ -177,7 +177,7 @@ void EnterUciMode() {
 			}
 		}
 		else if (startsWith(buf, "go ")) {
-			DefaultSearch();
+			SetSearchDefaults();
 			if (contains(buf, "infinite")) {
 				g_topSearchParams.MaxDepth = 30;
 				g_topSearchParams.TimeControl = false;

@@ -12,5 +12,5 @@ Game g_threadGames[SEARCH_THREADS];
 GlobalRootMoves g_rootMoves;
 HANDLE g_MutexFreeMove;
 
-void DefaultSearch();
+void SetSearchDefaults();
 Move Search(bool async);

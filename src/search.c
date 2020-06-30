@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 
-void DefaultSearch() {
+void SetSearchDefaults() {
 	g_topSearchParams.BlackIncrement = 0;
 	g_topSearchParams.BlackTimeLeft = 0;
 	g_topSearchParams.MaxDepth = 30;
@@ -353,6 +353,7 @@ DWORD WINAPI DoNothingThread(int* prm) {
 }
 
 int g_LastStartedMove = -1;
+// Prevents threads to work on same root move 
 int GetNextFreeMove() {
 	DWORD waitResult = WaitForSingleObject(g_MutexFreeMove, INFINITE);
 	int ret;
@@ -370,8 +371,8 @@ int GetNextFreeMove() {
 
 // Entry point for a thread that starts the alphabeta tree search for a given depth and a given move.
 // When finished takes next root move until they are no more.
-// Sets the score on the root move. They are all common for all threads.
-DWORD WINAPI SearchThread(ThreadParams* prm) {
+// Sets the score on the root moves. They are all common for all threads.
+DWORD WINAPI ScoreRootMoves(ThreadParams* prm) {
 	int moveIndex = GetNextFreeMove();
 	do
 	{
@@ -420,7 +421,7 @@ void SetMovesScoreAtDepth(int depth, int moveCount) {
 			tps->threadID = i;
 			tps->depth = depth;
 			tps->moveCount = moveCount;
-			threadHandles[i] = CreateThread(NULL, 0, SearchThread, tps, 0, NULL);
+			threadHandles[i] = CreateThread(NULL, 0, ScoreRootMoves, tps, 0, NULL);
 			tps++;
 
 		}
