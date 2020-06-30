@@ -73,7 +73,10 @@ int main(int argc, char* argv[]) {
 	ClearHashTable();
 	StartPosition();
 	OwnBook = false;
-	//loadBook("openings.abk");
+#ifndef _DEBUG // loadbook is to slow in debug mode.
+	loadBook("openings.abk");
+#endif // DEBUG
+
 	printf("initialized\n");
 	EnterUciMode();
 	return 0;
@@ -245,7 +248,7 @@ void EnterUciMode() {
 }
 
 void PrintOptions() {
-	printf("m: make move\n");
+	printf("\nm: make move\n");
 	printf("c: computer move\n");
 	printf("t: run tests\n");
 	printf("g: print game\n");
@@ -397,10 +400,10 @@ void PrintGame(Game* game) {
 		printf("|\n  ---------------------------------\n");
 	}
 	printf("    a   b   c   d   e   f   g   h  \n");
-	printf("%llu\n", game->Hash);
+	printf("Hash: %llx\n", game->Hash);
 	char fen[100];
 	WriteFen(fen);
-	printf("%s\n", fen);
+	printf("FEN: %s\n", fen);
 }
 
 PieceType parsePieceType(char c) {
