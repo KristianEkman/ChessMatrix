@@ -31,7 +31,7 @@ typedef enum {
 	a6, b6, c6, d6, e6, f6, g6, h6,
 	a7, b7, c7, d7, e7, f7, g7, h7,
 	a8, b8, c8, d8, e8, f8, g8, h8
-} Square;
+} Square; // not used
 
 typedef enum {
 	PlainMove = 0,
@@ -55,7 +55,7 @@ typedef struct {
 } MoveCoordinates;
 
 typedef struct {
-	char From;
+	char From; // Using char type instead of Square enum makes the struct half size. 8 vs 16 bytes, and test cases runs ~10% faster.
 	char To;
 	char MoveInfo;
 	short Score;
