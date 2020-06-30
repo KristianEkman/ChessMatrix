@@ -182,11 +182,11 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
 			GameState prevState = game->State;
 			U64 prevHash = game->Hash;
-			MakeNullMove(game);
+			DoNullMove(game);
 			if (game->Side == BLACK) {
 				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, game, false, moveScore, deep_in + 1);
 				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
+					UndoNullMove(prevState, game, prevHash);
 					return alpha;
 				}
 			}
@@ -194,11 +194,11 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			{
 				int nullScore = AlphaBeta(beta - 1, beta, depth - r, game, false, moveScore, deep_in + 1);
 				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
-					UnMakeNullMove(prevState, game, prevHash);
+					UndoNullMove(prevState, game, prevHash);
 					return beta;
 				}
 			}
-			UnMakeNullMove(prevState, game, prevHash);
+			UndoNullMove(prevState, game, prevHash);
 		}
 	}
 

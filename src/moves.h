@@ -8,8 +8,8 @@ void RemoveInvalidMoves(Game* game);
 int ValidMoves(Move* moves);
 Undos DoMove(Move move, Game* mainGame);
 void UndoMove(Game* game, Move move, Undos undos);
-void MakeNullMove(Game* game);
-void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash);
+void DoNullMove(Game* game);
+void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash);
 
 void AssertGame(Game* game);
 

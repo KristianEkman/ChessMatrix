@@ -294,9 +294,9 @@ void PerftSaveHash(depth) {
 		int prevPositionScore = g_mainGame.PositionScore;
 		U64 prevHash = g_mainGame.Hash;
 
-		int captIndex = MakeMove(move, &g_mainGame);
+		Undos undos  = DoMove(move, &g_mainGame);
 		PerftSaveHash(depth - 1);
-		UnMakeMove(move, captIndex, prevGameState, prevPositionScore, &g_mainGame, prevHash);
+		UndoMove(&g_mainGame, move, undos);
 	}
 	free(localMoves);
 }

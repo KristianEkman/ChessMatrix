@@ -27,11 +27,13 @@ void ComputerMove() {
 }
 
 void ManualMove() {
-	printf("\nYour move: ");
-	char sMove[6];
-	scanf_s(" %6c", sMove, 6);
-
-	MakePlayerMove(sMove);
+	printf("\nYour move (format e2e4): ");
+	char sMove[5];
+	fgets(sMove, 5, stdin);
+	fseek(stdin, 0, SEEK_END);
+	PlayerMove pm = MakePlayerMove(sMove);
+	if (pm.Invalid)
+		stdout_wl("Ivalid move");
 }
 
 void InitPieceList() {
@@ -71,7 +73,7 @@ int main(int argc, char* argv[]) {
 	ClearHashTable();
 	StartPosition();
 	OwnBook = false;
-	loadBook("openings.abk");
+	//loadBook("openings.abk");
 	printf("initialized\n");
 	EnterUciMode();
 	return 0;
@@ -230,6 +232,10 @@ void EnterUciMode() {
 		}
 		else if (streq(buf, "i\n")) {
 			EnterInteractiveMode();
+			stdout_wl("In uci mode");
+		}
+		else if (streq(buf, "\n")) {
+			
 		}
 		else {
 			stdout_wl("unknown command");
@@ -238,25 +244,42 @@ void EnterUciMode() {
 	}
 }
 
+void PrintOptions() {
+	printf("m: make move\n");
+	printf("c: computer move\n");
+	printf("t: run tests\n");
+	printf("g: print game\n");
+	printf("e: eval\n");
+	printf("h: help\n");
+	printf("q: quit\n");
+}
+
 int EnterInteractiveMode() {
-	char scan = 0;
-	while (scan != 'q')
+	char buffer[20];
+	char in = ' ';
+	PrintGame(&g_mainGame);
+	PrintOptions();
+
+	while (in != 'q')
 	{
 		//system("@cls||clear");
-		PrintGame(&g_mainGame);
-		printf("m: make move\n");
-		printf("c: computer move\n");
-		printf("t: run tests\n");
-		printf("e: eval\n");
-		printf("q: quit\n");
-		scanf_s(" %c", &scan, 1);
-		switch (scan)
+		printf("h for help> ");
+		fgets(buffer, 20, stdin);
+		if (buffer[1] == '\n')
+			in = buffer[0];
+		fseek(stdin, 0, SEEK_END);
+		switch (in)
 		{
 		case 'm':
 			ManualMove();
+			PrintGame(&g_mainGame);
 			break;
 		case 'c':
 			ComputerMove();
+			PrintGame(&g_mainGame);
+			break;
+		case 'g':
+			PrintGame(&g_mainGame);
 			break;
 		case 't':
 			runAllTests();
@@ -264,9 +287,13 @@ int EnterInteractiveMode() {
 		case 'e':
 			printf("Eval: %d\n", GetEval(&g_mainGame, 0));
 			break;
+		case 'h':
+			PrintOptions();
+			break;
 		case 'q':
 			break;
 		default:
+			stdout_wl("Not an option");
 			break;
 		}
 	}

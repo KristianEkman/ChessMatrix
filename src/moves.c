@@ -395,7 +395,7 @@ void UndoMove(Game* game, Move move, Undos undos) {
 	AssertGame(game);
 }
 
-void MakeNullMove(Game* game) {
+void DoNullMove(Game* game) {
 	int side01 = game->Side01;
 	U64 hash = ZobritsEnpassantFile[game->State & 15];
 	//resetting en passant
@@ -408,7 +408,7 @@ void MakeNullMove(Game* game) {
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
 }
 
-void UnMakeNullMove(GameState prevGameState, Game* game, U64 prevHash) {
+void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 	int otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
 	game->State = prevGameState;
