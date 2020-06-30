@@ -16,35 +16,12 @@
 
 int _failedAsserts = 0;
 PerftResult perftResult;
-void printColor(char * msg, int color) {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-	WORD saved_attributes;
-
-	/* Save current attributes */
-	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
-	saved_attributes = consoleInfo.wAttributes;
-
-	SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
-	printf(msg);
-
-	/* Restore original attributes */
-	SetConsoleTextAttribute(hConsole, saved_attributes);
-}
-
-void printRed(char * msg) {
-	printColor(msg, FOREGROUND_RED);
-}
-
-void printGreen(char * msg) {
-	printColor(msg, FOREGROUND_GREEN);
-}
 
 void Assert(int goodResult, char * msg) {
 	if (goodResult == 0)
 	{
 		printf("\n");
-		printRed(msg);
+		PrintRed(msg);
 		printf("\n");
 		_failedAsserts++;
 	}
@@ -54,7 +31,7 @@ void AssertNot(int result, char * msg) {
 	if (result != 0)
 	{
 		printf("\n");
-		printRed(msg);
+		PrintRed(msg);
 		printf("\n");
 		_failedAsserts++;
 	}
@@ -63,7 +40,7 @@ void AssertNot(int result, char * msg) {
 void AssertAreEqual(char * s1, char * s2, char * msg) {
 	if (strcmp(s1, s2))
 	{
-		printRed(msg);
+		PrintRed(msg);
 		printf("\n");
 		printf("Expected: %s\n", s1);
 		printf("Actual:   %s\n", s2);
@@ -75,14 +52,14 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 	if (expected != actual)
 	{
 		printf("\n");
-		printRed(msg);
+		PrintRed(msg);
 		printf("\n");
 		char str[24];
 		snprintf(str, 24, "Expected %d", expected);
-		printRed(str);
+		PrintRed(str);
 		printf("\n");
 		snprintf(str, 24, "Actual   %d", actual);
-		printRed(str);
+		PrintRed(str);
 		_failedAsserts++;
 	}
 }
@@ -91,14 +68,14 @@ void AssertAreEqualLongs(U64 expected, U64 actual, char* msg) {
 	if (expected != actual)
 	{
 		printf("\n");
-		printRed(msg);
+		PrintRed(msg);
 		printf("\n");
 		char str[24];
 		snprintf(str, 24, "Expected %llu", expected);
-		printRed(str);
+		PrintRed(str);
 		printf("\n");
 		snprintf(str, 24, "Actual   %llu", actual);
-		printRed(str);
+		PrintRed(str);
 		_failedAsserts++;
 	}
 }
@@ -897,9 +874,9 @@ void runAllTests() {
 	printf("Time: %.2fs\n", secs);	
 
 	if (_failedAsserts == 0)
-		printGreen("Success! Tests are good!\n");
+		PrintGreen("Success! Tests are good!\n");
 	else
-		printRed("There are failed tests.\n");
+		PrintRed("There are failed tests.\n");
 
 	printf("Press any key to continue.\n");
 	_getch();

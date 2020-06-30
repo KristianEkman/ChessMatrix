@@ -3,6 +3,9 @@
 #include "utils.h"
 #include <string.h>
 
+#include <Windows.h>
+#include <conio.h>
+
 
 
 int ParseChar(char c) {
@@ -67,4 +70,28 @@ int IndexOf(char * a, char * b) {
 void Stdout_wl(char* text) {
 	printf("%s\n", text);
 	fflush(stdout);
+}
+
+void printColor(char* msg, int color) {
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+	WORD saved_attributes;
+
+	/* Save current attributes */
+	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
+	saved_attributes = consoleInfo.wAttributes;
+
+	SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
+	printf(msg);
+
+	/* Restore original attributes */
+	SetConsoleTextAttribute(hConsole, saved_attributes);
+}
+
+void PrintRed(char* msg) {
+	printColor(msg, FOREGROUND_RED);
+}
+
+void PrintGreen(char* msg) {
+	printColor(msg, FOREGROUND_GREEN);
 }

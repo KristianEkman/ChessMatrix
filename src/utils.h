@@ -14,3 +14,7 @@ void Stdout_wl(char* text);
 bool Contains(char a[], char b[]);
 
 int IndexOf(char * a, char * b);
+
+void PrintRed(char* msg);
+
+void PrintGreen(char* msg);
