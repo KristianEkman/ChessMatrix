@@ -173,7 +173,7 @@ int Perft(depth) {
 		return 1;
 	}
 	int nodeCount = 0;
-	CreateMoves(&g_mainGame, 0);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 	if (g_mainGame.MovesBufferLength == 0)
 		return nodeCount;
@@ -257,7 +257,7 @@ void PerftSaveHash(depth) {
 	//below is regular Perft
 	if (depth == 0)
 		return;
-	CreateMoves(&g_mainGame, 0);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 	if (g_mainGame.MovesBufferLength == 0)
 		return;
@@ -307,7 +307,7 @@ int PerftHashDb(int depth) {
 	if (depth == 0)
 		return 1;
 	int nodeCount = 0;
-	CreateMoves(&g_mainGame, 0);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 	if (g_mainGame.MovesBufferLength == 0)
 		return nodeCount;
@@ -599,7 +599,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	g_SearchedNodes = 0;
 	clock_t start = clock();
 	SetSearchDefaults();
-	g_topSearchParams.MaxDepth = depth + 1;
+	g_topSearchParams.MaxDepth = depth;
 	Move bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;

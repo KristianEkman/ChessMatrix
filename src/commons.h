@@ -114,7 +114,7 @@ typedef struct {
 	PieceType Squares[64];
 	short PositionScore;
 	U64 Hash;
-	U64 PositionHistory[2000];
+	U64 PositionHistory[1800];
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
 	Move KillerMoves[31][2];

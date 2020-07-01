@@ -798,7 +798,7 @@ void RemoveInvalidMoves(Game* game) {
 }
 
 int ValidMoves(Move* moves) {
-	CreateMoves(&g_mainGame, 0);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 
 	if (g_mainGame.MovesBufferLength == 0)
@@ -809,7 +809,7 @@ int ValidMoves(Move* moves) {
 }
 
 int ValidMovesOnThread(Game* game, Move* moves) {
-	CreateMoves(game, 0);
+	CreateMoves(game);
 	RemoveInvalidMoves(game);
 
 	if (game->MovesBufferLength == 0)

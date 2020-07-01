@@ -64,7 +64,6 @@ void InitPieceList() {
 }
 
 int main(int argc, char* argv[]) {
-	g_MutexFreeMove = CreateMutex(NULL, FALSE, NULL);
 	SwitchSignOfWhitePositionValue();
 	SetSearchDefaults();
 	ResetDepthTimes();

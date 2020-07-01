@@ -9,6 +9,7 @@
 HashBookEntry* hashBook;
 int entryCount;
 char crap[25200];
+void PlayBookPosition(Game* game, int bookIndex);
 
 void LoadBook(char* fileName) {
 	struct stat st;
@@ -54,7 +55,7 @@ void LoadBook(char* fileName) {
 	printf("book loaded\n");
 }
 
-PlayBookPosition(Game* game, int bookIndex) {
+void PlayBookPosition(Game* game, int bookIndex) {
 	// plays all moves in book and stores its hash key for lookup later.
 	hashBook[bookIndex].positionHash = game->Hash;
 
