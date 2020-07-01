@@ -6,7 +6,5 @@
 uint g_SearchedNodes;
 bool g_Stopped;
 TopSearchParams g_topSearchParams;
-
 void SetSearchDefaults();
 Move Search(bool async);
-DWORD WINAPI SingleSearch(void* v);

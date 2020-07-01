@@ -416,46 +416,10 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	return 0;
 }
 
-// Starting point of a search for best move.
-// Continues until time millis is reached or depth is reached.
-// When async is set the result is printed to stdout. Not returned.
-Move Search(bool async) {
 
-	Move bookMove = BestBookMove(&g_mainGame);
-	if (bookMove.MoveInfo != NotAMove) {
-		char sMove[5];
-		MoveToString(bookMove, sMove);
-		printf("bestmove %s\n", sMove);
-		fflush(stdout);
-		return bookMove;
-	}
-
-	HANDLE timeLimitThread = 0;
-	if (g_topSearchParams.MoveTime > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
-	}
-
-	g_Stopped = false;
-	g_SearchedNodes = 0;
-
-	HANDLE handle = CreateThread(NULL, 0, SingleSearch, NULL, 0, NULL);
-	if (!async)
-	{
-		WaitForSingleObject(handle, INFINITE);
-		if (timeLimitThread != 0)
-			TerminateThread(timeLimitThread, 0);
-		return g_topSearchParams.BestMove;
-	}
-
-	//this will not be used.
-	Move nomove;
-	nomove.MoveInfo = NotAMove;
-	return nomove;
-}
-
-DWORD WINAPI SingleSearch(void* v) {
+DWORD WINAPI IterativeSearch(void* v) {
 	Game game = g_mainGame;
-	Game * pGame = &game;
+	Game* pGame = &game;
 	CopyMainGame(&game);
 	clock_t start = clock();
 	Move bestMove;
@@ -499,4 +463,41 @@ DWORD WINAPI SingleSearch(void* v) {
 	fflush(stdout);
 	ExitThread(0);
 	return 0;
+}
+
+// Starting point of a search for best move.
+// Continues until time millis is reached or depth is reached.
+// When async is set the result is printed to stdout. Not returned.
+Move Search(bool async) {
+
+	Move bookMove = BestBookMove(&g_mainGame);
+	if (bookMove.MoveInfo != NotAMove) {
+		char sMove[5];
+		MoveToString(bookMove, sMove);
+		printf("bestmove %s\n", sMove);
+		fflush(stdout);
+		return bookMove;
+	}
+
+	HANDLE timeLimitThread = 0;
+	if (g_topSearchParams.MoveTime > 0) {
+		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
+	}
+
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+
+	HANDLE handle = CreateThread(NULL, 0, IterativeSearch, NULL, 0, NULL);
+	if (!async)
+	{
+		WaitForSingleObject(handle, INFINITE);
+		if (timeLimitThread != 0)
+			TerminateThread(timeLimitThread, 0);
+		return g_topSearchParams.BestMove;
+	}
+
+	//this will not be used.
+	Move nomove;
+	nomove.MoveInfo = NotAMove;
+	return nomove;
 }
