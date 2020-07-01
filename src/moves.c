@@ -519,7 +519,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	AssertGame(game);
 }
 
-void CreateMoves(Game* game, int depth) {
+void CreateMoves(Game* game) {
 	game->MovesBufferLength = 0;
 	for (size_t pi = 0; pi < 16; pi++)
 	{

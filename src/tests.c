@@ -599,7 +599,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	g_SearchedNodes = 0;
 	clock_t start = clock();
 	SetSearchDefaults();
-	g_topSearchParams.MaxDepth = depth;
+	g_topSearchParams.MaxDepth = depth + 1;
 	Move bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
@@ -637,8 +637,8 @@ void BestMoveTestBlackCaptureBishop() {
 
 void TestWhiteMateIn2() {
 	char * fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
-	AssertBestMove(5, __func__, fen, "c6c7");
-	AssertBestMoveTimed(1, __func__, fen, "c6c7");
+	AssertBestMove(5, __func__, fen, "d5d7");
+	AssertBestMoveTimed(1, __func__, fen, "d5d7");
 }
 
 void BlackMatesIn5Deeping() {
@@ -815,14 +815,15 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*PerftSaveHashTest();
+	//TestWhiteMateIn2();
 
-	if (_failedAsserts == 0)
-		printGreen("Success! Tests are good!\n");
-	printf("Press any key to continue.\n");
-	int c = _getch();
-	return;
-	_failedAsserts = 0;*/
+	//if (_failedAsserts == 0)
+	//	PrintGreen("Success! Tests are good!\n");
+	//printf("Press any key to continue.\n");
+	//int c = _getch();
+	//return;
+	
+	_failedAsserts = 0;
 
 #ifdef DEBUG
 	EnpassantCollisionsTest();

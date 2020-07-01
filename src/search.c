@@ -478,7 +478,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 
 // Starting point main search thread that starts the 7 separet search threads.
 // Also increasing depth until given max depth.
-DWORD WINAPI  BestMoveDeepening(void* v) {
+DWORD WINAPI BestMoveDeepening(void* v) {
 	int maxDepth = g_topSearchParams.MaxDepth;
 	clock_t start = clock();
 	//ClearHashTable();
@@ -570,7 +570,7 @@ Move Search(bool async) {
 	g_Stopped = false;
 	g_SearchedNodes = 0;
 
-	HANDLE handle = CreateThread(NULL, 0, BestMoveDeepening, NULL, 0, NULL);
+	HANDLE handle = CreateThread(NULL, 0, SingleSearch, NULL, 0, NULL);
 	if (!async)
 	{
 		WaitForSingleObject(handle, INFINITE);
@@ -583,4 +583,50 @@ Move Search(bool async) {
 	Move nomove;
 	nomove.MoveInfo = NotAMove;
 	return nomove;
+}
+
+DWORD WINAPI SingleSearch(void* v) {
+	Game* copy = CopyMainGame(0);
+	clock_t start = clock();
+	Move bestMove;
+	bestMove.From = 0;
+	bestMove.To = 0;
+	bestMove.MoveInfo = NotAMove;
+
+	for (int depth = 1; depth < g_topSearchParams.MaxDepth + 2; depth++)
+	{
+		clock_t depStart = clock();
+		short score = AlphaBeta(MIN_SCORE, MAX_SCORE, depth, copy, true, 0, 0);
+		if (g_Stopped)
+			break;
+
+		float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
+		if (GetBestMoveFromHash(copy->Hash, &bestMove))
+		{
+			bestMove.Score = score;
+			PrintBestLine(bestMove, depth, ellapsed);
+		}
+		g_topSearchParams.BestMove = bestMove;
+
+		if ((copy->Side == WHITE && score < -7000) || (copy->Side == BLACK && score > 7000))
+		{
+			g_Stopped = true;
+			break; //A check mate is found, no need to search further.
+		}
+
+		float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
+		int moveNo = copy->PositionHistoryLength;
+		RegisterDepthTime(moveNo, depth, depthTime * 1000);
+		if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, copy->Side)) {
+			g_Stopped = true;
+			break;
+		}
+	}
+
+	char sMove[5];
+	MoveToString(bestMove, sMove);
+	printf("bestmove %s\n", sMove);
+	fflush(stdout);
+	ExitThread(0);
+	return 0;
 }

@@ -14,3 +14,4 @@ HANDLE g_MutexFreeMove;
 
 void SetSearchDefaults();
 Move Search(bool async);
+DWORD WINAPI SingleSearch(void* v);
