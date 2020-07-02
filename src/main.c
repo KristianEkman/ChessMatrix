@@ -385,20 +385,35 @@ char PieceChar(PieceType pieceType) {
 }
 
 void PrintGame(Game* game) {
-	printf("  ---------------------------------\n");
+	// ╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗
+	char top[] = { 201, 205,205,205, 209, 205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 187,0 };
+	// ╟───┼───┼───┼───┼───┼───┼───┼───╢
+	char rowLine[] = { 199, 196, 196, 196, 197, 196, 196, 196, 197, 196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 182, 0 };
+	// ╚═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╝
+	char lastLine[] = { 200,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 188, 0 };
+	// ║
+	char vBorder = 186; 
+
+	printf("   %s\n", top);	
 
 	for (int r = 8 - 1; r >= 0; r--)
 	{
 		printf("%d ", r + 1);
+		printf(" %c", vBorder);
 		for (int f = 0; f < 8; f++)
 		{
 			PieceType piece = game->Squares[r * 8 + f];
 			char c = PieceChar(piece);
-			printf("| %c ", c);
+			if (f < 7)
+				printf(" %c |", c);
+			else
+				printf(" %c %c\n", c, vBorder);
 		}
-		printf("|\n  ---------------------------------\n");
+		if (r > 0)
+			printf("   %s\n", rowLine);
 	}
-	printf("    a   b   c   d   e   f   g   h  \n");
+	printf("   %s\n", lastLine);
+	printf("     a   b   c   d   e   f   g   h  \n");
 	printf("Hash: %llx\n", game->Hash);
 	char fen[100];
 	WriteFen(fen);
