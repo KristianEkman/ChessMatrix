@@ -81,7 +81,7 @@ void printColor(char* msg, int color) {
 	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
 	saved_attributes = consoleInfo.wAttributes;
 
-	SetConsoleTextAttribute(hConsole, color | FOREGROUND_INTENSITY);
+	SetConsoleTextAttribute(hConsole, color);
 	printf(msg);
 
 	/* Restore original attributes */
@@ -89,9 +89,19 @@ void printColor(char* msg, int color) {
 }
 
 void PrintRed(char* msg) {
-	printColor(msg, FOREGROUND_RED);
+	ColorPrint(msg, red, black);
 }
 
 void PrintGreen(char* msg) {
-	printColor(msg, FOREGROUND_GREEN);
+	ColorPrint(msg, green, black);
 }
+
+void PrintInverted(char* msg) {
+	ColorPrint(msg, black, gray);
+}
+
+void ColorPrint(char* text, ConsoleColor textColor, ConsoleColor background) {
+	int color = background * 16 + textColor;
+	printColor(text, color);
+}
+

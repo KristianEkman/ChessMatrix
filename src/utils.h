@@ -15,6 +15,28 @@ bool Contains(char a[], char b[]);
 
 int IndexOf(char * a, char * b);
 
+typedef enum {
+	black,
+	blue,
+	green,
+	marine,
+	red,
+	purple,
+	lightbrown,
+	lightgray,
+	gray,
+	lightblue,
+	lightgreen,
+	seagreen,
+	orange,
+	lightpurple,
+	yellow,
+	white,
+} ConsoleColor;
+
 void PrintRed(char* msg);
 
 void PrintGreen(char* msg);
+void PrintInverted(char* msg);
+
+void ColorPrint(char* text, ConsoleColor textColor, ConsoleColor background);

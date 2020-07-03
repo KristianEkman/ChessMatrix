@@ -73,7 +73,8 @@ int main(int argc, char* argv[]) {
 	AllocateHashTable(1024);
 	ClearHashTable();
 	StartPosition();
-	OwnBook = false;
+
+	OwnBook = true;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
 	LoadBook("openings.abk");
 #endif // DEBUG
@@ -316,7 +317,7 @@ void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
 	}
 }
 
-void InitPiece(int file, int rank, enum PieceType type, enum Color color) {
+void InitPiece(int file, int rank, enum PieceType type, Side color) {
 	g_mainGame.Squares[rank * 8 + file] = type | color;
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
@@ -400,16 +401,23 @@ void PrintGame(Game* game) {
 
 	for (int r = 8 - 1; r >= 0; r--)
 	{
-		printf("%d ", r + 1);
+		printf(" %d", r + 1);
 		printf(" %c", vBorder);
 		for (int f = 0; f < 8; f++)
 		{
+			printf(" ");
 			PieceType piece = game->Squares[r * 8 + f];
-			char c = PieceChar(piece);
-			if (f < 7)
-				printf(" %c |", c);
+			Side side = piece & 24;
+			char c[] = { PieceChar(piece), 0 };
+			if (side == BLACK)
+				ColorPrint(c, lightblue, black);
 			else
-				printf(" %c %c\n", c, vBorder);
+				ColorPrint(c, yellow, black);
+
+			if (f < 7)
+				printf(" |");
+			else
+				printf(" %c\n", vBorder);
 		}
 		if (r > 0)
 			printf("   %s\n", rowLine);
