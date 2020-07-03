@@ -21,5 +21,5 @@ typedef struct {
 
 void LoadBook(char* fileName);
 void CloseBook();
-Move BestBookMove(Game* game);
+MoveCoordinates BestBookMove(Game* game);
 bool OwnBook;

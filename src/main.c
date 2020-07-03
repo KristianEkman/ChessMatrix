@@ -22,8 +22,10 @@
 
 void ComputerMove() {
 	g_topSearchParams.MoveTime = 5000;
-	Move move = Search(false);
-	DoMove(move, &g_mainGame);
+	MoveCoordinates move = Search(false);
+	char sMove[5];
+	CoordinatesToString(move, sMove);
+	MakePlayerMove(sMove);
 }
 
 void ManualMove() {
@@ -386,9 +388,9 @@ char PieceChar(PieceType pieceType) {
 
 void PrintGame(Game* game) {
 	// ╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗
-	char top[] = { 201, 205,205,205, 209, 205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 209,205,205,205, 187,0 };
+	char top[] = { 201,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,187,0 };
 	// ╟───┼───┼───┼───┼───┼───┼───┼───╢
-	char rowLine[] = { 199, 196, 196, 196, 197, 196, 196, 196, 197, 196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 197,196, 196, 196, 182, 0 };
+	char rowLine[] = { 199,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,182,0 };
 	// ╚═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╝
 	char lastLine[] = { 200,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 188, 0 };
 	// ║
@@ -423,19 +425,18 @@ void PrintGame(Game* game) {
 PieceType parsePieceType(char c) {
 	switch (c)
 	{
-	case 'p': return PAWN | BLACK;
-	case 'r': return ROOK | BLACK;
+	case 'p': return PAWN   | BLACK;
+	case 'r': return ROOK   | BLACK;
 	case 'b': return BISHOP | BLACK;
 	case 'n': return KNIGHT | BLACK;
-	case 'q': return QUEEN | BLACK;
-	case 'k': return KING | BLACK;
-	case 'P': return PAWN | WHITE;
-	case 'R': return ROOK | WHITE;
+	case 'q': return QUEEN  | BLACK;
+	case 'k': return KING   | BLACK;
+	case 'P': return PAWN   | WHITE;
+	case 'R': return ROOK   | WHITE;
 	case 'B': return BISHOP | WHITE;
 	case 'N': return KNIGHT | WHITE;
-	case 'Q': return QUEEN | WHITE;
-	case 'K': return KING | WHITE;
-
+	case 'Q': return QUEEN  | WHITE;
+	case 'K': return KING   | WHITE;
 	default:
 		return NOPIECE;
 	}

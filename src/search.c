@@ -420,7 +420,7 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 DWORD WINAPI IterativeSearch(void* v) {
 	Game game = g_mainGame;
 	Game* pGame = &game;
-	CopyMainGame(&game);
+	CopyMainGame(pGame);
 	clock_t start = clock();
 	Move bestMove;
 	bestMove.From = 0;
@@ -468,12 +468,11 @@ DWORD WINAPI IterativeSearch(void* v) {
 // Starting point of a search for best move.
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
-Move Search(bool async) {
-
-	Move bookMove = BestBookMove(&g_mainGame);
-	if (bookMove.MoveInfo != NotAMove) {
+MoveCoordinates Search(bool async) {
+	MoveCoordinates bookMove = BestBookMove(&g_mainGame);
+	if (bookMove.From != -1) {
 		char sMove[5];
-		MoveToString(bookMove, sMove);
+		CoordinatesToString(bookMove, sMove);
 		printf("bestmove %s\n", sMove);
 		fflush(stdout);
 		return bookMove;
@@ -493,11 +492,15 @@ Move Search(bool async) {
 		WaitForSingleObject(handle, INFINITE);
 		if (timeLimitThread != 0)
 			TerminateThread(timeLimitThread, 0);
-		return g_topSearchParams.BestMove;
+		MoveCoordinates coords;
+		coords.From = g_topSearchParams.BestMove.From;
+		coords.To = g_topSearchParams.BestMove.To;
+		return coords;
 	}
 
 	//this will not be used.
-	Move nomove;
-	nomove.MoveInfo = NotAMove;
+	MoveCoordinates nomove;
+	nomove.From = -1;
+	nomove.To = -1;
 	return nomove;
 }

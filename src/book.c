@@ -85,10 +85,11 @@ void CloseBook() {
 	free(hashBook);
 }
 
-Move BestBookMove(Game* game)
+MoveCoordinates BestBookMove(Game* game)
 {
-	Move foundMove;
-	foundMove.MoveInfo = NotAMove;
+	MoveCoordinates foundMove;
+	foundMove.From = -1;
+	foundMove.To = -1;
 	if (!OwnBook)
 		return foundMove;
 	double bestRatio = -100000;
@@ -131,13 +132,15 @@ Move BestBookMove(Game* game)
 
 	//This is tricky. It resolves some more information needed. I.e. index of piece being moved.
 	char sMove[5];
-	MoveToString(foundMove, sMove);
+	CoordinatesToString(foundMove, sMove);
 	PlayerMove pm = MakePlayerMoveOnThread(game, sMove);
 	UnMakePlayerMoveOnThread(game, pm);
 	if (pm.Invalid) {
 		printf("Invalid move found in book\n");
-		foundMove.MoveInfo = NotAMove;
-		return foundMove;
+		MoveCoordinates noMove;
+		noMove.From = -1;
+		noMove.To = -1;
+		return noMove;
 	}
-	return pm.Move;
+	return foundMove;
 }

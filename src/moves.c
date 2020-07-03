@@ -874,3 +874,15 @@ void MoveToString(Move move, char* sMove) {
 	sMove[3] = toRank;
 	sMove[4] = '\0';
 }
+
+void CoordinatesToString(MoveCoordinates move, char* sMove) {
+	char fromFile = (move.From & 7) + 'a';
+	char fromRank = (move.From >> 3) + '1';
+	char toFile = (move.To & 7) + 'a';
+	char toRank = (move.To >> 3) + '1';
+	sMove[0] = fromFile;
+	sMove[1] = fromRank;
+	sMove[2] = toFile;
+	sMove[3] = toRank;
+	sMove[4] = '\0';
+}

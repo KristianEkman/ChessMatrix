@@ -7,4 +7,4 @@ uint g_SearchedNodes;
 bool g_Stopped;
 TopSearchParams g_topSearchParams;
 void SetSearchDefaults();
-Move Search(bool async);
+MoveCoordinates Search(bool async);

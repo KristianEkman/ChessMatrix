@@ -600,13 +600,13 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	clock_t start = clock();
 	SetSearchDefaults();
 	g_topSearchParams.MaxDepth = depth;
-	Move bestMove = Search(false);
+	MoveCoordinates bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
 	printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
 	printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
 	char sMove[6];
-	MoveToString(bestMove, sMove);
+	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 	/*printf("\nEntries:    %d", HashTableEntries);
 	printf("\nMatches:    %d", HashTableMatches);
@@ -620,9 +620,9 @@ void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
 	g_SearchedNodes = 0;
 	SetSearchDefaults();
 	g_topSearchParams.MoveTime = secs * 1000;
-	Move bestMove = Search(false);
+	MoveCoordinates bestMove = Search(false);
 	char sMove[6];
-	MoveToString(bestMove, sMove);
+	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
 	/*printf("\nEntries:    %d", HashTableEntries);
 	printf("\nMatches:    %d", HashTableMatches);
