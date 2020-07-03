@@ -86,7 +86,7 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
@@ -248,10 +248,10 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 						AddHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
 						free(localMoves);
 
-						if (undos.CaptIndex == -1) {
+						/*if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
-						}
+						}*/
 						return beta;
 					}
 					alpha = score;
@@ -302,10 +302,10 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 				if (score < beta) {
 					if (score <= alpha) {
 						AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
-						if (undos.CaptIndex == -1) {
+						/*if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
-						}
+						}*/
 						free(localMoves);
 						return alpha;
 					}
