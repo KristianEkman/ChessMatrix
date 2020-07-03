@@ -1,26 +1,20 @@
 
-Öppningsregler
-Rokad
-Minska öppningsreglernas betydelse gradvis efter 3ply
-
 Se till så att draw by rep funkar.
 
-testa att slå av killer moves. Ger de något?
+Killer moves. Ger de något? Spelar lika bra utan.
 
-testa om lmr funkar bättre nu.
+Testa om lmr funkar bättre nu.
 	- läs på, mer komplicerat
-
-global alpha beta. (kanske skippa trådning). Många cut offs missas, eller?
 
 Books
 	Endgame tablebases
 
 Eval: 
-    ANN
-	Isolated pawns are bad.
-	
+	Isolated pawns are bad.	
 	Bad bishops -- performance ??
 	Outposts -- performance ??
+	Minska öppningsreglernas betydelse gradvis efter 3ply
+    ANN
 
 Testa negamax igen.
 
@@ -31,7 +25,7 @@ Mer pruning
 	Futilty pruning
 	Razoring
 
-Fler testafall.
+Fler testfall.
 
 Linux kompatibel.
 
