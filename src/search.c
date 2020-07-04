@@ -56,7 +56,7 @@ void MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_i
 	}
 }
 
-short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int deep_in) {
+short QuiteSearch(short best_black, short best_white, Game* game, short moveScore, int deep_in) {
 
 	g_SearchedNodes++;
 
@@ -66,16 +66,16 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
 
 	if (game->Side == BLACK) {
-		if (score >= beta)
-			return beta;
-		if (score > alpha)
-			alpha = score;
+		if (score >= best_white)
+			return best_white;
+		if (score > best_black)
+			best_black = score;
 	}
 	else {
-		if (score <= alpha)
-			return alpha;
-		if (score < beta)
-			beta = score;
+		if (score <= best_black)
+			return best_black;
+		if (score < best_white)
+			best_white = score;
 	}
 
 
@@ -101,18 +101,18 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 				UndoMove(game, childMove, undos);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
+			score = QuiteSearch(best_black, best_white, game, childMove.Score, deep_in + 1);
 			UndoMove(game, childMove, undos);
-			if (score > alpha) {
-				if (score >= beta) {
+			if (score > best_black) {
+				if (score >= best_white) {
 					free(localMoves);
-					return beta;
+					return best_white;
 				}
-				alpha = score;
+				best_black = score;
 			}
 		}
 		free(localMoves);
-		return alpha;
+		return best_black;
 	}
 	else { //minimizing
 		score = MAX_SCORE;
@@ -127,18 +127,18 @@ short AlphaBetaQuite(short alpha, short beta, Game* game, short moveScore, int d
 				UndoMove(game, childMove, undos);
 				continue;
 			}
-			score = AlphaBetaQuite(alpha, beta, game, childMove.Score, deep_in + 1);
+			score = QuiteSearch(best_black, best_white, game, childMove.Score, deep_in + 1);
 			UndoMove(game, childMove, undos);
-			if (score < beta) {
-				if (score <= alpha) {
+			if (score < best_white) {
+				if (score <= best_black) {
 					free(localMoves);
-					return alpha;
+					return best_black;
 				}
-				beta = score;
+				best_white = score;
 			}
 		}
 		free(localMoves);
-		return beta;
+		return best_white;
 	}
 }
 
@@ -147,14 +147,14 @@ int Reduction(int moveNo) {
 	return min(moveNo / 15 + 1, 2);
 }
 
-short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, short moveScore, int deep_in) {
+short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, short moveScore, int deep_in) {
 	if (g_Stopped)
 		return moveScore; // should not be used;
 
 	g_SearchedNodes++;
 
 	if (depth <= 0) {
-		return AlphaBetaQuite(alpha, beta, game, moveScore, deep_in);
+		return QuiteSearch(best_black, best_white, game, moveScore, deep_in);
 	}
 
 	if (DrawByRepetition(game))
@@ -170,7 +170,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 	//Probe hash
 	short score = 0; Move pvMove;
 	pvMove.MoveInfo = NotAMove;
-	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta)) {
+	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
 		return score;
 	}
 
@@ -184,18 +184,18 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			U64 prevHash = game->Hash;
 			DoNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = AlphaBeta(alpha, alpha + 1, depth - r, game, false, moveScore, deep_in + 1);
-				if (nullScore <= alpha && nullScore > -8000 && nullScore < 8000) {
+				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, moveScore, deep_in + 1);
+				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) {
 					UndoNullMove(prevState, game, prevHash);
-					return alpha;
+					return best_black;
 				}
 			}
 			else //(game->Side == WHITE)
 			{
-				int nullScore = AlphaBeta(beta - 1, beta, depth - r, game, false, moveScore, deep_in + 1);
-				if (nullScore >= beta && nullScore > -8000 && nullScore < 8000) {
+				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, moveScore, deep_in + 1);
+				if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
 					UndoNullMove(prevState, game, prevHash);
-					return beta;
+					return best_white;
 				}
 			}
 			UndoNullMove(prevState, game, prevHash);
@@ -217,8 +217,8 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 	// alpha beta pruning
 	short bestScore = 0;
 	int legalCount = 0;
-	short oldAlpha = alpha;
-	short oldBeta = beta;
+	short oldBestBlack = best_black;
+	short oldBestWhite = best_white;
 	Move bestMove = localMoves[0];
 	if (game->Side == BLACK) { //maximizing, black
 		bestScore = MIN_SCORE;
@@ -237,24 +237,24 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			}
 			legalCount++;
 			//int red = Reduction(i); 
-			score = AlphaBeta(alpha, beta, depth - 1, game, true, childMove.Score, deep_in + 1);
+			score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
 			UndoMove(game, childMove, undos);
 
 			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
-				if (score > alpha) {
-					if (score >= beta) {
-						AddHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
+				if (score > best_black) {
+					if (score >= best_white) {
+						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
 
 						/*if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
 						}*/
-						return beta;
+						return best_white;
 					}
-					alpha = score;
+					best_black = score;
 				}
 			}
 		}
@@ -268,14 +268,14 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 		}
 
 		if (g_Stopped)
-			return alpha;
+			return best_black;
 
-		if (alpha != oldAlpha)
+		if (best_black != oldBestBlack)
 			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
 
-		return alpha;
+		return best_black;
 	}
 	else { //minimizing, white
 		bestScore = MAX_SCORE;
@@ -293,23 +293,23 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			}
 			legalCount++;
 			//int red = Reduction(i);
-			score = AlphaBeta(alpha, beta, depth - 1, game, true, childMove.Score, deep_in + 1);
+			score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
 			UndoMove(game, childMove, undos);
 
 			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
-				if (score < beta) {
-					if (score <= alpha) {
-						AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
+				if (score < best_white) {
+					if (score <= best_black) {
+						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
 						/*if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
 							game->KillerMoves[deep_in][0] = childMove;
 						}*/
 						free(localMoves);
-						return alpha;
+						return best_black;
 					}
-					beta = score;
+					best_white = score;
 				}
 			}
 		}
@@ -322,13 +322,13 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 		}
 
 		if (g_Stopped)
-			return beta;
+			return best_white;
 
-		if (beta != oldBeta)
+		if (best_white != oldBestWhite)
 			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			AddHashScore(game->Hash, beta, depth, BETA, bestMove.From, bestMove.To);
-		return beta;
+			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);
+		return best_white;
 	}
 }
 
@@ -445,7 +445,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 	for (int depth = 1; depth < g_topSearchParams.MaxDepth + 2; depth++)
 	{
 		clock_t depStart = clock();
-		short score = AlphaBeta(MIN_SCORE, MAX_SCORE, depth, pGame, true, 0, 0);
+		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, 0, 0);
 		if (g_Stopped)
 			break;
 

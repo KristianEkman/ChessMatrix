@@ -61,7 +61,7 @@ void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 }
 
 
-bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta) {
+bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white) {
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
@@ -77,20 +77,19 @@ bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short al
 			if (dbDepth >= depth)
 			{
 				*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
-				//todo: adjust mate scores with in_deep?
 
 				HashEntryType type = (entry >> 50) & 0x3;
 				switch (type)
 				{
-				case ALPHA:
-					if (*score <= alpha) { // is this true for both black and white?
-						*score = alpha;
+				case BEST_BLACK:
+					if (*score <= best_black) {
+						*score = best_black;
 						return true;
 					}
 					break;
-				case BETA:
-					if (*score >= beta) { // is this true for both black and white?
-						*score = beta;
+				case BEST_WHITE:
+					if (*score >= best_white) {
+						*score = best_white;
 						return true;
 					}
 					break;

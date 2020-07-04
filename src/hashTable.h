@@ -9,8 +9,8 @@ U64 ZobritsEnpassantFile[9];
 
 typedef enum {
 	EXACT,
-	ALPHA,
-	BETA
+	BEST_BLACK,
+	BEST_WHITE
 } HashEntryType;
 
 typedef struct {
@@ -33,7 +33,7 @@ typedef struct {
 
 
 void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
-bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short alpha, short beta);
+bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white);
 bool GetBestMoveFromHash(U64 hash, Move* move);
 
 void AllocateHashTable(uint megabytes);
