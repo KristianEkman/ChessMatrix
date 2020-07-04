@@ -383,11 +383,26 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	int nps = (float)g_SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
-	short score = move.Score;
-	if (game->Side == WHITE)
-		score = -score;
+	short score = move.Score;	
+	
+	printf("info score ");
+	if (abs(score) > 7000) {
+		bool meMated = false;
+		if (score > 7000 && game->Side == WHITE || score < -7000 && game->Side == BLACK) {
+			meMated = true;
+		}
+		int mateIn = (8000 - abs(score)) / 2 + 1;
+		if (meMated)
+			mateIn = -mateIn;
+		printf("mate %d ", mateIn);
+	}
+	else {
+		if (game->Side == WHITE)
+			score = -score;
+		printf("cp %d ", score);
+	}
 
-	printf("info score cp %d depth %d nodes %d time %d nps %d hashfull %d pv %s\n", score, depth, g_SearchedNodes, time, nps, HashFull(), buffer);
+	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(), buffer);
 	fflush(stdout);
 	return 0;
 }

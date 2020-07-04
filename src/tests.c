@@ -695,6 +695,26 @@ void RookSacrificeByWhite() {
 	AssertBestMove(7, __func__, fen, "e1e8");
 }
 
+void BlackMatesIn5a() {
+	char* fen = "6k1/3b3r/1p1p4/p1n2p2/1PPNpP1q/P3Q1p1/1R1RB1P1/5K2 b - -";
+	AssertBestMove(11, __func__, fen, "h4f4");
+}
+
+void WhiteMatesIn5b() {
+	char* fen = "2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w";
+	AssertBestMove(11, __func__, fen, "e7e8");
+}
+
+void WhiteMatesIn7() {
+	char* fen = "rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 7 11";
+	AssertBestMove(8, __func__, fen, "h5h7");
+}
+
+void EngineMated() {
+	char* fen = "rn3rk1/pbppq1pQ/1p2pb2/4N3/3PN3/3B4/PPP2PPP/R3K2R b KQ - 0 11";
+	AssertBestMove(8, __func__, fen, "g8h7");
+}
+
 void DeepTest() {
 	printf("%s\n", __func__);
 	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
@@ -869,6 +889,10 @@ void runAllTests() {
 	BestMoveByBlack4();
 	BestMoveByBlack5();
 	RookSacrificeByWhite();
+	BlackMatesIn5a();
+	WhiteMatesIn5b();
+	WhiteMatesIn7();
+	EngineMated();
 
 	clock_t end = clock();
 	float secs =(float) (end - start) / CLOCKS_PER_SEC;
