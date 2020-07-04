@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	ClearHashTable();
 	StartPosition();
 
-	OwnBook = true;
+	OwnBook = false;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
 	LoadBook("openings.abk");
 #endif // DEBUG
@@ -363,6 +363,7 @@ void StartPosition() {
 
 	InitHash();
 	InitScores();
+	g_mainGame.FiftyMoveRuleCount = 0;
 }
 
 char PieceChar(PieceType pieceType) {
@@ -513,6 +514,7 @@ void InitHash() {
 
 void ReadFen(char* fen) {
 	InitPieceList();
+
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (size_t i = 0; i < 64; i++)
 		g_mainGame.Squares[i] = NOPIECE;
@@ -565,7 +567,23 @@ void ReadFen(char* fen) {
 	char enpFile = fen[index] - 'a';
 	if (enpFile >= 0 && enpFile <= 8)
 		g_mainGame.State |= (enpFile + 1);
-	//todo: counters	
+
+	index++; // skipping enp rank, not important
+
+	// tokens
+	size_t len = strlen(fen);
+	char fenCopy[100];
+	memcpy(fenCopy, fen, len);
+	int tokNo = 0;
+	char* context;
+	char* token = strtok_s(fenCopy, " ", &context);
+	while (token != NULL)
+	{
+		tokNo++;
+		if (tokNo == 5)
+			g_mainGame.FiftyMoveRuleCount = atoi(token);
+		token = strtok_s(NULL, " ", &context);
+	}
 
 	for (int i = 0; i < 64; i++)
 	{
@@ -621,7 +639,8 @@ void WriteFen(char* fenBuffer) {
 		fenBuffer[index++] = enPassantFile;
 		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
 	}
-	fenBuffer[index] = '\0';
+	fenBuffer[index++] = ' ';
+	itoa(g_mainGame.FiftyMoveRuleCount, &fenBuffer[index], 10); // Also terminates string with 0. Thanks.
 }
 
 void AdjustPositionImportance() {

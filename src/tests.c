@@ -366,7 +366,15 @@ void PerftHashDbTest() {
 	PrintHashStats();
 }
 void FenTest() {
-	char * fen1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+	char fen1[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1";
+	ReadFen(fen1);
+	char outFen[100];
+	WriteFen(outFen);
+	AssertAreEqual(fen1, outFen, "Start and end fen differ");
+}
+
+void FenTestHalfMoves() {
+	char fen1[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 23";
 	ReadFen(fen1);
 	char outFen[100];
 	WriteFen(outFen);
@@ -379,12 +387,12 @@ void FenEnppasantTest() {
 	MakePlayerMove("d2d4");
 	char fen[100];
 	WriteFen(fen);
-	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
+	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0", "Fen missmatch");
 
 	PlayerMove pm2 = MakePlayerMove("d7d6");
 	UnMakePlayerMove(pm2);
 	WriteFen(fen);
-	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3", "Fen missmatch");
+	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0", "Fen missmatch");
 }
 
 void TimedTest(int iterations, void(*func)(int)) {
@@ -398,7 +406,7 @@ void TimedTest(int iterations, void(*func)(int)) {
 
 void PerfTestPosition2() {
 	printf("%s\n", __func__);
-	char * fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+	char fen[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0";
 	PerftTest(fen, 4);
 	AssertAreEqualInts(757163, perftResult.Captures, "Captures missmatch");
 	AssertAreEqualInts(128013, perftResult.Castles, "Castles missmatch");
@@ -408,10 +416,9 @@ void PerfTestPosition2() {
 
 void PerftTestStart() {
 	printf("%s\n", __func__);
-	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+	char startFen[] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0";
 	int count = PerftTest(startFen, 5);
 	AssertAreEqualInts(4865609, count, "Perft Count missmatch");
-
 }
 
 bool MovesContains(Move * moves, int count, Move move) {
@@ -835,15 +842,15 @@ void _runTests() {
 }
 
 void runAllTests() {
-	//TestWhiteMateIn2();
+	/*FenTestHalfMoves();
 
-	//if (_failedAsserts == 0)
-	//	PrintGreen("Success! Tests are good!\n");
-	//printf("Press any key to continue.\n");
-	//int c = _getch();
-	//return;
+	if (_failedAsserts == 0)
+		PrintGreen("Success! Tests are good!\n");
+	printf("Press any key to continue.\n");
+	int c = _getch();
+	return;
 	
-	_failedAsserts = 0;
+	_failedAsserts = 0;*/
 
 #ifdef DEBUG
 	EnpassantCollisionsTest();
@@ -858,6 +865,7 @@ void runAllTests() {
 	PerftTestStart();
 	PerfTestPosition2();
 	FenTest();
+	FenTestHalfMoves();
 	FenEnppasantTest();
 	ValidMovesPromotionCaptureAndCastling();
 	LongCastling();

@@ -6,6 +6,7 @@
 
 typedef unsigned long long U64;
 typedef unsigned int uint;
+typedef unsigned short uchar;
 
 typedef enum {
 	NOPIECE,
@@ -90,10 +91,11 @@ typedef struct {
 
 
 typedef struct {
-	int CaptIndex;
+	char CaptIndex;
 	GameState PrevGameState;
 	short PrevPositionScore;
 	U64 PrevHash;
+	uchar FiftyMoveRuleCount;
 } Undos;
 
 typedef struct {
@@ -118,6 +120,7 @@ typedef struct {
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
 	Move KillerMoves[31][2];
+	uchar FiftyMoveRuleCount;
 } Game;
 
 typedef struct {

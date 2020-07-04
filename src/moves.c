@@ -262,8 +262,13 @@ Undos DoMove(Move move, Game* game) {
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
-	AssertGame(game);
 	undos.CaptIndex = captIndex;
+	undos.FiftyMoveRuleCount = game->FiftyMoveRuleCount;
+	if (pt == PAWN || captType)
+		game->FiftyMoveRuleCount = 0;
+	else
+		game->FiftyMoveRuleCount++;
+	AssertGame(game);
 	return undos;
 }
 
@@ -392,6 +397,7 @@ void UndoMove(Game* game, Move move, Undos undos) {
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
 	game->PositionHistoryLength--;
+	game->FiftyMoveRuleCount = undos.FiftyMoveRuleCount;
 	AssertGame(game);
 }
 

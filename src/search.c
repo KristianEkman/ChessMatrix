@@ -60,7 +60,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 
 	g_SearchedNodes++;
 
-	if (DrawByRepetition(game))
+	if (DrawByRepetition(game) || game->FiftyMoveRuleCount > 100)
 		return 0;
 
 	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
@@ -157,7 +157,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 		return QuiteSearch(best_black, best_white, game, moveScore, deep_in);
 	}
 
-	if (DrawByRepetition(game))
+	if (DrawByRepetition(game) || game->FiftyMoveRuleCount > 100)
 		return 0;
 
 	//In check extension
@@ -332,7 +332,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	}
 }
 
-void CopyMainGame(Game * copy) {
+void CopyMainGame(Game* copy) {
 
 	copy->KingSquares[0] = g_mainGame.KingSquares[0];
 	copy->KingSquares[1] = g_mainGame.KingSquares[1];
@@ -383,8 +383,8 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
 	int nps = (float)g_SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
-	short score = move.Score;	
-	
+	short score = move.Score;
+
 	printf("info score ");
 	if (abs(score) > 7000) {
 		bool meMated = false;
@@ -418,7 +418,7 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 		Sleep(100);
 		now = clock();
 
-		if ((now - start > (ms / (float)1000)* CLOCKS_PER_SEC))
+		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
 		{
 			printf("Search stopped by timeout after %dms.\n", now - start); // This is not preferable since it is more economic to stop before going to next depth.
 			fflush(stdout);
@@ -453,7 +453,8 @@ DWORD WINAPI IterativeSearch(void* v) {
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
 		{
 			bestMove.Score = score;
-			PrintBestLine(bestMove, depth, ellapsed);
+			if (depth > 3)
+				PrintBestLine(bestMove, depth, ellapsed);
 		}
 		g_topSearchParams.BestMove = bestMove;
 
