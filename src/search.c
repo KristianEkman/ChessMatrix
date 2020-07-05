@@ -142,9 +142,10 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 	}
 }
 
-int Reduction(int moveNo) {
-	//removes one depth for moves n and later
-	return min(moveNo / 15 + 1, 2);
+
+bool okToReduce(Move move, Undos undos) {
+	return undos.CaptIndex == -1 && // no capture
+		move.MoveInfo != PromotionQueen;
 }
 
 short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, short moveScore, int deep_in) {
@@ -213,6 +214,8 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 		MoveToTop(pvMove, localMoves, moveCount);
 	}
 
+	const int fullDepthMoves = 4;
+	const int reductionLimit = 3;
 
 	// alpha beta pruning
 	short bestScore = 0;
@@ -236,8 +239,17 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				continue;
 			}
 			legalCount++;
-			//int red = Reduction(i); 
-			score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
+
+			// late move reuctio
+			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && okToReduce(childMove, undos))
+				score = RecursiveSearch(best_black, best_black + 1, depth - 2, game, true, childMove.Score, deep_in + 1);
+			else
+				score = best_black + 1;  // Hack to ensure that full-depth  is done.
+
+			if (score > best_black) {
+				score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
+			}
+			
 			UndoMove(game, childMove, undos);
 
 			if (score > bestScore && !g_Stopped) {
@@ -292,8 +304,18 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				continue;
 			}
 			legalCount++;
-			//int red = Reduction(i);
-			score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
+
+			// late move reduction
+			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && okToReduce(childMove, undos))
+				score = RecursiveSearch(best_white - 1, best_white, depth - 2, game, true, childMove.Score, deep_in + 1);
+			else
+				score = best_white - 1;  // Hack to ensure that full-depth  is done.
+
+			if (score < best_white) {
+				score = RecursiveSearch(best_black, best_white, depth - 1, game, true, childMove.Score, deep_in + 1);
+			}
+			
+			
 			UndoMove(game, childMove, undos);
 
 			if (score < bestScore && !g_Stopped) {
