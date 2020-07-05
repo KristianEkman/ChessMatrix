@@ -18,7 +18,7 @@ Eval:
 
 Testa negamax igen.
 
-Fifty move rule, unsufficient material
+Unsufficient material
 
 Mer pruning
 	Aspiration window

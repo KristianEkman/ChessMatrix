@@ -346,8 +346,8 @@ void CopyMainGame(Game* copy) {
 	memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 
-int PrintBestLine(Move move, int depth, float ellapsed) {
-	char buffer[2000];
+void PrintBestLine(Move move, int depth, float ellapsed) {
+	char buffer[1800];
 	char* pv = &buffer;
 	char sMove[5];
 	MoveToString(move, sMove);
@@ -358,7 +358,7 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 	Game* game = &g_mainGame;
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
-	PlayerMove moves[350];
+	PlayerMove moves[300];
 	int movesCount = 0;
 	while (movesCount < (depth + 10)) // hack: shows moves found when extending search (checks), but not going into cycles.
 	{
@@ -404,7 +404,6 @@ int PrintBestLine(Move move, int depth, float ellapsed) {
 
 	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(), buffer);
 	fflush(stdout);
-	return 0;
 }
 
 // Background thread that sets Stopped flag after specified time in ms.
