@@ -650,7 +650,7 @@ void TestWhiteMateIn2() {
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
-	AssertBestMove(6, __func__, fen, "f4h4");
+	AssertBestMove(8, __func__, fen, "f4h4");
 
 }
 
@@ -699,7 +699,7 @@ void BestMoveByWhite3() {
 
 void RookSacrificeByWhite() {
 	char* fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
-	AssertBestMove(7, __func__, fen, "e1e8");
+	AssertBestMove(9, __func__, fen, "e1e8");
 }
 
 void BlackMatesIn5a() {
@@ -714,7 +714,7 @@ void WhiteMatesIn5b() {
 
 void WhiteMatesIn7() {
 	char* fen = "rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 7 11";
-	AssertBestMove(8, __func__, fen, "h5h7");
+	AssertBestMove(11, __func__, fen, "h5h7");
 }
 
 void EngineMated() {
