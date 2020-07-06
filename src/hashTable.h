@@ -1,4 +1,7 @@
 #pragma once
+#include <string.h>
+#include "commons.h"
+
 #define SLOTS 3
 
 U64 StartHash;

@@ -3,11 +3,6 @@
 #include "utils.h"
 #include <string.h>
 
-#include <Windows.h>
-#include <conio.h>
-
-
-
 int ParseChar(char c) {
 	switch (c)
 	{
@@ -73,19 +68,13 @@ void Stdout_wl(char* text) {
 }
 
 void printColor(char* msg, int color) {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-	WORD saved_attributes;
+	
+	printf("\033[0,32m;"); // todo: other colors also
 
-	/* Save current attributes */
-	GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
-	saved_attributes = consoleInfo.wAttributes;
-
-	SetConsoleTextAttribute(hConsole, color);
 	printf(msg);
 
 	/* Restore original attributes */
-	SetConsoleTextAttribute(hConsole, saved_attributes);
+	printf("\033[0m;");
 }
 
 void PrintRed(char* msg) {

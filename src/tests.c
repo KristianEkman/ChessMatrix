@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <Windows.h>
-#include <conio.h>
 
 #include "main.h"
 #include "commons.h"
@@ -599,7 +597,7 @@ void PositionScoreCastling() {
 	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
 }
 
-void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
+void AssertBestMove(int depth, const char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
@@ -620,7 +618,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\nFull count: %d", HashTableFullCount);*/
 }
 
-void AssertBestMoveTimed(int secs, char* testName, char* fen, char* expected) {
+void AssertBestMoveTimed(int secs, const char * testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
@@ -837,7 +835,8 @@ void containsNotTest() {
 void _runTests() {
 	//BestMoveTest();
 	printf("\nPress any key to continue.");
-	int c = _getch();
+	char ch;
+	scanf("%c",&ch);
 	system("@cls||clear");
 }
 
@@ -912,6 +911,7 @@ void runAllTests() {
 		PrintRed("There are failed tests.\n");
 
 	printf("Press any key to continue.\n");
-	_getch();
+	char ch;
+	scanf("%c",&ch);
 	system("@cls||clear");
 }

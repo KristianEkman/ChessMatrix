@@ -1,14 +1,15 @@
 #include <stdlib.h>
-#include <Windows.h>
+#include <time.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
 #include "search.h"
 #include "evaluation.h"
 #include "moves.h"
 #include "hashTable.h"
 #include "timeControl.h"
 #include "book.h"
-#include <time.h>
-#include <stdio.h>
-
 
 void SetSearchDefaults() {
 	g_topSearchParams.BlackIncrement = 0;
@@ -429,14 +430,14 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 }
 
 // Background thread that sets Stopped flag after specified time in ms.
-DWORD WINAPI TimeLimitWatch(void* args) {
+void * TimeLimitWatch(void* args) {
 	int ms = g_topSearchParams.MoveTime;
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
 	while (!g_Stopped)
 	{
-		Sleep(100);
+		usleep(100000);
 		now = clock();
 
 		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
@@ -448,12 +449,11 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	}
 
 	g_Stopped = true;
-	ExitThread(0);
 	return 0;
 }
 
 
-DWORD WINAPI IterativeSearch(void* v) {
+void * IterativeSearch(void* v) {
 	Game game = g_mainGame;
 	Game* pGame = &game;
 	CopyMainGame(pGame);
@@ -498,7 +498,6 @@ DWORD WINAPI IterativeSearch(void* v) {
 	MoveToString(bestMove, sMove);
 	printf("bestmove %s\n", sMove);
 	fflush(stdout);
-	ExitThread(0);
 	return 0;
 }
 
@@ -515,25 +514,27 @@ MoveCoordinates Search(bool async) {
 		return bookMove;
 	}
 
-	HANDLE timeLimitThread = 0;
+	int timeLimitThread = 0;
+	pthread_t idTimer;
 	if (g_topSearchParams.MoveTime > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
+		timeLimitThread = pthread_create(&idTimer, NULL, &TimeLimitWatch, NULL);
 	}
 
 	g_Stopped = false;
 	g_SearchedNodes = 0;
 
-	HANDLE handle = CreateThread(NULL, 0, IterativeSearch, NULL, 0, NULL);
-	if (!async)
-	{
-		WaitForSingleObject(handle, INFINITE);
-		if (timeLimitThread != 0)
-			TerminateThread(timeLimitThread, 0);
-		MoveCoordinates coords;
-		coords.From = g_topSearchParams.BestMove.From;
-		coords.To = g_topSearchParams.BestMove.To;
-		return coords;
-	}
+	pthread_t idSearch;
+	int handle = pthread_create(&idSearch, NULL, &IterativeSearch, NULL);
+	// if (!async)
+	// {
+	// 	WaitForSingleObject(handle, INFINITE);
+	// 	if (timeLimitThread != 0)
+	// 		TerminateThread(timeLimitThread, 0);
+	// 	MoveCoordinates coords;
+	// 	coords.From = g_topSearchParams.BestMove.From;
+	// 	coords.To = g_topSearchParams.BestMove.To;
+	// 	return coords;
+	// }
 
 	//this will not be used.
 	MoveCoordinates nomove;

@@ -1,6 +1,5 @@
 #pragma once
 #include <stdlib.h>
-#include <Windows.h>
 #include "commons.h"
 
 uint g_SearchedNodes;

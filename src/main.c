@@ -3,7 +3,6 @@
 #include <time.h>
 #include <ctype.h>
 #include <string.h>
-#include <Windows.h>
 #include <stdio.h>
 
 #include "commons.h"
@@ -306,7 +305,7 @@ int EnterInteractiveMode() {
 	return 0;
 }
 
-void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
+void PutFreePieceAt(int square, PieceType pieceType, int side01) {
 	for (int p = 0; p < 16; p++) {
 		Piece* piece = &(g_mainGame.Pieces[side01][p]);
 		if (piece->Off && piece->Type == pieceType) {
@@ -317,7 +316,7 @@ void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
 	}
 }
 
-void InitPiece(int file, int rank, enum PieceType type, Side color) {
+void InitPiece(int file, int rank, PieceType type, Side color) {
 	g_mainGame.Squares[rank * 8 + file] = type | color;
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
@@ -575,14 +574,13 @@ void ReadFen(char* fen) {
 	char fenCopy[100];
 	memcpy(fenCopy, fen, len);
 	int tokNo = 0;
-	char* context;
-	char* token = strtok_s(fenCopy, " ", &context);
+	char* token = strtok(fenCopy, " ");
 	while (token != NULL)
 	{
 		tokNo++;
 		if (tokNo == 5)
 			g_mainGame.FiftyMoveRuleCount = atoi(token);
-		token = strtok_s(NULL, " ", &context);
+		token = strtok(NULL, " ");
 	}
 
 	for (int i = 0; i < 64; i++)
@@ -640,7 +638,7 @@ void WriteFen(char* fenBuffer) {
 		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
 	}
 	fenBuffer[index++] = ' ';
-	itoa(g_mainGame.FiftyMoveRuleCount, &fenBuffer[index], 10); // Also terminates string with 0. Thanks.
+	sprintf(&fenBuffer[index], "%d", g_mainGame.FiftyMoveRuleCount);
 }
 
 void AdjustPositionImportance() {
