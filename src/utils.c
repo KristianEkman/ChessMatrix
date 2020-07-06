@@ -69,12 +69,12 @@ void Stdout_wl(char* text) {
 
 void printColor(char* msg, int color) {
 	
-	printf("\033[0,32m;"); // todo: other colors also
+	printf("\033[0;32m"); // todo: other colors also
 
 	printf(msg);
 
 	/* Restore original attributes */
-	printf("\033[0m;");
+	printf("\033[0m");
 }
 
 void PrintRed(char* msg) {
