@@ -5,13 +5,13 @@ It is currently under development.
 
 Features:
 * 64 square board representation
-* Piecelist
+* Piece list
 * Piece move templates
-* Parallell search on multiple threads.
 * Zobrist Hash Transposition table at configurable size.
 * Alpha beta pruning
 * Null move pruning
 * Quiescence search
+* Late move reductions
 * UCI Protocol
 
-Complie on Windows 10 using Visual Studio 2019.
+Complie solution on Windows 10 using Visual Studio 2019.
