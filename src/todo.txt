@@ -1,13 +1,18 @@
+sök på todo i koden
+
+variabel reducering för lmr
+inte reducera bondedrag nära promotion
+mer?
 
 Se till så att draw by rep funkar.
 
 Killer moves. Ger de något? Spelar lika bra utan.
-
-Testa om lmr funkar bättre nu.
-	- läs på, mer komplicerat
+ - läs på, kolla psuedo kod
 
 Books
 	Endgame tablebases
+
+Ange versionsnummer.
 
 Eval: 
 	Isolated pawns are bad.	

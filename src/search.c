@@ -186,7 +186,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			DoNullMove(game);
 			if (game->Side == BLACK) {
 				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, moveScore, deep_in + 1);
-				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) {
+				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
 					UndoNullMove(prevState, game, prevHash);
 					return best_black;
 				}
