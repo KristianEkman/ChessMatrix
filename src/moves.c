@@ -553,6 +553,9 @@ void CreateMoves(Game* game) {
 					CreateMove(i, toSquare, PromotionBishop, game, pi);
 					CreateMove(i, toSquare, PromotionKnight, game, pi);
 				}
+				else if (toSquare < 16 || toSquare > 47) {
+					CreateMove(i, toSquare, SoonPromoting, game, pi);
+				}
 				else if (pp == 2) {
 					CreateMove(i, toSquare, EnPassant, game, pi);
 				}

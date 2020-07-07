@@ -72,6 +72,7 @@ int main(int argc, char* argv[]) {
 	GenerateZobritsKeys();
 	AllocateHashTable(1024);
 	ClearHashTable();
+	InitLmr();
 	StartPosition();
 
 	OwnBook = true;
