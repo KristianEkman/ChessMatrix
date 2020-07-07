@@ -1,5 +1,22 @@
 sök på todo i koden
 
+fen testcase failed
+
+flush till output 1 ggr per sec.
+
+LMR
+==
+Inte reducera bondedrag nära promotion
+lmr, 2,3 eller 4. Matris [depth][i]. 
+i > 3 & depth > 3 --> 2
+i > 6 & depth > 6 --> 3
+i > 9 & depth > 9 --> 4
+
+Variabel reducering för lmr, högre när djupet är större
+Mer? Kolla wikipedia.
+Sök en gång till med depth-1
+
+Drag som kraftigt förbättrat score?
 variabel reducering för lmr
 inte reducera bondedrag nära promotion
 mer?
