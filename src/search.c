@@ -506,7 +506,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 // Continues until time millis is reached or depth is reached.
 // When async is set the result is printed to stdout. Not returned.
 MoveCoordinates Search(bool async) {
-	MoveCoordinates bookMove = BestBookMove(&g_mainGame);
+	MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
 	if (bookMove.From != -1) {
 		char sMove[5];
 		CoordinatesToString(bookMove, sMove);

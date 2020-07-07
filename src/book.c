@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include "book.h"
+#include "commons.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -143,4 +144,46 @@ MoveCoordinates BestBookMove(Game* game)
 		return noMove;
 	}
 	return foundMove;
+}
+
+// Selects a random good book move
+MoveCoordinates RandomBookMove(Game* game)
+{
+	MoveCoordinates foundMoves[5];
+	foundMoves[0].From = -1;
+	foundMoves[0].To = -1;
+	if (!OwnBook)
+		return foundMoves[0];
+	int moveCount = 0;
+	for (int i = 0; i < entryCount; i++)
+	{
+		if (game->Hash == hashBook[i].positionHash) {
+			BookEntry bookEntry = hashBook[i].bookEntry;
+			if (bookEntry.nwon > bookEntry.nlost && moveCount < 5)
+			{
+				foundMoves[moveCount].From = bookEntry.from;
+				foundMoves[moveCount].To = bookEntry.to;
+				moveCount++;
+			}
+		}
+	}
+
+	if (moveCount == 0)
+		return foundMoves[0];
+	int random = RandomInt(0, moveCount - 1);
+	printf("Selecting best book move from %d moves\n", moveCount);
+
+	//This is tricky. It resolves some more information needed. I.e. index of piece being moved.
+	char sMove[5];
+	CoordinatesToString(foundMoves[random], sMove);
+	PlayerMove pm = MakePlayerMoveOnThread(game, sMove);
+	UnMakePlayerMoveOnThread(game, pm);
+	if (pm.Invalid) {
+		printf("Invalid move found in book\n");
+		MoveCoordinates noMove;
+		noMove.From = -1;
+		noMove.To = -1;
+		return noMove;
+	}
+	return foundMoves[random];
 }

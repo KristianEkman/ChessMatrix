@@ -4,9 +4,8 @@
 #include <string.h>
 
 #include <Windows.h>
-#include <conio.h>
-
-
+#include <conio.h> 
+#include <time.h>
 
 int ParseChar(char c) {
 	switch (c)
@@ -43,7 +42,16 @@ U64 Llrand() {
 
 	return r & 0xFFFFFFFFFFFFFFFFULL;
 }
-
+bool seeded;
+int RandomInt(int lower, int upper)
+{
+	if (!seeded)
+	{
+		srand(time(0));
+		seeded = true;
+	}
+	return (rand() % (upper - lower + 1)) + lower;
+}
 
 bool Streq(char s1[], char s2[])
 {
@@ -57,13 +65,13 @@ bool StartsWith(char a[], char b[])
 }
 
 bool Contains(char a[], char b[]) {
-	return strstr(a, b) != NULL;	
+	return strstr(a, b) != NULL;
 }
 
-int IndexOf(char * a, char * b) {
-	char * p = strstr(a, b);
+int IndexOf(char* a, char* b) {
+	char* p = strstr(a, b);
 	if (p == NULL) return -1;
-	return p -  a;
+	return p - a;
 }
 
 
