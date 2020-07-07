@@ -1,18 +1,41 @@
 sök på todo i koden
 
-variabel reducering för lmr
-inte reducera bondedrag nära promotion
-mer?
+fen testcase failed
+
+LMR
+==
+Inte reducera bondedrag nära promotion
+lmr, 2,3 eller 4. Matris [depth][i]. 
+i > 3 & depth > 3 --> 2
+i > 6 & depth > 6 --> 3
+i > 9 & depth > 9 --> 4
+
+Variabel reducering för lmr, högre när djupet är större
+Mer? Kolla wikipedia.
+Sök en gång till med depth-1
+
+Drag som kraftigt förbättrat score?
+
+Multi thread
+============
+Gemensamma alpha beta över trådar.
+g_alpfa[depth]
+
+Auto trimma constanter för eval. Genetisk sökning?
 
 Se till så att draw by rep funkar.
 
 Killer moves. Ger de något? Spelar lika bra utan.
- - läs på, kolla psuedo kod
+ - läs på, kolla psuedo kod, vice kanske inte gör rätt.
 
 Books
 	Endgame tablebases
 
 Ange versionsnummer.
+
+Multitrådning
+=============
+En hash db per tråd.
 
 Eval: 
 	Isolated pawns are bad.	
@@ -32,7 +55,10 @@ Mer pruning
 
 Fler testfall.
 
-Linux kompatibel.
+Linux kompatibel
+================
+Ger bara en tredjedel av beräkningskapaciteten.
+Testfallen, async funkar inte.
 
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)

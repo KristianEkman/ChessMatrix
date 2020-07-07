@@ -47,7 +47,9 @@ typedef enum {
 	EnPassant = 9,
 	EnPassantCapture = 10,
 	NotAMove = 11,
-	QueenMove = 12
+	QueenMove = 12,
+	// move to 7th or 2nd rank
+	SoonPromoting = 13
 } MoveInfo;
 
 typedef struct {
