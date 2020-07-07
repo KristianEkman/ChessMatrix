@@ -425,7 +425,6 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 	}
 
 	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(), buffer);
-	fflush(stdout);
 }
 
 // Background thread that sets Stopped flag after specified time in ms.
@@ -466,6 +465,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 	for (int depth = 1; depth < g_topSearchParams.MaxDepth + 2; depth++)
 	{
 		clock_t depStart = clock();
+		clock_t flushed = clock();
 		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, 0, 0);
 		if (g_Stopped)
 			break;
@@ -476,6 +476,12 @@ DWORD WINAPI IterativeSearch(void* v) {
 			bestMove.Score = score;
 			if (depth > 3)
 				PrintBestLine(bestMove, depth, ellapsed);
+			// only flushing to stdout every second for performance
+			float flushTime = (float)(clock() - flushed) / CLOCKS_PER_SEC;
+			if (flushTime > 1) {
+				fflush(stdout);
+				flushed = clock();
+			}
 		}
 		g_topSearchParams.BestMove = bestMove;
 
