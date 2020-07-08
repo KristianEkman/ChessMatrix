@@ -163,7 +163,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 }
 
 
-bool okToReduce(Move move, Undos undos) {
+bool IsReductionOk(Move move, Undos undos) {
 	return undos.CaptIndex == -1 && // no capture
 		move.MoveInfo != PromotionQueen &&
 		move.MoveInfo != SoonPromoting;
@@ -263,9 +263,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			}
 			legalCount++;
 			
-			int lmrRed = lmr_matrix[depth][i];
+			int lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
-			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && okToReduce(childMove, undos))
+			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove.Score, deep_in + 1);
 			else
 				score = best_black + 1;  // Hack to ensure that full-depth is done.
@@ -330,8 +330,8 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			legalCount++;
 
 			// late move reduction
-			int lmrRed = lmr_matrix[depth][i];
-			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && okToReduce(childMove, undos))
+			int lmrRed = 2; // lmr_matrix[depth][i];
+			if (i >= fullDepthMoves && depth >= reductionLimit && !incheck && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove.Score, deep_in + 1);
 			else
 				score = best_white - 1;  // Hack to ensure that full-depth  is done.
