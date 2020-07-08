@@ -9,6 +9,8 @@
 #include <time.h>
 #include <stdio.h>
 
+short g_betas[40];
+short g_alphas[40];
 
 void SetSearchDefaults() {
 	g_topSearchParams.BlackIncrement = 0;
@@ -243,8 +245,8 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
-				if (score > alpha) {
-					if (score >= beta) {
+				if (score > alpha ||  score > g_alphas[depth]) {
+					if (score >= beta || score >= g_betas[depth]) {
 						AddHashScore(game->Hash, beta, depth, BETA, childMove.From, childMove.To);
 						free(localMoves);
 
@@ -254,6 +256,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 						}
 						return beta;
 					}
+					g_alphas[depth-1] = score;
 					alpha = score;
 				}
 			}
@@ -299,8 +302,8 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
-				if (score < beta) {
-					if (score <= alpha) {
+				if (score < beta || score < g_betas[depth]) {
+					if (score <= alpha || score <= g_alphas[depth]) {
 						AddHashScore(game->Hash, alpha, depth, ALPHA, bestMove.From, bestMove.To);
 						if (undos.CaptIndex == -1) {
 							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
@@ -309,6 +312,7 @@ short AlphaBeta(short alpha, short beta, int depth, Game* game, bool doNull, sho
 						free(localMoves);
 						return alpha;
 					}
+					g_betas[depth-1] = score;
 					beta = score;
 				}
 			}
@@ -386,6 +390,11 @@ DWORD WINAPI ScoreRootMoves(ThreadParams* prm) {
 		Undos undos = DoMove(move, game);
 		short g_alpha = MIN_SCORE;
 		short g_beta = MAX_SCORE;
+		for (size_t i = 0; i < 40; i++)
+		{
+			g_alphas[i] = MIN_SCORE;
+			g_betas[i] = MAX_SCORE;
+		}
 		int score = AlphaBeta(g_alpha, g_beta, prm->Depth, game, true, move.Score, 0);
 
 		if (!g_Stopped)
