@@ -74,7 +74,6 @@ int main(int argc, char* argv[]) {
 	ClearHashTable();
 	InitLmr();
 	StartPosition();
-
 	OwnBook = true;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
 	LoadBook("openings.abk");

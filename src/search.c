@@ -53,8 +53,19 @@ void MoveToTop(Move move, Move* list, int length) {
 	}
 }
 
-void MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_in) {
-	Move secondKiller = game->KillerMoves[deep_in][1];
+void AddKiller(Game* game, Move move) {
+	MoveCoordinates * list = game->KillerMoves[game->PositionHistoryLength];
+	if ((list[0].From == move.From && list[0].To == move.To) ||
+		(list[1].From == move.From && list[1].To == move.To))
+		return; // dont add already existing killers 
+	list[1] = list[0];
+	list[0].From = move.From;
+	list[0].To = move.To;
+}
+
+
+void MoveKillersToTop(Game* game, Move* moveList, int moveListLength) {
+	MoveCoordinates secondKiller = game->KillerMoves[game->PositionHistoryLength][1];
 	for (size_t i = 0; i < moveListLength; i++)
 	{
 		if (moveList[i].From == secondKiller.From && moveList[i].To == secondKiller.To) {
@@ -64,7 +75,7 @@ void MoveKillersToTop(Game* game, Move* moveList, int moveListLength, int deep_i
 			break;
 		}
 	}
-	Move firstKiller = game->KillerMoves[deep_in][0];
+	MoveCoordinates firstKiller = game->KillerMoves[game->PositionHistoryLength][0];
 	for (size_t i = 0; i < moveListLength; i++)
 	{
 		if (moveList[i].From == firstKiller.From && moveList[i].To == firstKiller.To) {
@@ -231,6 +242,8 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
+	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount);
 	}
@@ -284,10 +297,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
 
-						/*if (undos.CaptIndex == -1) {
-							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
-							game->KillerMoves[deep_in][0] = childMove;
-						}*/
+						if (undos.CaptIndex == -1) {
+							AddKiller(game, childMove);
+						}
 						return best_white;
 					}
 					best_black = score;
@@ -348,10 +360,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				if (score < best_white) {
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
-						/*if (undos.CaptIndex == -1) {
-							game->KillerMoves[deep_in][1] = game->KillerMoves[deep_in][0];
-							game->KillerMoves[deep_in][0] = childMove;
-						}*/
+						AddKiller(game, childMove);
 						free(localMoves);
 						return best_black;
 					}

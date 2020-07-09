@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include "book.h"
 #include "commons.h"
+#include "utils.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 
