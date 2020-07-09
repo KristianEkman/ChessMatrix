@@ -117,7 +117,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
+	MoveKillersToTop(game, localMoves, moveCount);
 
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
@@ -242,7 +242,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveKillersToTop(game, localMoves, moveCount, deep_in);
+	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount);
