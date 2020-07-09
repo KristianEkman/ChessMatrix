@@ -1,30 +1,11 @@
 sök på todo i koden
 
-fen testcase failed
+killers ordnde efter pvmoves
 
-flush till output 1 ggr per sec.
-
-LMR
-==
-Inte reducera bondedrag nära promotion
-lmr, 2,3 eller 4. Matris [depth][i]. 
-i > 3 & depth > 3 --> 2
-i > 6 & depth > 6 --> 3
-i > 9 & depth > 9 --> 4
-
-Variabel reducering för lmr, högre när djupet är större
-Mer? Kolla wikipedia.
-Sök en gång till med depth-1
-
-Drag som kraftigt förbättrat score?
-variabel reducering för lmr
-inte reducera bondedrag nära promotion
-mer?
-fen testcase failed
+minskad betydelse av position på brädet.
 
 LMR
-==
-Inte reducera bondedrag nära promotion
+===
 lmr, 2,3 eller 4. Matris [depth][i]. 
 i > 3 & depth > 3 --> 2
 i > 6 & depth > 6 --> 3
@@ -40,6 +21,7 @@ Multi thread
 ============
 Gemensamma alpha beta över trådar.
 g_alpfa[depth]
+En hash db per tråd.
 
 Auto trimma constanter för eval. Genetisk sökning?
 
@@ -53,10 +35,6 @@ Books
 
 Ange versionsnummer.
 
-Multitrådning
-=============
-En hash db per tråd.
-
 Eval: 
 	Isolated pawns are bad.	
 	Bad bishops -- performance ??
@@ -65,6 +43,7 @@ Eval:
     ANN
 
 Testa negamax igen.
+	kolla allt som görs på den branch som funkar
 
 Unsufficient material
 
