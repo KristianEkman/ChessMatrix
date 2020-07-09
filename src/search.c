@@ -236,7 +236,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	}
 
 	//Not reducing for the first number of moves of each depth.
-	const int fullDepthMoves = 4;
+	const int fullDepthMoves = 5;
 	//Not reducing when depth is or lower
 	const int reductionLimit = 3;
 	
