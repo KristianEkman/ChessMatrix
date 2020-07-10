@@ -121,7 +121,7 @@ typedef struct {
 	U64 PositionHistory[1800];
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
-	MoveCoordinates KillerMoves[500][2];
+	//MoveCoordinates KillerMoves[500][2];
 	uchar FiftyMoveRuleCount;
 } Game;
 
