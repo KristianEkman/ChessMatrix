@@ -699,7 +699,7 @@ void BestMoveByWhite3() {
 
 void RookSacrificeByWhite() {
 	char* fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
-	AssertBestMoveTimed(10000, __func__, fen, "e1e8");
+	AssertBestMoveTimed(2000, __func__, fen, "e1e8");
 }
 
 void BlackMatesIn5a() {
