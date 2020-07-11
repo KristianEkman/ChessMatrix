@@ -91,7 +91,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 
 	g_SearchedNodes++;
 
-	if (DrawByRepetition(game) || game->FiftyMoveRuleCount > 100)
+	if (IsDraw(game))
 		return 0;
 
 	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
@@ -190,7 +190,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 		return QuiteSearch(best_black, best_white, game, moveScore, deep_in);
 	}
 
-	if (DrawByRepetition(game) || game->FiftyMoveRuleCount > 100)
+	if (IsDraw(game))
 		return 0;
 
 	//In check extension

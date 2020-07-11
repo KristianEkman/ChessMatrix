@@ -92,5 +92,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="openings.abk" />
+    <None Include="copybuild.ps1" />
   </ItemGroup>
 </Project>

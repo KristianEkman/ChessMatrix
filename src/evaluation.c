@@ -207,19 +207,26 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 	return score;
 }
 
-bool DrawByRepetition(Game* game) {
-	if (game->PositionHistoryLength < 50) //This draw can happen early also, but cheating for performance reasons.
-		return false;
-	int start = game->PositionHistoryLength - 10; //Only checking back some moves. Possible to miss repetions but must be quite rare.
+bool IsDraw(Game* game) {
+	//This draw can happen early also, but cheating for performance reasons.
+	/*if (game->PositionHistoryLength < 20) 
+		return false;*/
+	// However this optimization did not give measurable improvment
+
+	int start = game->PositionHistoryLength - 20; //Only checking back some moves. Possible to miss repetions but must be quite rare.
 	int end = game->PositionHistoryLength - (int)2;
 	for (size_t i = start; i < end; i++)
 	{
 		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
 			return true;
 	}
-	return false;
 
-	// todo 50 move rule.
+	//Draw by material if both players have two knights or less material.
+	// todo: And no pawn.
+	//if (game->Material[0] >= -MATERIAL_N_N && game->Material[1] <= MATERIAL_N_N)
+	//	return true;
+
+	return game->FiftyMoveRuleCount >= 100;
 }
 
 // Move score is much faster than evaluation. It is used during move generation to get good sortting of moves.

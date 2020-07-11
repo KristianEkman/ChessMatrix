@@ -31,7 +31,7 @@ short GetMoveScore(Game* game);
 
 short GetEval(Game* game, short moveScore);
 
-bool DrawByRepetition(Game* game);
+bool IsDraw(Game* game);
 
 short KingExposed(int square, Game* game);
 

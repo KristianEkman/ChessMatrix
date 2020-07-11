@@ -4,6 +4,15 @@
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
 
+//white, black   nopiece, bishop, rook, queen, pawn, knight, promotions (minus pawn)
+#define MATERIAL_B 305
+#define MATERIAL_R 500
+#define MATERIAL_Q 1010
+#define MATERIAL_P 100
+#define MATERIAL_N 295
+#define MATERIAL_N_N 590
+
+
 typedef unsigned long long U64;
 typedef unsigned int uint;
 typedef unsigned short uchar;
