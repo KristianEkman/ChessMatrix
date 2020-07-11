@@ -1,21 +1,13 @@
 resultat mot vice. 2.5p av 10
 
-killers ordnde efter pvmoves
-
 minskad betydelse av position på brädet.
-
-LMR
-===
-lmr, 2,3 eller 4. Matris [depth][i]. 
-i > 3 & depth > 3 --> 2
-i > 6 & depth > 6 --> 3
-i > 9 & depth > 9 --> 4
 
 Variabel reducering för lmr, högre när djupet är större
 Mer? Kolla wikipedia.
 Sök en gång till med depth-1
 
 Drag som kraftigt förbättrat score?
+
 
 Multi thread
 ============
@@ -36,6 +28,8 @@ Books
 Ange versionsnummer.
 
 Eval: 
+	Pins
+	Forks
 	Isolated pawns are bad.	
 	Bad bishops -- performance ??
 	Outposts -- performance ??
