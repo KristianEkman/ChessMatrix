@@ -1,6 +1,6 @@
-# CChess
+# ChessMatrix
 This is a chess engine written in C.
-Strength is estimated at between 1900 and 2000 ELO.
+Strength is estimated at between 2000-2100 ELO.
 It is currently under development.
 
 Features:
