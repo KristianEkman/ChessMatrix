@@ -175,6 +175,7 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="license.txt" />
     <Text Include="todo.txt" />
   </ItemGroup>
   <ItemGroup>
