@@ -1,13 +1,11 @@
-resultat mot vice. 2.5p av 10
 
-minskad betydelse av position på brädet.
+
+Minskad betydelse av position på brädet.
 
 Variabel reducering för lmr, högre när djupet är större
-Mer? Kolla wikipedia.
 Sök en gång till med depth-1
 
 Drag som kraftigt förbättrat score?
-
 
 Multi thread
 ============
@@ -15,12 +13,12 @@ Gemensamma alpha beta över trådar.
 g_alpfa[depth]
 En hash db per tråd.
 
-Auto trimma constanter för eval. Genetisk sökning?
+Auto trimma konstanter för eval. Genetisk sökning?
 
-Se till så att draw by rep funkar.
+Draw by material.
 
 Killer moves. Ger de något? Spelar lika bra utan.
- - läs på, kolla psuedo kod, vice kanske inte gör rätt.
+ - läs på, kolla psuedo kod.
 
 Books
 	Endgame tablebases
@@ -35,9 +33,6 @@ Eval:
 	Outposts -- performance ??
 	Minska öppningsreglernas betydelse gradvis efter 3ply
     ANN
-
-Testa negamax igen.
-	kolla allt som görs på den branch som funkar
 
 Unsufficient material
 

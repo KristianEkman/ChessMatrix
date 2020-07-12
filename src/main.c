@@ -96,7 +96,7 @@ void EnterUciMode() {
 			Stdout_wl("new game");
 		}
 		else if (StartsWith(buf, "uci")) {
-			Stdout_wl("id name CChess");
+			Stdout_wl("id name ChessMatrix");
 			Stdout_wl("id author Kristian Ekman");
 			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			Stdout_wl("option name OwnBook type check default false");
