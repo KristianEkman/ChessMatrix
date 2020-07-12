@@ -1,6 +1,15 @@
 
 
-Minskad betydelse av position på brädet.
+
+Mer pruning
+	Futilty pruning
+	Aspiration window
+	Razoring
+
+LMR
+===
+	fulldepthmoves = 6,7,8
+	depth limit
 
 Variabel reducering för lmr, högre när djupet är större
 Sök en gång till med depth-1
@@ -10,8 +19,8 @@ Drag som kraftigt förbättrat score?
 Multi thread
 ============
 Gemensamma alpha beta över trådar.
-g_alpfa[depth]
 En hash db per tråd.
+MoveGen, (eval) på egna trådar?
 
 Auto trimma konstanter för eval. Genetisk sökning?
 
@@ -28,20 +37,14 @@ Ange versionsnummer.
 Eval: 
 	Pins
 	Forks
-	Isolated pawns are bad.	
+	Isolated pawns.
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 	Minska öppningsreglernas betydelse gradvis efter 3ply
     ANN
+	Minskad betydelse av position på brädet.
 
 Unsufficient material
-
-Mer pruning
-	Aspiration window
-	Futilty pruning
-	Razoring
-
-Fler testfall.
 
 Linux kompatibel
 ================

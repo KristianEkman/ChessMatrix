@@ -90,19 +90,19 @@ void EnterUciMode() {
 	fgets(buf, 5000, stdin);
 	while (!Streq(buf, "quit\n"))
 	{
-		if (StartsWith(buf, "ucinewgame")) {
+		if (Streq(buf, "ucinewgame\n")) {
 			ClearHashTable();
 			ResetDepthTimes();
 			Stdout_wl("new game");
 		}
-		else if (StartsWith(buf, "uci")) {
-			Stdout_wl("id name ChessMatrix");
+		else if (Streq(buf, "uci\n")) {
+			Stdout_wl("id name ChessMatrix 1.0.1");
 			Stdout_wl("id author Kristian Ekman");
 			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			Stdout_wl("option name OwnBook type check default false");
 			Stdout_wl("uciok");
 		}
-		else if (StartsWith(buf, "isready")) {
+		else if (Streq(buf, "isready\n")) {
 			Stdout_wl("readyok");
 		}
 		else if (StartsWith(buf, "setoption name Hash value")) {
@@ -152,7 +152,7 @@ void EnterUciMode() {
 				int fenPos = pFen - buf + 5;
 
 				if (movesPos == -1) { // note sure if "moves" string is mandatory
-					movesPos = strlen(buf) - 1;
+					movesPos = (int)strlen(buf) - 1;
 				}
 
 				int fenLength = movesPos - fenPos; //position fen xxx...yyy moves
@@ -174,7 +174,7 @@ void EnterUciMode() {
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-				printf("string position parsed\n");
+				Stdout_wl("string position parsed");
 				AssertGame(&g_mainGame);
 			}
 		}

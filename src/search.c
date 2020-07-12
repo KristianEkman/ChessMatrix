@@ -539,6 +539,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 			break; //A check mate is found, no need to search further.
 		}
 
+		// At the end of each depth, checks if it is smart to search deeper.
 		float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
 		int moveNo = pGame->PositionHistoryLength;
 		RegisterDepthTime(moveNo, depth, depthTime * 1000);
