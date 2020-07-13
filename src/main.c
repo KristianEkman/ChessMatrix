@@ -35,7 +35,7 @@ void ManualMove() {
 	fseek(stdin, 0, SEEK_END);
 	PlayerMove pm = MakePlayerMove(sMove);
 	if (pm.Invalid)
-		Stdout_wl("Ivalid move");
+		Stdout_wl("Invalid move");
 }
 
 void InitPieceList() {
