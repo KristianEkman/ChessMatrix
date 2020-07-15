@@ -1,0 +1,1 @@
+cp ..\x64\Release\CChess.exe C:\Users\krist\Downloads\arena_3.5.1\Engines\ChessMatrixFeature\ChessMatrixFeat.exe
