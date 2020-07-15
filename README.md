@@ -9,6 +9,7 @@ Features:
 * Piece move templates
 * Zobrist Hash Transposition table at configurable size.
 * Alpha beta pruning
+* Opening book in abk format.
 * Null move pruning
 * Quiescence search
 * Late move reductions
