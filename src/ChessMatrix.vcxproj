@@ -180,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="copybuild.ps1" />
+    <None Include="copyfeature.ps1" />
     <None Include="openings.abk">
       <DeploymentContent>true</DeploymentContent>
       <FileType>Resx</FileType>
