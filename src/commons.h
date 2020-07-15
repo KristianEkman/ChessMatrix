@@ -157,4 +157,11 @@ typedef struct {
 	Move BestMove;
 } TopSearchParams;
 
+typedef struct {
+	bool Checks;
+	bool DoNull;
+	MoveInfo MoveInfo;
+	short MoveScore;
+} LastMove;
+
 Game g_mainGame;
