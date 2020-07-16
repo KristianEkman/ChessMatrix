@@ -9,9 +9,10 @@
 #define KING_EXPOSED_INFRONT 22
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 7
+#define PAWN_PROTECT 8
 #define ENDGAME 1800
-#define SAME_TWICE 28
-#define QUEEN_EARLY 25
+#define SAME_TWICE 28 //todo change to 18
+#define QUEEN_EARLY 25 //todo change to 15
 
 //[type][side][square]
 short PositionValueMatrix[7][2][64];

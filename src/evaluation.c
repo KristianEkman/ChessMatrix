@@ -317,6 +317,35 @@ short PassedPawn(int square, Game* game) {
 	return PASSED_PAWN * steps;
 }
 
+short ProtectedByPawn(int square, Game* game) {
+	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
+	PieceType pawn = PAWN | pieceColor;
+	int file = square % 8;
+
+	if (pieceColor == WHITE) {
+		//special case for file a and h (a and h)
+		if (square < 8)
+			return 0;
+		if (file == 0 && game->Squares[square - 7] == pawn)
+			return PAWN_PROTECT;
+		if (file == 7 && game->Squares[square - 9] == pawn)
+			return PAWN_PROTECT;
+		if (game->Squares[square - 7] == pawn || game->Squares[square - 9] == pawn)
+			return PAWN_PROTECT;
+	}
+	else { // BLACK
+		if (square > 56)
+			return 0;
+		if (file == 0 && game->Squares[square + 9] == pawn)
+			return PAWN_PROTECT;
+		if (file == 7 && game->Squares[square + 7] == pawn)
+			return PAWN_PROTECT;
+		if (game->Squares[square + 7] == pawn || game->Squares[square + 9] == pawn)
+			return PAWN_PROTECT;
+	}
+	return 0;
+}
+
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
@@ -356,19 +385,15 @@ short GetEval(Game* game, short moveScore) {
 				//mobil += piece.Mobility;
 			}
 			break;
-			//case BISHOP:
-			//{
-			//	//mobil += piece.Mobility;
-			//}
-			// break;
-			//case KNIGHT: {
-			//	//outposts, protected by a pawn?
-			// Mobility of knights is set by piecetypeposition matrix
-			//}
-			// break;
+			case BISHOP:
+			case KNIGHT: {
+				score += neg * ProtectedByPawn(i, game);
+			}
+			 break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
 				score += neg * PassedPawn(i, game);
+				score += neg * ProtectedByPawn(i, game);
 			}
 					 break;
 			case KING: {
