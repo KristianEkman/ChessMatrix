@@ -6,13 +6,17 @@ Mer pruning
 	Aspiration window
 	Razoring
 
-LMR
+Förenkla 3-fold rep med att kolla typ varannan. Testfall.
+
+Köra tester med egen bok. 3-4 drag slumpmässigt.
+
+LMR och Extensions
 ===
-	fulldepthmoves = 6,7,8
 	depth limit
 
+Extensions för fler typer av drag.
 Variabel reducering för lmr, högre när djupet är större
-Sök en gång till med depth-1
+Sök en gång till med depth-1 efter lmr?
 
 Drag som kraftigt förbättrat score?
 
@@ -21,6 +25,8 @@ Multi thread
 Gemensamma alpha beta över trådar.
 En hash db per tråd.
 MoveGen, (eval) på egna trådar?
+Stoppa de långsamaste trådarna?
+Låta de köra helt fritt, öka sitt eget djup?
 
 Auto trimma konstanter för eval. Genetisk sökning?
 
@@ -29,12 +35,13 @@ Draw by material.
 Killer moves. Ger de något? Spelar lika bra utan.
  - läs på, kolla psuedo kod.
 
+HistorikTabell
+
 Books
 	Endgame tablebases
 
-Ange versionsnummer.
-
 Eval: 
+	Protected by pawn
 	Pins
 	Forks
 	Isolated pawns.

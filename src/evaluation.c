@@ -271,8 +271,8 @@ short KingExposed(int square, Game* game) {
 	return score;
 }
 
+//No opponent pawn on files left right and infront
 short PassedPawn(int square, Game* game) {
-	//No opponent pawn on files left right and infront
 	int file = square % 8;
 	int rank = square / 8;
 	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
@@ -323,7 +323,7 @@ short GetEval(Game* game, short moveScore) {
 	//int mobil = 0;
 	int neg = -1;
 	int opening = 0;
-	if (game->MovesBufferLength < 12) {
+	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
 	for (size_t s = 0; s < 2; s++)
@@ -338,9 +338,9 @@ short GetEval(Game* game, short moveScore) {
 			if (opening)
 			{
 				if (piece.MoveCount > 1)
-					score -= (neg * SAME_TWICE);
+					score += (neg * SAME_TWICE);
 				if (piece.Type == QUEEN)
-					score -= (neg * QUEEN_EARLY);
+					score += (neg * QUEEN_EARLY);
 			}
 
 			int i = piece.SquareIndex;
