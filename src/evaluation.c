@@ -205,15 +205,9 @@ short OpenRookFile(int square, Game* game) {
 }
 
 short DoublePawns(int square, Game* game, PieceType pawn) {
-	int file = square % 8;
-	short score = -DOUBLE_PAWN; //Always one pawn
-	for (int i = 0; i < 7; i++)
-	{
-		file += 8;
-		if ((game->Squares[file] == pawn))
-			score += DOUBLE_PAWN;
-	}
-	return score;
+	int color01 = (pawn & 24) >> 4;
+	int sqBehind = square + Behind[color01];
+	return (game->Squares[sqBehind] == pawn) * DOUBLE_PAWN;
 }
 
 bool IsDraw(Game* game) {
