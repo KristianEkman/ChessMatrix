@@ -243,7 +243,10 @@ short KingExposed(int square, Game* game) {
 	int otherSide = (kingColor >> 4) ^ 1;
 	if (abs(game->Material[otherSide]) < KING_NEEDS_PROTECTION)
 		return 0;
+
 	short score = 0;
+	//short score = game->Squares[InfrontOfKing[game->Side01][square]];
+
 	// King should be on back rank.
 	// Points for placement of king is handled by main position score lookup.
 	if (kingColor == BLACK) {
