@@ -73,6 +73,7 @@ int main(int argc, char* argv[]) {
 	AllocateHashTable(1024);
 	ClearHashTable();
 	InitLmr();
+	CalculatePatterns();
 	StartPosition();
 	OwnBook = false;
 #ifndef _DEBUG // loadbook is to slow in debug mode.

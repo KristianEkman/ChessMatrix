@@ -1,5 +1,6 @@
 #include "commons.h"
 #include "evaluation.h"
+#include "patterns.h"
 #include <stdlib.h>
 
 
@@ -183,6 +184,14 @@ short KingPositionValueMatrix[2][2][64] = {
 
 short CastlingPoints[2] = { -CASTLED, CASTLED };
 
+
+// Array of coordinates for squares infront of the king.
+// Depending on side and square of king.
+int InfrontOfKingSquares[2][64][4];
+
+// Array of coordinates for squares that could have a protecting pawn
+char PawnProtectionSquares[2][64][3];
+
 short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
 	short open = OPEN_ROOK_FILE;
@@ -234,42 +243,72 @@ short GetMoveScore(Game* game) {
 	return game->Material[0] + game->Material[1] + game->PositionScore;
 }
 
+//When king is castled at back rank, penalty for missing pawns.
 short KingExposed(int square, Game* game) {
-	// If opponent has alot of material, the king should be protected by pawns.
-	// More points for square infront
-	// less for diagonals.
-
-	PieceType kingColor = game->Squares[square] & (BLACK | WHITE);
-	int otherSide = (kingColor >> 4) ^ 1;
-	if (abs(game->Material[otherSide]) < KING_NEEDS_PROTECTION)
-		return 0;
+	Side kingColor = game->Squares[square] & 24;
+	int color01 = kingColor >> 4;
+	PieceType pawn = PAWN | kingColor;
+	
 	short score = 0;
-	// King should be on back rank.
-	// Points for placement of king is handled by main position score lookup.
-	if (kingColor == BLACK) {
-		if (square < 56 && square != 59 && square != 60) //back rank not center
-			return 0;
-		PieceType blackPawn = (BLACK | PAWN);
-		if (game->Squares[square - 7] != blackPawn && square != 63)
-			score += KING_EXPOSED_DIAGONAL;
-		if (game->Squares[square - 8] != blackPawn)
-			score += KING_EXPOSED_INFRONT;
-		if (game->Squares[square - 9] != blackPawn && square != 56)
-			score += KING_EXPOSED_DIAGONAL;
+	for (size_t i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
+	{
+		int protectSquare = InfrontOfKingSquares[color01][square][i];
+		score += game->Squares[protectSquare] != pawn;
 	}
-	else { // WHITE
-		if (square > 7 && square != 3 && square != 4) //back rank not center
-			return 0;
-		PieceType whitePawn = (WHITE | PAWN);
-		if (game->Squares[square + 7] != whitePawn && square != 0)
-			score += KING_EXPOSED_DIAGONAL;
-		if (game->Squares[square + 8] != whitePawn)
-			score += KING_EXPOSED_INFRONT;
-		if (game->Squares[square + 9] != whitePawn && square != 7)
-			score += KING_EXPOSED_DIAGONAL;
-	}
-	return score;
+	return score * KING_EXPOSED_INFRONT;
 }
+
+void CalculateInfrontOfKing() {
+	for (size_t side = 0; side < 2; side++)
+	{
+		for (size_t square = 0; square < 64; square++)
+		{
+			InfrontOfKingSquares[side][square][0] = 0;
+			InfrontOfKingSquares[side][square][1] = 0;
+			InfrontOfKingSquares[side][square][2] = 0;
+			InfrontOfKingSquares[side][square][3] = 0;
+			char count = 0;
+			if (side == 1) { //BLACK
+				if (square < 56 || square == 59 || square == 60) //back rank not center
+					InfrontOfKingSquares[side][square][0] = 0;
+				else
+				{
+					if (square != 63)
+					{
+						InfrontOfKingSquares[side][square][++count] = square - 7;
+						InfrontOfKingSquares[side][square][0]++;
+					}
+					InfrontOfKingSquares[side][square][++count] = square - 8;
+					InfrontOfKingSquares[side][square][0]++;
+					if (square != 56)
+					{
+						InfrontOfKingSquares[side][square][++count] = square - 9;
+						InfrontOfKingSquares[side][square][0]++;
+					}
+				}
+			}
+			else { // WHITE
+				if (square > 7 || square == 3 || square == 4) //back rank not center
+					InfrontOfKingSquares[side][square][0] = 0;
+				else {
+					if (square != 7)
+					{
+						InfrontOfKingSquares[side][square][++count] = square + 9;
+						InfrontOfKingSquares[side][square][0]++;
+					}
+					InfrontOfKingSquares[side][square][++count] = square + 8;
+					InfrontOfKingSquares[side][square][0]++;
+					if (square != 0)
+					{
+						InfrontOfKingSquares[side][square][++count] = square + 7;
+						InfrontOfKingSquares[side][square][0]++;
+					}					
+				}
+			}
+		}
+	}
+}
+
 
 //No opponent pawn on files left right and infront
 short PassedPawn(int square, Game* game) {
@@ -317,6 +356,75 @@ short PassedPawn(int square, Game* game) {
 	return PASSED_PAWN * steps;
 }
 
+void CalculatePawnProtection() {
+	for (size_t side = 0; side < 2; side++)
+	{
+		for (size_t square = 0; square < 64; square++)
+		{
+			int file = square % 8;
+			//special case for file a and h (a and h)
+			if (side == 0) { //white
+				if (square < 8)
+					PawnProtectionSquares[side][square][0] = 0; // has no protecting pawns
+				else if (file == 0)
+				{
+					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file a
+					PawnProtectionSquares[side][square][1] = square - 7;
+				}
+				else if (file == 7)
+				{
+					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file h
+					PawnProtectionSquares[side][square][1] = square - 9;
+				}
+				else {
+					PawnProtectionSquares[side][square][0] = 2; //two protecting pawns on the rest
+					PawnProtectionSquares[side][square][1] = square - 7;
+					PawnProtectionSquares[side][square][2] = square - 9;
+				}
+				
+			}
+			else { // BLACK
+				if (square > 56)
+					PawnProtectionSquares[side][square][0] = 0; // has no protecting pawns
+				else if (file == 0)
+				{
+					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file a
+					PawnProtectionSquares[side][square][1] = square + 9;
+				}
+				else if (file == 7)
+				{
+					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file h
+					PawnProtectionSquares[side][square][1] = square + 7;
+				}
+				else {
+					PawnProtectionSquares[side][square][0] = 2; //two protecting pawns on the rest
+					PawnProtectionSquares[side][square][1] = square + 9;
+					PawnProtectionSquares[side][square][2] = square + 7;
+				}
+			}
+		}
+	}
+}
+
+void CalculatePatterns() {
+	CalculatePawnProtection();
+	CalculateInfrontOfKing();
+}
+
+short ProtectedByPawn(int square, Game* game) {
+	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
+	int color01 = pieceColor >> 4;
+	PieceType pawn = PAWN | pieceColor;
+	int score = 0;
+
+	for (size_t i = 1; i <= PawnProtectionSquares[color01][square][0]; i++)
+	{
+		short pps = PawnProtectionSquares[color01][square][i];
+		score = (game->Squares[pps] == pawn);
+	}
+	return score * PASSED_PAWN;
+}
+
 short GetEval(Game* game, short moveScore) {
 
 	int score = moveScore;
@@ -356,19 +464,15 @@ short GetEval(Game* game, short moveScore) {
 				//mobil += piece.Mobility;
 			}
 			break;
-			//case BISHOP:
-			//{
-			//	//mobil += piece.Mobility;
-			//}
-			// break;
-			//case KNIGHT: {
-			//	//outposts, protected by a pawn?
-			// Mobility of knights is set by piecetypeposition matrix
-			//}
-			// break;
+			case BISHOP:
+			case KNIGHT: {
+				score += neg * ProtectedByPawn(i, game);
+			}
+			 break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
 				score += neg * PassedPawn(i, game);
+				score += neg * ProtectedByPawn(i, game);
 			}
 					 break;
 			case KING: {
