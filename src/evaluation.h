@@ -1,7 +1,7 @@
 #pragma once
 #include "commons.h"
 
-#define CASTLED 32
+#define CASTLED 38
 #define OPEN_ROOK_FILE 19
 #define SEMI_OPEN_FILE 15
 #define DOUBLE_PAWN 9
@@ -9,7 +9,7 @@
 #define KING_EXPOSED_INFRONT 16
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 21
-#define PASSED_PAWN_FREE_PATH 22
+#define PASSED_PAWN_FREE_PATH 35
 #define PAWN_PROTECT 8
 #define ENDGAME 1800
 #define SAME_TWICE 18 //todo change to 18
