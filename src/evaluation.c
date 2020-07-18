@@ -310,44 +310,50 @@ short PassedPawn(int square, Game* game) {
 	int rank = square / 8;
 	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
 	PieceType opponentPawn = PAWN | (pieceColor ^ 24);
-	int steps = 0;
+	int freePath = 1;
 	if (pieceColor == WHITE) {
 		for (int i = 7 - 1; i > rank; i--) // starts at rank 7
 		{
+			int nextSq = (i * 8) + file;
 			// to left
-			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
+			if (file > 0 && game->Squares[nextSq - 1] == opponentPawn) {
 				return 0;
 			}
 			// infront
-			if (game->Squares[(i * 8) + file] == opponentPawn) {
+			if (game->Squares[nextSq] == opponentPawn) {
 				return 0;
 			}
-			//toright
-			if (file < 7 && game->Squares[(i * 8) + file + 1] == opponentPawn) {
+			else if (game->Squares[nextSq] != NOPIECE) {
+				freePath = 0;
+			}
+			//to right
+			if (file < 7 && game->Squares[nextSq + 1] == opponentPawn) {
 				return 0;
 			}
 		}
-		steps = rank - 1;
 	}
 	else { //black
 		for (int i = 0; i < rank; i++)
 		{
+			int nextSq = (i * 8) + file;
 			// to left
-			if (file > 0 && game->Squares[(i * 8) + file - 1] == opponentPawn) {
+			if (file > 0 && game->Squares[nextSq - 1] == opponentPawn) {
 				return 0;
 			}
 			// infront
-			if (game->Squares[(i * 8) + file] == opponentPawn) {
+			if (game->Squares[nextSq] == opponentPawn) {
 				return 0;
 			}
-			//toright
-			if (file < 7 && game->Squares[(i * 8) + file + 1] == opponentPawn) {
+			else if (game->Squares[nextSq] != NOPIECE ) {
+				freePath = 0;
+			}
+			//to right
+			if (file < 7 && game->Squares[nextSq + 1] == opponentPawn) {
 				return 0;
 			}
 		}
-		steps = 6 - rank;
 	}
-	return PASSED_PAWN * steps;
+	return PASSED_PAWN + (PASSED_PAWN_FREE_PATH * freePath);
 }
 
 void CalculatePawnProtection() {
