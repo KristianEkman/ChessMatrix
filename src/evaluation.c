@@ -212,9 +212,9 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 
 bool IsDraw(Game* game) {
 	//This draw can happen early also, but cheating for performance reasons.
-	/*if (game->PositionHistoryLength < 20) 
+	/*if (game->PositionHistoryLength < 20)
 		return false;*/
-	// However this optimization did not give measurable improvment
+		// However this optimization did not give measurable improvment
 
 	int start = game->PositionHistoryLength - 20; //Only checking back some moves. Possible to miss repetions but must be quite rare.
 	int end = game->PositionHistoryLength - (int)2;
@@ -242,7 +242,7 @@ short KingExposed(int square, Game* game) {
 	Side kingColor = game->Squares[square] & 24;
 	int color01 = kingColor >> 4;
 	PieceType pawn = PAWN | kingColor;
-	
+
 	short score = 0;
 	for (size_t i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
 	{
@@ -296,7 +296,7 @@ void CalculateInfrontOfKing() {
 					{
 						InfrontOfKingSquares[side][square][++count] = square + 7;
 						InfrontOfKingSquares[side][square][0]++;
-					}					
+					}
 				}
 			}
 		}
@@ -375,7 +375,7 @@ void CalculatePawnProtection() {
 					PawnProtectionSquares[side][square][1] = square - 7;
 					PawnProtectionSquares[side][square][2] = square - 9;
 				}
-				
+
 			}
 			else { // BLACK
 				if (square > 56)
@@ -425,11 +425,13 @@ short GetEval(Game* game, short moveScore) {
 	//int mobil = 0;
 	int neg = -1;
 	int opening = 0;
+	int pawnCount[2] = { 0,0 };
 	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
 	for (size_t s = 0; s < 2; s++)
 	{
+		short scr = 0;
 		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
@@ -440,9 +442,9 @@ short GetEval(Game* game, short moveScore) {
 			if (opening)
 			{
 				if (piece.MoveCount > 1)
-					score += (neg * SAME_TWICE);
+					scr += SAME_TWICE;
 				if (piece.Type == QUEEN)
-					score += (neg * QUEEN_EARLY);
+					scr += QUEEN_EARLY;
 			}
 
 			int i = piece.SquareIndex;
@@ -454,36 +456,39 @@ short GetEval(Game* game, short moveScore) {
 			{
 			case ROOK:
 			{
-				score += neg * OpenRookFile(i, game);
+				scr += OpenRookFile(i, game);
 				//mobil += piece.Mobility;
 			}
 			break;
 			case BISHOP:
 			case KNIGHT: {
-				score += neg * ProtectedByPawn(i, game);
+				scr += ProtectedByPawn(i, game);
 			}
-			 break;
+					   break;
 			case PAWN: {
-				score -= neg * DoublePawns(i, game, pieceType);
-				score += neg * PassedPawn(i, game);
-				score += neg * ProtectedByPawn(i, game);
+				scr -= DoublePawns(i, game, pieceType);
+				scr += PassedPawn(i, game);
+				scr += ProtectedByPawn(i, game);
+				pawnCount[s]++;
 			}
 					 break;
 			case KING: {
-				score -= neg * KingExposed(i, game);
+				scr -= KingExposed(i, game);
 			}
 					 break;
 			default:
 				break;
 			}
 		}
-		//score += neg * mobil * MOBILITY;
+
+		if (pawnCount[s] == 0 || abs(game->Material[s]) < MATERIAL_N_N) { //todo: constanst for piece value
+			// player can best reach draw,
+			scr = min(0, scr);
+		}
+		score += (scr * neg);
 		neg += 2; // -1 --> 1 // White then black
 	}
-
-
 	return score;
-
 }
 
 short TotalMaterial(Game* game) {
