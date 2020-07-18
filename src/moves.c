@@ -536,6 +536,7 @@ void CreateMoves(Game* game) {
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
+		Side color = pieceType & 24;
 		switch (pt)
 		{
 		case PAWN:
@@ -553,7 +554,7 @@ void CreateMoves(Game* game) {
 					CreateMove(i, toSquare, PromotionBishop, game, pi);
 					CreateMove(i, toSquare, PromotionKnight, game, pi);
 				}
-				else if (toSquare < 16 || toSquare > 47) {
+				else if (color == BLACK && toSquare < 24 || color == WHITE && toSquare > 39) {
 					CreateMove(i, toSquare, SoonPromoting, game, pi);
 				}
 				else if (pp == 2) {
