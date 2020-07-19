@@ -147,6 +147,9 @@
     <PostBuildEvent>
       <Command>copy $(ProjectDir)openings.abk $(OutputPath)openings.abk</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>powershell -NoProfile -ExecutionPolicy RemoteSigned -file $(ProjectDir)\setvers.ps1</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="book.c" />
@@ -174,6 +177,7 @@
     <ClInclude Include="tests.h" />
     <ClInclude Include="timeControl.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />
@@ -185,6 +189,7 @@
       <DeploymentContent>true</DeploymentContent>
       <FileType>Resx</FileType>
     </None>
+    <None Include="setvers.ps1" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -18,6 +18,7 @@
 #include "moves.h"
 #include "search.h"
 #include "book.h"
+#include "version.h"
 
 
 void ComputerMove() {
@@ -80,7 +81,10 @@ int main(int argc, char* argv[]) {
 	LoadBook("openings.abk");
 #endif // DEBUG
 
-	printf("initialized\n");
+	printf("info Built date %s\n", BuildDate);
+	printf("info Branch %s\n", GitBranch);
+	printf("info Commit %s\n", GitCommit);
+	printf("Initialized\n");
 	EnterUciMode();
 	return 0;
 }

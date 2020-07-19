@@ -86,6 +86,9 @@
     <ClInclude Include="book.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="todo.txt" />
@@ -94,5 +97,6 @@
     <None Include="openings.abk" />
     <None Include="copybuild.ps1" />
     <None Include="copyfeature.ps1" />
+    <None Include="setvers.ps1" />
   </ItemGroup>
 </Project>
