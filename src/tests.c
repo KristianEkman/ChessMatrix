@@ -744,7 +744,7 @@ void DoublePawnsTest()
 	printf("%s\n", __func__);
 	char* fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
-	short score = DoublePawns(12, &g_mainGame, PAWN | WHITE);
+	short score = DoublePawns(20, &g_mainGame, PAWN | WHITE);
 	AssertAreEqualInts(9, score, "Double pawns score missmatch");
 	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
 }
@@ -765,8 +765,8 @@ void KingExposureTest() {
 	ReadFen(unprotected);
 	whiteScore = KingExposed(6, &g_mainGame);
 	blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(46, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(46, blackScore, "Not the expected exposure score for black");
+	AssertAreEqualInts(48, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(48, blackScore, "Not the expected exposure score for black");
 
 }
 
@@ -842,15 +842,15 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*FenTestHalfMoves();
+	/*DoublePawnsTest();
 
 	if (_failedAsserts == 0)
 		PrintGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;
+	return;*/
 	
-	_failedAsserts = 0;*/
+	_failedAsserts = 0;
 
 #ifdef DEBUG
 	EnpassantCollisionsTest();
