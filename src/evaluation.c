@@ -448,9 +448,9 @@ short GetEval(Game* game, short moveScore) {
 			if (opening)
 			{
 				if (piece.MoveCount > 1)
-					scr += SAME_TWICE;
+					scr -= SAME_TWICE;
 				if (piece.Type == QUEEN)
-					scr += QUEEN_EARLY;
+					scr -= QUEEN_EARLY;
 			}
 
 			int i = piece.SquareIndex;
