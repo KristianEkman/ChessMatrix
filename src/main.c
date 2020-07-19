@@ -101,7 +101,7 @@ void EnterUciMode() {
 			Stdout_wl("new game");
 		}
 		else if (Streq(buf, "uci\n")) {
-			Stdout_wl("id name ChessMatrix 1.0.4");
+			printf("id name ChessMatrix %s\n", Version);
 			Stdout_wl("id author Kristian Ekman");
 			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			Stdout_wl("option name OwnBook type check default false");

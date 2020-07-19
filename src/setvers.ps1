@@ -7,6 +7,6 @@ $commit = $commit.Trim()
 $date = $date.Trim()
 
 $file = "Branch: $branch`nCommit: $commit`nBuilt: $date"
-$code = "char GitBranch[] = `"$Branch`"; `r`nchar GitCommit[] = `"$Commit`"; `r`nchar BuildDate[] = `"$date`"; `r`n "
+$code = "char Version[]=`"1.0.5`"; `r`nchar GitBranch[] = `"$Branch`"; `r`nchar GitCommit[] = `"$Commit`"; `r`nchar BuildDate[] = `"$date`"; `r`n"
 Write-Host $file 
 Out-File -FilePath version.h -InputObject $code
