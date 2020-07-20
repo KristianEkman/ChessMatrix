@@ -212,13 +212,13 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 
 bool IsDraw(Game* game) {
 	//This draw can happen early also, but cheating for performance reasons.
-	/*if (game->PositionHistoryLength < 20) 
+	/*if (game->PositionHistoryLength < 20)
 		return false;*/
-	// However this optimization did not give measurable improvment
+		// However this optimization did not give measurable improvment
 
-	int start = game->PositionHistoryLength - 20; //Only checking back some moves. Possible to miss repetions but must be quite rare.
-	int end = game->PositionHistoryLength - (int)2;
-	for (size_t i = start; i < end; i++)
+	int start = game->PositionHistoryLength-5; //Only checking back some moves. Possible to miss repetions but must be quite rare.
+	int end = max (0, game->PositionHistoryLength - 30);
+	for (int i = start; i > end; i -= 2)
 	{
 		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
 			return true;
@@ -242,7 +242,7 @@ short KingExposed(int square, Game* game) {
 	Side kingColor = game->Squares[square] & 24;
 	int color01 = kingColor >> 4;
 	PieceType pawn = PAWN | kingColor;
-	
+
 	short score = 0;
 	for (size_t i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
 	{
@@ -296,7 +296,7 @@ void CalculateInfrontOfKing() {
 					{
 						InfrontOfKingSquares[side][square][++count] = square + 7;
 						InfrontOfKingSquares[side][square][0]++;
-					}					
+					}
 				}
 			}
 		}
@@ -344,7 +344,7 @@ short PassedPawn(int square, Game* game) {
 			if (game->Squares[nextSq] == opponentPawn) {
 				return 0;
 			}
-			else if ((game->Squares[nextSq] & 24) == WHITE ) {
+			else if ((game->Squares[nextSq] & 24) == WHITE) {
 				freePath = 0;
 			}
 			//to right
@@ -381,7 +381,7 @@ void CalculatePawnProtection() {
 					PawnProtectionSquares[side][square][1] = square - 7;
 					PawnProtectionSquares[side][square][2] = square - 9;
 				}
-				
+
 			}
 			else { // BLACK
 				if (square > 56)
@@ -468,7 +468,7 @@ short GetEval(Game* game, short moveScore) {
 			case KNIGHT: {
 				score += neg * ProtectedByPawn(i, game);
 			}
-			 break;
+					   break;
 			case PAWN: {
 				score -= neg * DoublePawns(i, game, pieceType);
 				score += neg * PassedPawn(i, game);

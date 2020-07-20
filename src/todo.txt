@@ -1,5 +1,4 @@
-
-
+TEst och utvärdering. Köra mot fler engines. Längre.
 
 Mer pruning
 	Futilty pruning
@@ -7,8 +6,6 @@ Mer pruning
 	Razoring
 
 Förenkla 3-fold rep med att kolla typ varannan. Testfall.
-
-Köra tester med egen bok. 3-4 drag slumpmässigt.
 
 LMR och Extensions
 ===
