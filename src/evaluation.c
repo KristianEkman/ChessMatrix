@@ -234,7 +234,7 @@ bool IsDraw(Game* game) {
 
 // Move score is much faster than evaluation. It is used during move generation to get good sortting of moves.
 short GetMoveScore(Game* game) {
-	return game->Material[0] + game->Material[1] + game->PositionScore;
+	return game->Material[0] + game->Material[1];
 }
 
 //When king is castled at back rank, penalty for missing pawns.
@@ -431,6 +431,7 @@ short GetEval(Game* game, short moveScore) {
 	//int mobil = 0;
 	int neg = -1;
 	int opening = 0;
+	short posScore = 0;
 	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
@@ -445,6 +446,8 @@ short GetEval(Game* game, short moveScore) {
 			if (piece.Off)
 				continue;
 
+			posScore += PositionValueMatrix[piece.Type & 7][s][piece.SquareIndex];
+
 			// penalty for moving a piece more than once in the opening.
 			if (opening)
 			{
@@ -458,6 +461,7 @@ short GetEval(Game* game, short moveScore) {
 			PieceType pieceType = piece.Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
+
 
 			switch (pt)
 			{
@@ -480,6 +484,9 @@ short GetEval(Game* game, short moveScore) {
 					 break;
 			case KING: {
 				scr -= KingExposed(i, game);
+				scr -= neg * KingExposed(i, game);
+				int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < ENDGAME ? 1 : 0;
+				posScore += KingPositionValueMatrix[endGame][s][piece.SquareIndex];
 			}
 					 break;
 			default:

@@ -469,8 +469,6 @@ PieceType parseSide(char c) {
 void InitScores() {
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
-	g_mainGame.PositionScore = 0;
-
 	for (size_t s = 0; s < 2; s++)
 	{
 		for (size_t p = 0; p < 16; p++)
@@ -482,13 +480,8 @@ void InitScores() {
 			PieceType pt = piece.Type & 7;
 			int colorSide = (piece.Type & (WHITE | BLACK)) >> 4;
 			g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
-			g_mainGame.PositionScore += PositionValueMatrix[pt][colorSide][i];
 		}
 	}
-	int endGame = g_mainGame.Material[1] - g_mainGame.Material[0] < ENDGAME ? 1 : 0;
-	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][0][g_mainGame.KingSquares[0]];
-	g_mainGame.PositionScore += KingPositionValueMatrix[endGame][1][g_mainGame.KingSquares[1]];
-
 }
 
 void InitHash() {

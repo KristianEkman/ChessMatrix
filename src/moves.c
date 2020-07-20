@@ -67,16 +67,15 @@ void AssertGame(Game* game) {
 
 void KingPositionScore(Move move, Game* game) {
 	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
-	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
-	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
+	//int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
+	/*game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
+	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];*/
 }
 
 Undos DoMove(Move move, Game* game) {
 	Undos undos;
 	undos.PrevGameState = game->State;
 	undos.PrevHash = game->Hash;
-	undos.PrevPositionScore = game->PositionScore;
 
 	char f = move.From;
 	char t = move.To;
@@ -85,14 +84,9 @@ Undos DoMove(Move move, Game* game) {
 	int captColor = captType >> 4;
 	int side01 = game->Side01;
 
-	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
-
 	PieceType pieceType = game->Squares[f];
 
 	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
 
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
@@ -204,8 +198,6 @@ Undos DoMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
 		MovePiece(game, side01, rookFr, rookTo);
-
-		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -227,8 +219,6 @@ Undos DoMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 		MovePiece(game, side01, rookFr, rookTo);
-
-		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -280,15 +270,9 @@ void SetLightScore(Move move, Game* game) {
 	int captColor = captType >> 4;
 	int side01 = game->Side01;
 
-	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
-
 	PieceType pieceType = game->Squares[f];
 
 	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
-
 	if (captType && move.MoveInfo != EnPassantCapture)
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
 
@@ -310,11 +294,11 @@ void SetLightScore(Move move, Game* game) {
 		KingPositionScore(move, game);
 		break;
 	case CastleShort:
-		game->PositionScore += CastlingPoints[side01];
+		//game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		break;
 	case CastleLong:
-		game->PositionScore += CastlingPoints[side01];
+		//game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		break;
 	case EnPassantCapture:
@@ -392,7 +376,6 @@ void UndoMove(Game* game, Move move, Undos undos) {
 		break;
 	}
 	game->State = undos.PrevGameState;
-	game->PositionScore = undos.PrevPositionScore;
 	game->Hash = undos.PrevHash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
@@ -510,16 +493,14 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
-	short prevPosScore = game->PositionScore;
 	short material0 = game->Material[0];
 	short material1 = game->Material[1];
 
 	SetLightScore(move, game);
-	move.Score = game->Material[0] + game->Material[1] + game->PositionScore;
+	move.Score = game->Material[0] + game->Material[1];
 	//move.Score = GetEval(game, move.Score);
 	game->Material[0] = material0;
 	game->Material[1] = material1;
-	game->PositionScore = prevPosScore;
 
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 	AssertGame(game);

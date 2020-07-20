@@ -104,7 +104,6 @@ typedef struct {
 typedef struct {
 	char CaptIndex;
 	GameState PrevGameState;
-	short PrevPositionScore;
 	U64 PrevHash;
 	uchar FiftyMoveRuleCount;
 } Undos;
@@ -125,7 +124,6 @@ typedef struct {
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
-	short PositionScore;
 	U64 Hash;
 	U64 PositionHistory[1800];
 	int PositionHistoryLength;
