@@ -434,8 +434,11 @@ short GetEval(Game* game, short moveScore) {
 	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
+
 	for (size_t s = 0; s < 2; s++)
 	{
+		short scr = 0;
+
 		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
@@ -446,9 +449,9 @@ short GetEval(Game* game, short moveScore) {
 			if (opening)
 			{
 				if (piece.MoveCount > 1)
-					score += (neg * SAME_TWICE);
+					scr -= SAME_TWICE;
 				if (piece.Type == QUEEN)
-					score += (neg * QUEEN_EARLY);
+					scr -= QUEEN_EARLY;
 			}
 
 			int i = piece.SquareIndex;
@@ -460,34 +463,37 @@ short GetEval(Game* game, short moveScore) {
 			{
 			case ROOK:
 			{
-				score += neg * OpenRookFile(i, game);
+				scr += OpenRookFile(i, game);
 				//mobil += piece.Mobility;
 			}
 			break;
 			case BISHOP:
 			case KNIGHT: {
-				score += neg * ProtectedByPawn(i, game);
+				scr += ProtectedByPawn(i, game);
 			}
 					   break;
 			case PAWN: {
-				score -= neg * DoublePawns(i, game, pieceType);
-				score += neg * PassedPawn(i, game);
-				score += neg * ProtectedByPawn(i, game);
+				scr -= DoublePawns(i, game, pieceType);
+				scr += PassedPawn(i, game);
+				scr += ProtectedByPawn(i, game);
 			}
 					 break;
 			case KING: {
-				score -= neg * KingExposed(i, game);
+				scr -= KingExposed(i, game);
 			}
 					 break;
 			default:
 				break;
 			}
 		}
-		//score += neg * mobil * MOBILITY;
+		score += (neg * scr);
 		neg += 2; // -1 --> 1 // White then black
 	}
 
-
+	// float relLead = (float)score / (float)((-game->Material[0] + game->Material[1]) * 25);
+	// the lead is more worth when there is less material on the board
+	// lead of 200 with material 2000 (two queen) -> 25p
+	// supposed to make leader prefer chaning down.
 	return score;
 
 }
