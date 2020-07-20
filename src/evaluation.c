@@ -446,7 +446,6 @@ short GetEval(Game* game, short moveScore) {
 			if (piece.Off)
 				continue;
 
-			posScore += PositionValueMatrix[piece.Type & 7][s][piece.SquareIndex];
 
 			// penalty for moving a piece more than once in the opening.
 			if (opening)
@@ -461,7 +460,7 @@ short GetEval(Game* game, short moveScore) {
 			PieceType pieceType = piece.Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
-
+			posScore += PositionValueMatrix[pt][s][piece.SquareIndex];
 
 			switch (pt)
 			{
