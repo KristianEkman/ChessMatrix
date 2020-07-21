@@ -211,7 +211,7 @@ Undos DoMove(Move move, Game* game) {
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 
 		//gör inte detta om det redan är gjort
-		if ((game->Side == WHITE && game->State & WhiteCanCastleLong) || (game->Side == BLACK && BlackCanCastleLong))
+		if ((game->Side == WHITE && (game->State & WhiteCanCastleLong)) || (game->Side == BLACK && (game->State & BlackCanCastleLong)))
 			hash ^= ZobritsCastlingRights[side01 * 2]; // 0 eller 2, white long, black long
 
 		hash ^= ZobritsCastlingRights[side01 * 2 + 1]; // 1 eller 3, white short, black short
@@ -234,7 +234,7 @@ Undos DoMove(Move move, Game* game) {
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 
 		hash ^= ZobritsCastlingRights[side01 * 2]; //long
-		if ((game->Side == WHITE && game->State & WhiteCanCastleShort) || (game->Side == BLACK && BlackCanCastleShort))
+		if ((game->Side == WHITE && game->State & WhiteCanCastleShort) || (game->Side == BLACK && (game->State & BlackCanCastleShort)))
 			hash ^= ZobritsCastlingRights[side01 * 2 + 1]; //short
 
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
