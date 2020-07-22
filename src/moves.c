@@ -327,7 +327,7 @@ void SetLightScore(Move move, Game* game) {
 
 void UndoMove(Game* game, Move move, Undos undos) {
 
-	int otherSide = game->Side ^ 24;
+	Side otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
 
 	PieceType capture = NOPIECE;
@@ -394,8 +394,8 @@ void UndoMove(Game* game, Move move, Undos undos) {
 	game->State = undos.PrevGameState;
 	game->PositionScore = undos.PrevPositionScore;
 	game->Hash = undos.PrevHash;
-	game->Side ^= 24;
-	game->Side01 = game->Side >> 4;
+	game->Side = otherSide;
+	game->Side01 = otherSide01;
 	game->PositionHistoryLength--;
 	game->FiftyMoveRuleCount = undos.FiftyMoveRuleCount;
 	AssertGame(game);
@@ -415,8 +415,6 @@ void DoNullMove(Game* game) {
 }
 
 void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash) {
-	int otherSide = game->Side ^ 24;
-	int otherSide01 = otherSide >> 4;
 	game->State = prevGameState;
 	game->Hash = prevHash;
 	game->Side ^= 24;

@@ -12,8 +12,8 @@
 #define PASSED_PAWN_FREE_PATH 35
 #define PAWN_PROTECT 8
 #define ENDGAME 1800
-#define SAME_TWICE 18 //todo change to 18
-#define QUEEN_EARLY 15 //todo change to 15
+#define SAME_TWICE 18
+#define QUEEN_EARLY 15
 
 //[type][side][square]
 short PositionValueMatrix[7][2][64];
