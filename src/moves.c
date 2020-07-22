@@ -263,10 +263,10 @@ Undos DoMove(Move move, Game* game) {
 
 //Side, Piece (NOPIECE,BISHOP,ROOK,QUEEN,PAWN,KNIGHT,KING, // 6	
 //Moving small pieces first material equal
-const char PieceOrder[2][7] = { {0,3,4,6,1,2,5}, {0,-3,-4,-6,-1,-2,-5} };
+const char PieceOrder[2][7] = { {0,30,40,60,10,20,50}, {0,-30,-40,-60,-10,-20,-50} };
 
 short GetLightScore(Move move, Game* game) {
-	short startScore = game->Material[0] + game->Material[1];
+	short lightScore = game->Material[0] + game->Material[1];
 	char f = move.From;
 	char t = move.To;
 
@@ -275,52 +275,52 @@ short GetLightScore(Move move, Game* game) {
 	int side01 = game->Side01;
 
 	//removing piece from square removes its position score
-	startScore -= PositionValueMatrix[captType & 7][captColor][t];
+	lightScore -= PositionValueMatrix[captType & 7][captColor][t];
 
 	PieceType pieceType = game->Squares[f];
 	PieceType pt = pieceType & 7;
 
-	startScore -= PositionValueMatrix[pt][side01][f];
-	startScore += PositionValueMatrix[pt][side01][t];
+	lightScore -= PositionValueMatrix[pt][side01][f];
+	lightScore += PositionValueMatrix[pt][side01][t];
 
 	if (captType && move.MoveInfo != EnPassantCapture)
-		startScore -= MaterialMatrix[captColor][captType & 7];
+		lightScore -= MaterialMatrix[captColor][captType & 7];
 
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
-		startScore += MaterialMatrix[side01][QUEEN + 6];
+		lightScore += MaterialMatrix[side01][QUEEN + 6];
 		break;
 	case PromotionRook:
-		startScore += MaterialMatrix[side01][ROOK + 6];
+		lightScore += MaterialMatrix[side01][ROOK + 6];
 		break;
 	case PromotionBishop:
-		startScore += MaterialMatrix[side01][BISHOP + 6];
+		lightScore += MaterialMatrix[side01][BISHOP + 6];
 		break;
 	case PromotionKnight:
-		startScore += MaterialMatrix[side01][KNIGHT + 6];
+		lightScore += MaterialMatrix[side01][KNIGHT + 6];
 		break;
 	case KingMove:
-		startScore += KingPositionScore(move, game);
+		lightScore += KingPositionScore(move, game);
 		break;
 	case CastleShort:
-		startScore += CastlingPoints[side01];
-		startScore += KingPositionScore(move, game);
+		lightScore += CastlingPoints[side01];
+		lightScore += KingPositionScore(move, game);
 		break;
 	case CastleLong:
-		startScore += CastlingPoints[side01];
-		startScore += KingPositionScore(move, game);
+		lightScore += CastlingPoints[side01];
+		lightScore += KingPositionScore(move, game);
 		break;
 	case EnPassantCapture:
-		startScore += MaterialMatrix[side01][PAWN];
+		lightScore += MaterialMatrix[side01][PAWN];
 		break;
 	default:
 		break;
 	}
 
 	// remove more points for larger capturing pieces.
-	startScore -= PieceOrder[side01][pt] * (captType != 0);
-	return startScore;
+	//lightScore += PieceOrder[side01][pt] * (captType != 0);
+	return lightScore;
 }
 
 void UndoMove(Game* game, Move move, Undos undos) {
