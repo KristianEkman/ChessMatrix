@@ -260,6 +260,11 @@ Undos DoMove(Move move, Game* game) {
 	return undos;
 }
 
+
+//Side, Piece (NOPIECE,BISHOP,ROOK,QUEEN,PAWN,KNIGHT,KING, // 6	
+//Moving small pieces first material equal
+const char PieceOrder[2][7] = { {0,3,4,6,1,2,5}, {0,-3,-4,-6,-1,-2,-5} };
+
 short GetLightScore(Move move, Game* game) {
 	short startScore = game->Material[0] + game->Material[1];
 	char f = move.From;
@@ -273,8 +278,8 @@ short GetLightScore(Move move, Game* game) {
 	startScore -= PositionValueMatrix[captType & 7][captColor][t];
 
 	PieceType pieceType = game->Squares[f];
+	PieceType pt = pieceType & 7;
 
-	char pt = pieceType & 7;
 	startScore -= PositionValueMatrix[pt][side01][f];
 	startScore += PositionValueMatrix[pt][side01][t];
 
@@ -312,7 +317,9 @@ short GetLightScore(Move move, Game* game) {
 	default:
 		break;
 	}
-	// todo: remove more points for larger capturing pieces.
+
+	// remove more points for larger capturing pieces.
+	startScore -= PieceOrder[side01][pt] * (captType != 0);
 	return startScore;
 }
 

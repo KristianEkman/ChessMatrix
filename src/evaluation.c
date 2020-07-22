@@ -489,7 +489,7 @@ short GetEval(Game* game) {
 	// the lead is more worth when there is less material on the board
 	// lead of 200 with material 2000 (two queen) -> 25p
 	// supposed to make leader prefer chaning down.
-	return score;
+	return score + posScore;
 
 }
 
