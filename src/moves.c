@@ -65,11 +65,11 @@ void AssertGame(Game* game) {
 #endif // _DEBUG
 }
 
-void KingPositionScore(Move move, Game* game) {
+short KingPositionScore(Move move, Game* game) {
 	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
 	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
-	game->PositionScore += KingPositionValueMatrix[endGame][game->Side01][move.To];
-	game->PositionScore -= KingPositionValueMatrix[endGame][game->Side01][move.From];
+	return KingPositionValueMatrix[endGame][game->Side01][move.To] -
+		   KingPositionValueMatrix[endGame][game->Side01][move.From];
 }
 
 Undos DoMove(Move move, Game* game) {
@@ -272,7 +272,8 @@ Undos DoMove(Move move, Game* game) {
 	return undos;
 }
 
-void SetLightScore(Move move, Game* game) {
+short GetLightScore(Move move, Game* game) {
+	short startScore = game->Material[0] + game->Material[1] + game->PositionScore;
 	char f = move.From;
 	char t = move.To;
 
@@ -281,48 +282,49 @@ void SetLightScore(Move move, Game* game) {
 	int side01 = game->Side01;
 
 	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
+	startScore -= PositionValueMatrix[captType & 7][captColor][t];
 
 	PieceType pieceType = game->Squares[f];
 
 	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
+	startScore -= PositionValueMatrix[pt][side01][f];
+	startScore += PositionValueMatrix[pt][side01][t];
 
 	if (captType && move.MoveInfo != EnPassantCapture)
-		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
+		startScore -= MaterialMatrix[captColor][captType & 7];
 
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
-		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
+		startScore += MaterialMatrix[side01][QUEEN + 6];
 		break;
 	case PromotionRook:
-		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
+		startScore += MaterialMatrix[side01][ROOK + 6];
 		break;
 	case PromotionBishop:
-		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
+		startScore += MaterialMatrix[side01][BISHOP + 6];
 		break;
 	case PromotionKnight:
-		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
+		startScore += MaterialMatrix[side01][KNIGHT + 6];
 		break;
 	case KingMove:
-		KingPositionScore(move, game);
+		startScore += KingPositionScore(move, game);
 		break;
 	case CastleShort:
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
+		startScore += CastlingPoints[side01];
+		startScore += KingPositionScore(move, game);
 		break;
 	case CastleLong:
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
+		startScore += CastlingPoints[side01];
+		startScore += KingPositionScore(move, game);
 		break;
 	case EnPassantCapture:
-		game->Material[side01] += MaterialMatrix[side01][PAWN];
+		startScore += MaterialMatrix[side01][PAWN];
 		break;
 	default:
 		break;
 	}
+	return startScore;
 }
 
 void UndoMove(Game* game, Move move, Undos undos) {
@@ -508,16 +510,9 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	move.To = toSquare;
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
-	short prevPosScore = game->PositionScore;
-	short material0 = game->Material[0];
-	short material1 = game->Material[1];
 
-	SetLightScore(move, game);
-	move.Score = game->Material[0] + game->Material[1] + game->PositionScore;
+	move.Score = GetLightScore(move, game);
 	//move.Score = GetEval(game, move.Score);
-	game->Material[0] = material0;
-	game->Material[1] = material1;
-	game->PositionScore = prevPosScore;
 
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 	AssertGame(game);
