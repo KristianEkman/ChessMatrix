@@ -76,7 +76,6 @@ Undos DoMove(Move move, Game* game) {
 	Undos undos;
 	undos.PrevGameState = game->State;
 	undos.PrevHash = game->Hash;
-	undos.PrevPositionScore = game->PositionScore;
 
 	char f = move.From;
 	char t = move.To;
@@ -86,13 +85,9 @@ Undos DoMove(Move move, Game* game) {
 	int side01 = game->Side01;
 
 	//removing piece from square removes its position score
-	game->PositionScore -= PositionValueMatrix[captType & 7][captColor][t];
 
 	PieceType pieceType = game->Squares[f];
-
 	char pt = pieceType & 7;
-	game->PositionScore -= PositionValueMatrix[pt][side01][f];
-	game->PositionScore += PositionValueMatrix[pt][side01][t];
 
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
@@ -161,8 +156,6 @@ Undos DoMove(Move move, Game* game) {
 				hash ^= ZobritsCastlingRights[3];
 		}
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
-
-		KingPositionScore(move, game);
 		break;
 	case RookMove:
 		switch (move.From)
@@ -204,9 +197,6 @@ Undos DoMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
 		MovePiece(game, side01, rookFr, rookTo);
-
-		game->PositionScore += CastlingPoints[side01];
-		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 
@@ -227,8 +217,6 @@ Undos DoMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 		MovePiece(game, side01, rookFr, rookTo);
-
-		game->PositionScore += CastlingPoints[side01];
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -273,7 +261,7 @@ Undos DoMove(Move move, Game* game) {
 }
 
 short GetLightScore(Move move, Game* game) {
-	short startScore = game->Material[0] + game->Material[1] + game->PositionScore;
+	short startScore = game->Material[0] + game->Material[1];
 	char f = move.From;
 	char t = move.To;
 
@@ -324,6 +312,7 @@ short GetLightScore(Move move, Game* game) {
 	default:
 		break;
 	}
+	// todo: remove more points for larger capturing pieces.
 	return startScore;
 }
 
@@ -394,7 +383,6 @@ void UndoMove(Game* game, Move move, Undos undos) {
 		break;
 	}
 	game->State = undos.PrevGameState;
-	game->PositionScore = undos.PrevPositionScore;
 	game->Hash = undos.PrevHash;
 	game->Side = otherSide;
 	game->Side01 = otherSide01;

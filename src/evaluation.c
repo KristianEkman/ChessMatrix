@@ -232,11 +232,6 @@ bool IsDraw(Game* game) {
 	return game->FiftyMoveRuleCount >= 100;
 }
 
-// Move score is much faster than evaluation. It is used during move generation to get good sortting of moves.
-short GetMoveScore(Game* game) {
-	return game->Material[0] + game->Material[1] + game->PositionScore;
-}
-
 //When king is castled at back rank, penalty for missing pawns.
 short KingExposed(int square, Game* game) {
 	Side kingColor = game->Squares[square] & 24;
@@ -425,9 +420,10 @@ short ProtectedByPawn(int square, Game* game) {
 	return score * PASSED_PAWN;
 }
 
-short GetEval(Game* game, short moveScore) {
+short GetEval(Game* game) {
 
-	int score = moveScore;
+	int score = game->Material[0] + game->Material[1];
+	short posScore = 0;
 	//int mobil = 0;
 	int neg = -1;
 	int opening = 0;
@@ -438,7 +434,6 @@ short GetEval(Game* game, short moveScore) {
 	for (size_t s = 0; s < 2; s++)
 	{
 		short scr = 0;
-
 		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
@@ -458,7 +453,7 @@ short GetEval(Game* game, short moveScore) {
 			PieceType pieceType = piece.Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
-
+			posScore += PositionValueMatrix[pt][s][i];
 			switch (pt)
 			{
 			case ROOK:

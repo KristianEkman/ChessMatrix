@@ -561,44 +561,6 @@ void EnPassantMaterial() {
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void PositionScorePawns() {
-	printf("%s\n", __func__);
-	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	ReadFen(startFen);
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	MakePlayerMove("d2-d4");
-	AssertAreEqualInts(-40, g_mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("d7d5");
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	UnMakePlayerMove(m2);
-	AssertAreEqualInts(-40, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
-void PositionScoreKnights() {
-	printf("%s\n", __func__);
-	char * startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-	ReadFen(startFen);
-	MakePlayerMove("b1-c3");
-	AssertAreEqualInts(-50, g_mainGame.PositionScore, "Position Score Missmatch");
-	PlayerMove m2 = MakePlayerMove("g8f6");
-	AssertAreEqualInts(0, g_mainGame.PositionScore, "Position Score Missmatch");
-	UnMakePlayerMove(m2);
-	AssertAreEqualInts(-50, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
-void PositionScoreCastling() {
-	printf("%s\n", __func__);
-	char * startFen = "r3k2r/p1qnbppp/bpp2n2/3pp3/B2P4/2N1PN2/PPPBQPPP/R3K2R w KQkq - 0 1";
-	ReadFen(startFen);
-	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
-
-	MakePlayerMove("e1g1");
-	AssertAreEqualInts(-45, g_mainGame.PositionScore, "Position Score Missmatch");
-
-	MakePlayerMove("e8g8");
-	AssertAreEqualInts(-15, g_mainGame.PositionScore, "Position Score Missmatch");
-}
-
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
@@ -734,7 +696,7 @@ void MobilityRookTest() {
 	ReadFen(fen);
 	g_topSearchParams.MaxDepth = 1;
 	Search(true); // mobility is calculated in movegenearion and alphabeta ... incheck
-	short score = GetEval(&g_mainGame, 0);
+	short score = GetEval(&g_mainGame);
 	// no asserts, just entrypoint for debugging.
 }
 

@@ -99,7 +99,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 	if (IsDraw(game))
 		return 0;
 
-	int score = GetEval(game, moveScore); // There seems to be a small advantage in taking time to fully evaluate even here.
+	int score = GetEval(game); // There seems to be a small advantage in taking time to fully evaluate even here.
 
 	if (game->Side == BLACK) {
 		if (score >= best_white)
