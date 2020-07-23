@@ -268,7 +268,6 @@ void PerftSaveHash(depth) {
 	{
 		Move move = localMoves[i];
 		GameState prevGameState = g_mainGame.State;
-		int prevPositionScore = g_mainGame.PositionScore;
 		U64 prevHash = g_mainGame.Hash;
 
 		Undos undos  = DoMove(move, &g_mainGame);

@@ -216,8 +216,8 @@ bool IsDraw(Game* game) {
 		return false;*/
 		// However this optimization did not give measurable improvment
 
-	int start = game->PositionHistoryLength-5; //Only checking back some moves. Possible to miss repetions but must be quite rare.
-	int end = max (0, game->PositionHistoryLength - 30);
+	int start = game->PositionHistoryLength - 5; //Only checking back some moves. Possible to miss repetions but must be quite rare.
+	int end = max(0, game->PositionHistoryLength - 30);
 	for (int i = start; i > end; i -= 2)
 	{
 		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
@@ -485,12 +485,15 @@ short GetEval(Game* game) {
 		neg += 2; // -1 --> 1 // White then black
 	}
 
-	// float relLead = (float)score / (float)((-game->Material[0] + game->Material[1]) * 25);
 	// the lead is more worth when there is less material on the board
 	// lead of 200 with material 2000 (two queen) -> 25p
 	// supposed to make leader prefer chaning down.
-	return score + posScore;
 
+	/*short materialLead = game->Material[1] - game->Material[0];
+	if (materialLead)
+		return score + posScore + (float)(score * 50) / (float)materialLead;*/
+	
+	return score + posScore;
 }
 
 short TotalMaterial(Game* game) {
