@@ -46,17 +46,50 @@ void SetSearchDefaults() {
 	g_topSearchParams.MovesTogo = 0;
 }
 
-void MoveToTop(Move move, Move* list, int length) {
+void MoveToTop(Move move, Move* list, int length, Side side) {
 	for (size_t i = 0; i < length; i++)
 	{
 		if (move.From == list[i].From && move.To == list[i].To && i > 0) {
-			Move temp = list[i];
-			memmove(&list[1], list, i * sizeof(Move));
-			list[0] = temp;
+			list[i].Score += (side == BLACK ? 10000 : -10000);
 			return;
 		}
 	}
 }
+
+static void PickBlacksNextMove(int moveNum, Move * moves, int moveCount) {
+
+	int bestScore = -9000;
+	int bestNum = moveNum;
+
+	for (int index = moveNum; index < moveCount; ++index) {
+		if (moves[index].Score > bestScore) {
+			bestScore = moves[index].Score;
+			bestNum = index;
+		}
+	}
+
+	Move temp = moves[moveNum];
+	moves[moveNum] = moves[bestNum];
+	moves[bestNum] = temp;
+}
+
+static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
+
+	int bestScore = 9000;
+	int bestNum = moveNum;
+
+	for (int index = moveNum; index < moveCount; ++index) {
+		if (moves[index].Score < bestScore) {
+			bestScore = moves[index].Score;
+			bestNum = index;
+		}
+	}
+
+	Move temp = moves[moveNum];
+	moves[moveNum] = moves[bestNum];
+	moves[bestNum] = temp;
+}
+
 //
 //void AddKiller(Game* game, Move move) {
 //	MoveCoordinates * list = game->KillerMoves[game->PositionHistoryLength];
@@ -128,6 +161,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 		score = MIN_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
+			PickBlacksNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
@@ -154,6 +188,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 		score = MAX_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
+			PickWhitesNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
@@ -245,7 +280,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
-		MoveToTop(pvMove, localMoves, moveCount);
+		MoveToTop(pvMove, localMoves, moveCount, game->Side);
 	}
 
 	//Not reducing for the first number of moves of each depth.
@@ -264,6 +299,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 		score = MIN_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
+			PickBlacksNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 
@@ -336,6 +372,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 		score = MAX_SCORE;
 		for (int i = 0; i < moveCount; i++)
 		{
+			PickWhitesNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];

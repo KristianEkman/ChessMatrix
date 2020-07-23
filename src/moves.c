@@ -660,7 +660,7 @@ void CreateMoves(Game* game) {
 		}
 
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
+	//SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 void CreateCaptureMoves(Game* game) {
@@ -774,7 +774,7 @@ void CreateCaptureMoves(Game* game) {
 		}
 		}
 	}
-	SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
+	//SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 void RemoveInvalidMoves(Game* game) {
