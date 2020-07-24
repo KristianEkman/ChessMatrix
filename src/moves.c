@@ -312,7 +312,7 @@ short GetLightScore(Move move, Game* game) {
 		lightScore += KingPositionScore(move, game);
 		break;
 	case EnPassantCapture:
-		lightScore += MaterialMatrix[side01][PAWN];
+		lightScore += MaterialMatrix[side01][PAWN]; //Adding own pawn material is same as removing opponent.
 		break;
 	default:
 		break;
