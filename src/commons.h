@@ -5,12 +5,12 @@
 #define MIN_SCORE -8190
 
 //white, black   nopiece, bishop, rook, queen, pawn, knight, promotions (minus pawn)
-#define MATERIAL_B 305
-#define MATERIAL_R 500
-#define MATERIAL_Q 1010
+#define MATERIAL_B 325
+#define MATERIAL_R 550
+#define MATERIAL_Q 1000
 #define MATERIAL_P 100
-#define MATERIAL_N 295
-#define MATERIAL_N_N 590
+#define MATERIAL_N 325
+#define MATERIAL_N_N 650
 
 
 typedef unsigned long long U64;

@@ -9,11 +9,12 @@
 #define KING_EXPOSED_INFRONT 16
 #define KING_EXPOSED_DIAGONAL 12
 #define PASSED_PAWN 21
-#define PASSED_PAWN_FREE_PATH 35
+#define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8
 #define ENDGAME 1800
 #define SAME_TWICE 18
 #define QUEEN_EARLY 15
+#define BISHOP_PAIR 30
 
 //[type][side][square]
 short PositionValueMatrix[7][2][64];

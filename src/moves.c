@@ -274,12 +274,11 @@ short GetLightScore(Move move, Game* game) {
 	int captColor = captType >> 4;
 	int side01 = game->Side01;
 
-	//removing piece from square removes its position score
-	lightScore -= PositionValueMatrix[captType & 7][captColor][t];
-
 	PieceType pieceType = game->Squares[f];
 	PieceType pt = pieceType & 7;
 
+	//removing piece from square removes its position score
+	lightScore -= PositionValueMatrix[captType & 7][captColor][t];
 	lightScore -= PositionValueMatrix[pt][side01][f];
 	lightScore += PositionValueMatrix[pt][side01][t];
 

@@ -38,24 +38,24 @@ short PositionValueMatrix[7][2][64] = {
 	//rookPositionValues[2][64] =
 	{
 		{
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
 			20,20,20,20,20,20,20,20,
-			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
 		},
 		{
-			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
 		   20,20,20,20,20,20,20,20,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
+			0, 0, 5,10,10, 5, 0, 0,
 		}
 	},
 	// queenPositionValues[2][64] = 
@@ -84,24 +84,24 @@ short PositionValueMatrix[7][2][64] = {
 	//char pawnPositionValues[2][64] =
 	{
 		{
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 5, 5, 0, 0, 0,
-			3, 3, 3,28,28, 3, 3, 3,
-			6, 6, 6,10,10, 6, 6, 6,
-			9, 9, 9, 9, 9, 9, 9, 9,
-			12,12,12,12,12,12,12,12,
-			0, 0, 0, 0, 0, 0, 0, 0,
-		},
+			0,  0,  0,  0,  0,  0,  0,  0,
+		   10, 10,  0,-10,-10,  0, 10, 10,
+			5,  0,  0,  5,  5,  0,  0,  5,
+			0,  0, 10, 20, 20, 10,  0,  0,
+			5,  5,  5, 10, 10,  5,  5,  5,
+		   10, 10, 10, 20, 20, 10, 10, 10,
+		   20, 20, 20, 30, 30, 20, 20, 20,
+			0,  0,  0,  0,  0,  0,  0,  0
+   },
 		{
-			0, 0, 0, 0, 0, 0, 0, 0,
-		   12,12,12,12,12,12,12,12,
-			9, 9, 9, 9, 9, 9, 9, 9,
-			6, 6, 6,10,10, 6, 6, 6,
-			3, 3, 3,28,28, 3, 3, 3,
-			0, 0, 0, 5, 5, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
+			0,  0,  0,  0,  0,  0,  0,  0,
+		   20, 20, 20, 30, 30, 20, 20, 20,
+		   10, 10, 10, 20, 20, 10, 10, 10,
+			5,  5,  5, 10, 10,  5,  5,  5,
+			0,  0, 10, 20, 20, 10,  0,  0,
+			5,  0,  0,  5,  5,  0,  0,  5,
+		   10, 10,  0,-10,-10,  0, 10, 10,
+			0,  0,  0,  0,  0,  0,  0,  0,
 		}
 	},
 	//char knightPositionsValues[2][64] =
@@ -138,9 +138,9 @@ short KingPositionValueMatrix[2][2][64] = {
 	//kingMiddleGamePositionValues[2][64] =
 	{
 		{
-			 20, 30, 10,  0,  0, 10, 30, 20,
-			 20, 20,  0,  0,  0,  0, 20, 20,
-			-10,-20,-20,-20,-20,-20,-20,-10,
+			  0,  5,  5,-10,-10,  0, 10, 5,
+			-20,-20,-20,-20,-20,-20,-20,-20,
+			-20,-20,-20,-20,-20,-20,-20,-20,
 			-20,-30,-30,-40,-40,-30,-30,-20,
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-30,-40,-40,-50,-50,-40,-40,-30,
@@ -155,7 +155,7 @@ short KingPositionValueMatrix[2][2][64] = {
 			-20,-30,-30,-40,-40,-30,-30,-20,
 			-10,-20,-20,-20,-20,-20,-20,-10,
 			 20, 20,  0,  0,  0,  0, 20, 20,
-			 20, 30, 10,  0,  0, 10, 30, 20
+			  0,  5,  5,-10,-10,  0, 10,  5
 		}
 	},
 	//kingEndGamePositionValues[2][64] = 
@@ -298,7 +298,10 @@ void CalculateInfrontOfKing() {
 	}
 }
 
-
+const int PawnPassedPoints[2][8] = { 
+	{ 0, 5, 10, 20, 35, 60, 100, 200 },
+	{ 200, 100, 60, 35, 20, 10, 5, 0 },
+};
 //No opponent pawn on files left right and infront
 short PassedPawn(int square, Game* game) {
 	int file = square % 8;
@@ -348,7 +351,7 @@ short PassedPawn(int square, Game* game) {
 			}
 		}
 	}
-	return PASSED_PAWN + (PASSED_PAWN_FREE_PATH * freePath);
+	return PawnPassedPoints[pieceColor >> 4][rank] + (PASSED_PAWN_FREE_PATH * freePath);
 }
 
 void CalculatePawnProtection() {
@@ -417,7 +420,7 @@ short ProtectedByPawn(int square, Game* game) {
 		short pps = PawnProtectionSquares[color01][square][i];
 		score = (game->Squares[pps] == pawn);
 	}
-	return score * PASSED_PAWN;
+	return score * PAWN_PROTECT;
 }
 
 short GetEval(Game* game) {
@@ -434,6 +437,7 @@ short GetEval(Game* game) {
 	for (size_t s = 0; s < 2; s++)
 	{
 		short scr = 0;
+		int bishopCount = 0;
 		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
@@ -464,6 +468,7 @@ short GetEval(Game* game) {
 			break;
 			case BISHOP:
 			case KNIGHT: {
+				bishopCount += (pt == BISHOP);
 				scr += ProtectedByPawn(i, game);
 			}
 					   break;
@@ -481,6 +486,7 @@ short GetEval(Game* game) {
 				break;
 			}
 		}
+		scr += BISHOP_PAIR * (bishopCount == 2);
 		score += (neg * scr);
 		neg += 2; // -1 --> 1 // White then black
 	}
@@ -492,7 +498,7 @@ short GetEval(Game* game) {
 	/*short materialLead = game->Material[1] - game->Material[0];
 	if (materialLead)
 		return score + posScore + (float)(score * 50) / (float)materialLead;*/
-	
+
 	return score + posScore;
 }
 
