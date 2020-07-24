@@ -263,7 +263,7 @@ Undos DoMove(Move move, Game* game) {
 
 //Side, Piece (NOPIECE,BISHOP,ROOK,QUEEN,PAWN,KNIGHT,KING, // 6	
 //Moving small pieces first material equal
-const char PieceOrder[2][7] = { {0,30,40,60,10,20,50}, {0,-30,-40,-60,-10,-20,-50} };
+const char PieceOrder[2][7] = { {0,3,4,6,1,2,5}, {0,-3,-4,-6,-1,-2,-5} };
 
 short GetLightScore(Move move, Game* game) {
 	short lightScore = game->Material[0] + game->Material[1];

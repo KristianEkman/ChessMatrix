@@ -164,7 +164,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 			PickBlacksNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			int kingSquare = game->KingSquares[!game->Side01];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
@@ -191,7 +191,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 			PickWhitesNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			int kingSquare = game->KingSquares[!game->Side];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
@@ -303,7 +303,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			int kingSquare = game->KingSquares[!game->Side01];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
@@ -375,7 +375,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			PickWhitesNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
+			int kingSquare = game->KingSquares[!game->Side01];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
@@ -571,6 +571,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 		}
 
 		// At the end of each depth, checks if it is smart to search deeper.
+		// todo: if score has gone down, is it worth spending some more time?
 		float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
 		int moveNo = pGame->PositionHistoryLength;
 		RegisterDepthTime(moveNo, depth, depthTime * 1000);
@@ -607,6 +608,7 @@ MoveCoordinates Search(bool async) {
 		return singleMove;
 	}
 
+	// book moves are just to add variation on tournament games.
 	if (g_mainGame.PositionHistoryLength < 6) {
 		MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
 		if (bookMove.From != -1) {
