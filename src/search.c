@@ -6,6 +6,7 @@
 #include "hashTable.h"
 #include "timeControl.h"
 #include "book.h"
+#include "killers.h"
 #include <time.h>
 #include <stdio.h>
 
@@ -90,41 +91,6 @@ static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
 	moves[bestNum] = temp;
 }
 
-//
-//void AddKiller(Game* game, Move move) {
-//	MoveCoordinates * list = game->KillerMoves[game->PositionHistoryLength];
-//	if ((list[0].From == move.From && list[0].To == move.To) ||
-//		(list[1].From == move.From && list[1].To == move.To))
-//		return; // dont add already existing killers 
-//	list[1] = list[0];
-//	list[0].From = move.From;
-//	list[0].To = move.To;
-//}
-//
-//
-//void MoveKillersToTop(Game* game, Move* moveList, int moveListLength) {
-//	MoveCoordinates secondKiller = game->KillerMoves[game->PositionHistoryLength][1];
-//	for (size_t i = 0; i < moveListLength; i++)
-//	{
-//		if (moveList[i].From == secondKiller.From && moveList[i].To == secondKiller.To) {
-//			Move temp = moveList[i];
-//			memmove(&moveList[1], moveList, i * sizeof(Move));
-//			moveList[0] = temp;
-//			break;
-//		}
-//	}
-//	MoveCoordinates firstKiller = game->KillerMoves[game->PositionHistoryLength][0];
-//	for (size_t i = 0; i < moveListLength; i++)
-//	{
-//		if (moveList[i].From == firstKiller.From && moveList[i].To == firstKiller.To) {
-//			Move temp = moveList[i];
-//			memmove(&moveList[1], moveList, i * sizeof(Move));
-//			moveList[0] = temp;
-//			break;
-//		}
-//	}
-//}
-
 short QuiteSearch(short best_black, short best_white, Game* game, short moveScore, int deep_in) {
 
 	g_SearchedNodes++;
@@ -155,7 +121,6 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
-	//MoveKillersToTop(game, localMoves, moveCount);
 
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
@@ -212,7 +177,6 @@ short QuiteSearch(short best_black, short best_white, Game* game, short moveScor
 		return best_white;
 	}
 }
-
 
 bool IsReductionOk(Move move, Undos undos) {
 	return undos.CaptIndex == -1 && // no capture
@@ -277,8 +241,6 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
-
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount, game->Side);
 	}
@@ -339,9 +301,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
 
-						/*if (undos.CaptIndex == -1) {
-							AddKiller(game, childMove);
-						}*/
+						if (undos.CaptIndex == -1) {
+							AddBlackKiller(game, childMove);
+						}
 						return best_white;
 					}
 					best_black = score;
@@ -409,8 +371,8 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				if (score < best_white) {
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
-						//if (undos.CaptIndex == -1)
-						//   AddKiller(game, childMove);
+						if (undos.CaptIndex == -1)
+						   AddWhiteKiller(game, childMove);
 						free(localMoves);
 						return best_black;
 					}
@@ -448,7 +410,6 @@ void CopyMainGame(Game* copy) {
 	memcpy(g_mainGame.Squares, copy->Squares, 64 * sizeof(PieceType));
 	memcpy(g_mainGame.PositionHistory, copy->PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(g_mainGame.Pieces, copy->Pieces, 32 * sizeof(Piece));
-	//memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 
 void PrintBestLine(Move move, int depth, float ellapsed) {
@@ -537,9 +498,9 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 
 
 DWORD WINAPI IterativeSearch(void* v) {
-	Game game = g_mainGame;
-	Game* pGame = &game;
-	CopyMainGame(pGame);
+	//Game game = g_mainGame;
+	Game* pGame = &g_mainGame;
+	//CopyMainGame(pGame);
 	clock_t start = clock();
 	Move bestMove;
 	bestMove.From = 0;
@@ -627,6 +588,8 @@ MoveCoordinates Search(bool async) {
 
 	g_Stopped = false;
 	g_SearchedNodes = 0;
+	// todo, ska dom nollas efter varje depth?
+	memset(g_mainGame.Killers, 0, 2 * 250 * 2 * sizeof(MoveCoordinates));
 
 	HANDLE handle = CreateThread(NULL, 0, IterativeSearch, NULL, 0, NULL);
 	if (!async)

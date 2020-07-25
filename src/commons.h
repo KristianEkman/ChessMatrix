@@ -117,10 +117,10 @@ typedef struct {
 
 typedef struct {
 	Side Side;
-	int Side01;
-	int MovesBufferLength;
+	char Side01;
+	short MovesBufferLength;
 	Move MovesBuffer[100];
-	int KingSquares[2];
+	char KingSquares[2];
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
@@ -128,7 +128,8 @@ typedef struct {
 	U64 PositionHistory[1800];
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
-	//MoveCoordinates KillerMoves[500][2];
+	//[side][ply][slot]
+	MoveCoordinates Killers[2][250][2];
 	uchar FiftyMoveRuleCount;
 } Game;
 

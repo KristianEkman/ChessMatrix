@@ -4,6 +4,7 @@
 #include "evaluation.h"
 #include "hashTable.h"
 #include "sort.h"
+#include "killers.h"
 
 int SetCaptureOff(Game* game, int side, int squareIndex) {
 	for (int i = 0; i < 16; i++)
@@ -498,6 +499,22 @@ void SortMoves(Move* moves, int moveCount, Side side) {
 		QuickSortDescending(moves, 0, moveCount - 1);
 }
 
+
+void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {
+	Move move;
+	move.From = fromSquare;
+	move.To = toSquare;
+	move.MoveInfo = moveInfo;
+	move.PieceIdx = pieceIdx;
+
+	move.Score = GetLightScore(move, game);
+	
+	move.Score += KillerScore(game, game->Side01, move);
+
+	game->MovesBuffer[game->MovesBufferLength++] = move;
+	AssertGame(game);
+}
+
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {
 	Move move;
 	move.From = fromSquare;
@@ -686,10 +703,10 @@ void CreateCaptureMoves(Game* game) {
 			if (game->Squares[toSquare] == NOPIECE)
 			{
 				if (toSquare < 8 || toSquare > 55) {
-					CreateMove(i, toSquare, PromotionQueen, game, pi);
-					/*CreateMove(i, toSquare, PromotionRook, game, pi);
-					CreateMove(i, toSquare, PromotionBishop, game, pi);
-					CreateMove(i, toSquare, PromotionKnight, game, pi);*/
+					CreateCaptureMove(i, toSquare, PromotionQueen, game, pi);
+					/*CreateCaptureMove(i, toSquare, PromotionRook, game, pi);
+					CreateCaptureMove(i, toSquare, PromotionBishop, game, pi);
+					CreateCaptureMove(i, toSquare, PromotionKnight, game, pi);*/
 				}
 			}
 
@@ -702,13 +719,13 @@ void CreateCaptureMoves(Game* game) {
 				if (game->Squares[toSquare] & otherSide)
 				{
 					if (toSquare < 8 || toSquare > 55) {
-						CreateMove(i, toSquare, PromotionQueen, game, pi);
-						/*CreateMove(i, toSquare, PromotionRook, game, pi);
-						CreateMove(i, toSquare, PromotionBishop, game, pi);
-						CreateMove(i, toSquare, PromotionKnight, game, pi);*/
+						CreateCaptureMove(i, toSquare, PromotionQueen, game, pi);
+						/*CreatCreateCaptureMoveeMove(i, toSquare, PromotionRook, game, pi);
+						CreateCaptureMove(i, toSquare, PromotionBishop, game, pi);
+						CreateCaptureMove(i, toSquare, PromotionKnight, game, pi);*/
 					}
 					else {
-						CreateMove(i, toSquare, PlainMove, game, pi);
+						CreateCaptureMove(i, toSquare, PlainMove, game, pi);
 					}
 				}
 				else {
@@ -717,7 +734,7 @@ void CreateCaptureMoves(Game* game) {
 						int toFile = toSquare & 7;
 						int toRank = toSquare >> 3;
 						if (toFile == enpFile && toRank == EnpassantRankPattern[side01])
-							CreateMove(i, toSquare, EnPassantCapture, game, pi);
+							CreateCaptureMove(i, toSquare, EnPassantCapture, game, pi);
 					}
 				}
 			}
@@ -730,7 +747,7 @@ void CreateCaptureMoves(Game* game) {
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
 				if (game->Squares[toSquare] & otherSide) {
-					CreateMove(i, toSquare, 0, game, pi);
+					CreateCaptureMove(i, toSquare, 0, game, pi);
 				}
 			}
 			break;
@@ -742,7 +759,7 @@ void CreateCaptureMoves(Game* game) {
 			{
 				int toSquare = PieceTypeSquarePatterns[1][i][p];
 				if (game->Squares[toSquare] & otherSide) {
-					CreateMove(i, toSquare, KingMove, game, pi);
+					CreateCaptureMove(i, toSquare, KingMove, game, pi);
 				}
 			}
 			break;
@@ -761,7 +778,7 @@ void CreateCaptureMoves(Game* game) {
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 					if (toPiece & otherSide) {
-						CreateMove(i, toSquare, moveInfo, game, pi);
+						CreateCaptureMove(i, toSquare, moveInfo, game, pi);
 						break;
 					}
 					else if (toPiece) { // own piece
@@ -773,7 +790,6 @@ void CreateCaptureMoves(Game* game) {
 		}
 		}
 	}
-	//SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 void RemoveInvalidMoves(Game* game) {

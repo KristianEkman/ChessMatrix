@@ -48,6 +48,9 @@
     <ClCompile Include="book.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="killers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patterns.h">
@@ -87,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="killers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
