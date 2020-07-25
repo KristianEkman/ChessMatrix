@@ -20,7 +20,7 @@ void AddBlackKiller(Game* game, Move move) {
 	list[0].To = move.To;
 }
 
-short killerScores[2] = { -150, 150 };
+short killerScores[2] = { -3000, 3000 };
 
 short KillerScore(Game* game, int side, Move move) {
 	MoveCoordinates* list = game->Killers[side][game->PositionHistoryLength / 2];
