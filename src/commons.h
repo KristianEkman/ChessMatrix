@@ -80,7 +80,9 @@ typedef enum {
 	WhiteCanCastleShort = 16,
 	WhiteCanCastleLong = 32,
 	BlackCanCastleShort = 64,
-	BlackCanCastleLong = 128
+	BlackCanCastleLong = 128,
+	WhiteHasCastled = 256,
+	BlackHasCastled = 512
 } GameState;
 
 typedef struct {

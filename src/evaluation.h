@@ -1,13 +1,12 @@
 #pragma once
 #include "commons.h"
+#include "patterns.h"
 
-#define CASTLED 38
+#define CASTLED 20
 #define OPEN_ROOK_FILE 19
 #define SEMI_OPEN_FILE 15
-#define DOUBLE_PAWN 9
-#define KING_NEEDS_PROTECTION 1500
-#define KING_EXPOSED_INFRONT 16
-#define KING_EXPOSED_DIAGONAL 12
+#define DOUBLE_PAWN 14
+#define KING_EXPOSED 16
 #define PASSED_PAWN 21
 #define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8

@@ -244,7 +244,7 @@ short KingExposed(int square, Game* game) {
 		int protectSquare = InfrontOfKingSquares[color01][square][i];
 		score += game->Squares[protectSquare] != pawn;
 	}
-	return score * KING_EXPOSED_INFRONT;
+	return score * KING_EXPOSED;
 }
 
 void CalculateInfrontOfKing() {
@@ -302,6 +302,9 @@ const int PawnPassedPoints[2][8] = {
 	{ 0, 5, 10, 20, 35, 60, 100, 200 },
 	{ 200, 100, 60, 35, 20, 10, 5, 0 },
 };
+
+GameState hasCastled[2] = { WhiteHasCastled, BlackHasCastled };
+
 //No opponent pawn on files left right and infront
 short PassedPawn(int square, Game* game) {
 	int file = square % 8;
@@ -486,7 +489,8 @@ short GetEval(Game* game) {
 				break;
 			}
 		}
-		scr += BISHOP_PAIR * (bishopCount == 2);
+		scr += BISHOP_PAIR * (bishopCount == 2);		
+		scr += ((game->State & hasCastled[s]) == hasCastled[s]) * CASTLED;
 		score += (neg * scr);
 		neg += 2; // -1 --> 1 // White then black
 	}

@@ -199,12 +199,22 @@ Undos DoMove(Move move, Game* game) {
 		MovePiece(game, side01, rookFr, rookTo);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
+		hash ^= ZobritsCastlingRights[side01 * 2 + 1]; // 1 eller 3, white short, black short
 
 		//gör inte detta om det redan är gjort
-		if ((game->Side == WHITE && (game->State & WhiteCanCastleLong)) || (game->Side == BLACK && (game->State & BlackCanCastleLong)))
-			hash ^= ZobritsCastlingRights[side01 * 2]; // 0 eller 2, white long, black long
+		if (game->Side == WHITE) {
+			game->State |= WhiteHasCastled;
+			if (game->State & WhiteCanCastleLong) {
+				hash ^= ZobritsCastlingRights[side01 * 2];
+			}
+		}
+		else {
+			game->State |= BlackHasCastled;
+			if (game->State & BlackCanCastleLong) {
+				hash ^= ZobritsCastlingRights[side01 * 2];
+			}
+		}
 
-		hash ^= ZobritsCastlingRights[side01 * 2 + 1]; // 1 eller 3, white short, black short
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
 	}
 	break;
@@ -217,13 +227,22 @@ Undos DoMove(Move move, Game* game) {
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 		MovePiece(game, side01, rookFr, rookTo);
-		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
-
 		hash ^= ZobritsCastlingRights[side01 * 2]; //long
-		if ((game->Side == WHITE && game->State & WhiteCanCastleShort) || (game->Side == BLACK && (game->State & BlackCanCastleShort)))
-			hash ^= ZobritsCastlingRights[side01 * 2 + 1]; //short
+
+		if (game->Side == WHITE) {
+			game->State |= WhiteHasCastled;
+			if (game->State & WhiteCanCastleShort) {
+				hash ^= ZobritsCastlingRights[side01 * 2 + 1];
+			}
+		}
+		else {
+			game->State |= BlackHasCastled;
+			if (game->State & BlackCanCastleShort) {
+				hash ^= ZobritsCastlingRights[side01 * 2 + 1];
+			}
+		}
 
 		game->State &= ~SideCastlingRights[side01]; //sets castling rights bits for current player.
 	}
