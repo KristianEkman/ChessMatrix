@@ -106,19 +106,20 @@ static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
 //
 
 void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength) {
-
+	//int moved = 0;
 	for (int i = 0; i < moveListLength; i++)
 	{
 		if (IsCounterMove(moveList[i], previousMove)) {
 			Move temp = moveList[i];
 			memmove(&moveList[1], moveList, i * sizeof(Move));
 			moveList[0] = temp;
+			//moved++;
 			break;
 		}
 	}
 }
 
-short QuiteSearch(short best_black, short best_white, Game* game, Move move, int deep_in) {
+short QuiteSearch(short best_black, short best_white, Game* game, int deep_in) {
 
 	g_SearchedNodes++;
 
@@ -164,7 +165,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, Move move, int
 				UndoMove(game, childMove, undos);
 				continue;
 			}
-			score = QuiteSearch(best_black, best_white, game, childMove, deep_in + 1);
+			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
 			UndoMove(game, childMove, undos);
 			if (score > best_black) {
 				if (score >= best_white) {
@@ -191,7 +192,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, Move move, int
 				UndoMove(game, childMove, undos);
 				continue;
 			}
-			score = QuiteSearch(best_black, best_white, game, childMove, deep_in + 1);
+			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
 			UndoMove(game, childMove, undos);
 			if (score < best_white) {
 				if (score <= best_black) {
@@ -213,14 +214,14 @@ bool IsReductionOk(Move move, Undos undos) {
 		move.MoveInfo != SoonPromoting;
 }
 
-short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, Move move, int deep_in, bool incheck) {
+short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, Move prevMove, int deep_in, bool incheck) {
 	if (g_Stopped)
 		return 0; // should not be used;
 
 	g_SearchedNodes++;
 
 	if (depth <= 0) {
-		return QuiteSearch(best_black, best_white, game, move, deep_in);
+		return QuiteSearch(best_black, best_white, game, deep_in);
 	}
 
 	if (IsDraw(game))
@@ -245,7 +246,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			U64 prevHash = game->Hash;
 			DoNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, move, deep_in + 1, incheck);
+				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
 				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
 					UndoNullMove(prevState, game, prevHash);
 					return best_black;
@@ -253,7 +254,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			}
 			else //(game->Side == WHITE)
 			{
-				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, move, deep_in + 1, incheck);
+				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
 				if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
 					UndoNullMove(prevState, game, prevHash);
 					return best_white;
@@ -264,13 +265,13 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	}
 
 	//Move generation
-	CreateMoves(game, move);
+	CreateMoves(game, prevMove);
 	int moveCount = game->MovesBufferLength;
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(move, localMoves, moveCount);
+	MoveCounterMoveToTop(prevMove, localMoves, moveCount);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
@@ -333,7 +334,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
 						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, move);
+							AddCounterMove(childMove, prevMove);
 
 						/*if (undos.CaptIndex == -1) {
 							AddKiller(game, childMove);
@@ -406,7 +407,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
 						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, move);
+							AddCounterMove(childMove, prevMove);
 						//if (undos.CaptIndex == -1)
 						//   AddKiller(game, childMove);
 						free(localMoves);
@@ -463,7 +464,7 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 	int index = 0;
 	PlayerMove moves[300];
 	int movesCount = 0;
-	while (movesCount < (depth + 10)) // hack: shows moves found when extending search (checks), but not going into cycles.
+	while (movesCount < (depth + 5)) // hack: shows moves found when extending search (checks), but not going into cycles.
 	{
 		Move bestMove;
 		if (!GetBestMoveFromHash(game->Hash, &bestMove))
@@ -622,6 +623,8 @@ MoveCoordinates Search(bool async) {
 			return bookMove;
 		}
 	}
+
+	ClearCounterMoves();
 
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
