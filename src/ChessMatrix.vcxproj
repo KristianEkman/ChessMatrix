@@ -153,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="book.c" />
+    <ClCompile Include="countermoves.c" />
     <ClCompile Include="evaluation.c" />
     <ClCompile Include="hashTable.c" />
     <ClCompile Include="main.c" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="book.h" />
+    <ClInclude Include="countermoves.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashTable.h" />
     <ClInclude Include="main.h" />
