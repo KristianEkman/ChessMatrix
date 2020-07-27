@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "commons.h"
 
-void CreateMoves(Game* game, Move previousMove);
+void CreateMoves(Game* game);
 void CreateCaptureMoves(Game* game);
 void RemoveInvalidMoves(Game* game);
 int ValidMoves(Move* moves);

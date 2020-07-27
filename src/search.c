@@ -63,6 +63,7 @@ static void PickBlacksNextMove(int moveNum, Move * moves, int moveCount) {
 	int bestNum = moveNum;
 
 	for (int index = moveNum; index < moveCount; ++index) {
+
 		if (moves[index].Score > bestScore) {
 			bestScore = moves[index].Score;
 			bestNum = index;
@@ -103,28 +104,19 @@ static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
 //}
 //
 //
-//void MoveKillersToTop(Game* game, Move* moveList, int moveListLength) {
-//	MoveCoordinates secondKiller = game->KillerMoves[game->PositionHistoryLength][1];
-//	for (size_t i = 0; i < moveListLength; i++)
-//	{
-//		if (moveList[i].From == secondKiller.From && moveList[i].To == secondKiller.To) {
-//			Move temp = moveList[i];
-//			memmove(&moveList[1], moveList, i * sizeof(Move));
-//			moveList[0] = temp;
-//			break;
-//		}
-//	}
-//	MoveCoordinates firstKiller = game->KillerMoves[game->PositionHistoryLength][0];
-//	for (size_t i = 0; i < moveListLength; i++)
-//	{
-//		if (moveList[i].From == firstKiller.From && moveList[i].To == firstKiller.To) {
-//			Move temp = moveList[i];
-//			memmove(&moveList[1], moveList, i * sizeof(Move));
-//			moveList[0] = temp;
-//			break;
-//		}
-//	}
-//}
+
+void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength) {
+
+	for (int i = 0; i < moveListLength; i++)
+	{
+		if (IsCounterMove(moveList[i], previousMove)) {
+			Move temp = moveList[i];
+			memmove(&moveList[1], moveList, i * sizeof(Move));
+			moveList[0] = temp;
+			break;
+		}
+	}
+}
 
 short QuiteSearch(short best_black, short best_white, Game* game, Move move, int deep_in) {
 
@@ -278,6 +270,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
+	MoveCounterMoveToTop(move, localMoves, moveCount);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {

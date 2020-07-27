@@ -4,4 +4,4 @@
 
 void AddCounterMove(Move move, Move previousMove);
 
-short CounterMoveScore(Move move, Move previousMove);
+bool IsCounterMove(Move move, Move previousMove);

@@ -173,8 +173,7 @@ int Perft(depth) {
 		return 1;
 	}
 	int nodeCount = 0;
-	Move dummy;
-	CreateMoves(&g_mainGame, dummy);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 	if (g_mainGame.MovesBufferLength == 0)
 		return nodeCount;
@@ -307,8 +306,7 @@ int PerftHashDb(int depth) {
 	if (depth == 0)
 		return 1;
 	int nodeCount = 0;
-	Move dummy;
-	CreateMoves(&g_mainGame, dummy);
+	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
 	if (g_mainGame.MovesBufferLength == 0)
 		return nodeCount;
