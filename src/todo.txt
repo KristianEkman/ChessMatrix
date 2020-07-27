@@ -1,18 +1,24 @@
-TEst och utvärdering. Köra mot fler engines. Längre.
+Counter moves
+	2 previous
+	Flytta upp fler
+	
+Killer moves.
+ - läs på, kolla psuedo kod.
+ - Glöm inte att resetta inför varje sökning
+
+Variabel full depth moves för lmr, lägre när djupet är större
+
+LMR och Extensions
+===
+	Depth limit
+	Extensions för fler typer av drag.
 
 Mer pruning
 	Futilty pruning
 	Aspiration window
 	Razoring
 
-Förenkla 3-fold rep med att kolla typ varannan. Testfall.
-
-LMR och Extensions
-===
-	depth limit
-
-Extensions för fler typer av drag.
-Variabel reducering för lmr, högre när djupet är större
+Iterativt öka full depth moves.
 Sök en gång till med depth-1 efter lmr?
 
 Drag som kraftigt förbättrat score?
@@ -29,26 +35,16 @@ Auto trimma konstanter för eval. Genetisk sökning?
 
 Draw by material.
 
-Killer moves. Ger de något? Spelar lika bra utan.
- - läs på, kolla psuedo kod.
-
-HistorikTabell
-
 Books
 	Endgame tablebases
 
 Eval: 
-	Protected by pawn
 	Pins
 	Forks
-	Isolated pawns.
 	Bad bishops -- performance ??
 	Outposts -- performance ??
 	Minska öppningsreglernas betydelse gradvis efter 3ply
     ANN
-	Minskad betydelse av position på brädet.
-
-Unsufficient material
 
 Linux kompatibel
 ================
