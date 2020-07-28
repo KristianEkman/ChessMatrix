@@ -1,6 +1,8 @@
 Counter moves
 	2 previous
 	Flytta upp fler
+
+Prioritera castling lite oftare
 	
 Killer moves.
  - läs på, kolla psuedo kod.
