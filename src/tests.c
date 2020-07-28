@@ -516,9 +516,9 @@ void WhiteCastlingRightsAfterKingMove() {
 void MaterialBlackPawnCapture() {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
-	AssertAreEqualInts(-510, TotalMaterial(&g_mainGame), "Start Material missmatch");
+	AssertAreEqualInts(-450, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d4e5").Invalid, "Move was not valid");
-	AssertAreEqualInts(-610, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(-550, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void MaterialWhiteQueenCapture() {
@@ -526,26 +526,26 @@ void MaterialWhiteQueenCapture() {
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("d5e4").Invalid, "Move was not valid");
-	AssertAreEqualInts(1010, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(1000, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void MaterialCaptureAndPromotion() {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
+	AssertAreEqualInts(450, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	PlayerMove pm = MakePlayerMove("b7c8");
 	AssertNot(pm.Invalid, "Move was not valid");
 	AssertAreEqualInts(-1010, TotalMaterial(&g_mainGame), "Game Material missmatch");
 	UnMakePlayerMove(pm);
-	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
+	AssertAreEqualInts(450, TotalMaterial(&g_mainGame), "Start Material missmatch");
 }
 
 void MaterialPromotion() {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
-	AssertAreEqualInts(400, TotalMaterial(&g_mainGame), "Start Material missmatch");
+	AssertAreEqualInts(450, TotalMaterial(&g_mainGame), "Start Material missmatch");
 	AssertNot(MakePlayerMove("b7b8").Invalid, "Move was not valid");
-	AssertAreEqualInts(-510, TotalMaterial(&g_mainGame), "Game Material missmatch");
+	AssertAreEqualInts(-460, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
 void EnPassantMaterial() {
@@ -611,7 +611,7 @@ void TestWhiteMateIn2() {
 
 void BlackMatesIn5Deeping() {
 	char * fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
-	AssertBestMoveTimed(1000, __func__, fen, "f4h4");
+	AssertBestMoveTimed(2000, __func__, fen, "f4h4");
 
 }
 
@@ -660,7 +660,7 @@ void BestMoveByWhite3() {
 
 void RookSacrificeByWhite() {
 	char* fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
-	AssertBestMoveTimed(2000, __func__, fen, "e1e8");
+	AssertBestMoveTimed(3000, __func__, fen, "e1e8");
 }
 
 void BlackMatesIn5a() {
