@@ -1,14 +1,7 @@
 Counter moves
-	2 previous
-	Flytta upp fler
+	2 previous, i så fall packa coordinater.
 
-Prioritera castling lite oftare
-	
-Killer moves.
- - läs på, kolla psuedo kod.
- - Glöm inte att resetta inför varje sökning
-
-Variabel full depth moves för lmr, lägre när djupet är större
+Iterativt öka full depth moves.
 
 LMR och Extensions
 ===
@@ -20,7 +13,7 @@ Mer pruning
 	Aspiration window
 	Razoring
 
-Iterativt öka full depth moves.
+
 Sök en gång till med depth-1 efter lmr?
 
 Drag som kraftigt förbättrat score?
