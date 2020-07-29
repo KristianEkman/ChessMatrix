@@ -299,7 +299,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			bool capture = true;
 
 			// Futility pruning
-			if (depth == 1 && pvMove.MoveInfo == NotAMove && legalCount > 0 && !incheck && childMove.Score + 100 < best_white) {
+			if (depth == 1 && pvMove.MoveInfo == NotAMove && legalCount > 0 && !incheck && childMove.Score - 200 > best_white) {
 				score = QuiteSearch(best_black, best_white, game, deep_in);
 			}
 			else { // skipping do/undo and next depth
@@ -382,7 +382,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			Move childMove = localMoves[i];
 			bool capture = true;
 			// Futility pruning
-			if (depth == 1 && pvMove.MoveInfo == NotAMove && legalCount > 0 && !incheck && childMove.Score - 100 > best_black) {
+			if (depth == 1 && pvMove.MoveInfo == NotAMove && legalCount > 0 && !incheck && childMove.Score + 200 < best_black) {
 				score = QuiteSearch(best_black, best_white, game, deep_in);
 			}
 			else {
