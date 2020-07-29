@@ -1,5 +1,5 @@
 Counter moves
-	2 previous, i så fall packa coordinater.
+	2 previous, i så fall kanske packa coordinater.
 
 Iterativt öka full depth moves.
 
@@ -13,15 +13,21 @@ Mer pruning
 	Aspiration window
 	Razoring
 
-
 Sök en gång till med depth-1 efter lmr?
 
 Drag som kraftigt förbättrat score?
 
 Multi thread
 ============
-Gemensamma alpha beta över trådar.
 En hash db per tråd.
+En tråd som gör minimalt forwar pruning.
+En tråd som gör mycket frwprn
+En tråd som gör mellan.
+Välj det bästa draget.
+	- matt
+	- stor förbättring?
+	- den tråd som brukar vara bäst?
+
 MoveGen, (eval) på egna trådar?
 Stoppa de långsamaste trådarna?
 Låta de köra helt fritt, öka sitt eget djup?
