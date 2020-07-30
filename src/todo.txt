@@ -56,10 +56,9 @@ Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move hist
 (Fast det tar bara 2 ms)
 
 
-Senaste benchmark: 256MB, 40/2min, repeterande
    Schackmotor               Poäng          Ch
-1: ChessMatrixFeat           22,0/40 ·········· 
-2: Vice10                    8,0/10  0111111101 
-3: ChessMatrix               4,5/10  1001010=01 
-4: Predateur2.2.1_x32        4,0/10  0110110000 
-5: ChessterfieldCL_i5a_intel 1,5/10  0=0=000=00 
+1: ChessMatrixFeat           23,0/40 ·········· 
+2: Vice10                    5,5/10  011001110= 
+3: ChessMatrix               5,0/10  01==1=100= 
+4: Predateur2.2.1_x32        3,5/10  =101000100 
+5: ChessterfieldCL_i5a_intel 3,0/10  ==00011000
