@@ -153,8 +153,8 @@ short KingPositionValueMatrix[2][2][64] = {
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-20,-30,-30,-40,-40,-30,-30,-20,
-			-10,-20,-20,-20,-20,-20,-20,-10,
-			 20, 20,  0,  0,  0,  0, 20, 20,
+#			-20,-20,-20,-20,-20,-20,-20,-20,
+			-20,-20,-20,-20,-20,-20,-20,-20,
 			  0,  5,  5,-10,-10,  0, 10,  5
 		}
 	},
@@ -244,7 +244,7 @@ short KingExposed(int square, Game* game) {
 		int protectSquare = InfrontOfKingSquares[color01][square][i];
 		score += game->Squares[protectSquare] != pawn;
 	}
-	return score * KING_EXPOSED_INFRONT;
+	return score * KING_EXPOSED;
 }
 
 void CalculateInfrontOfKing() {
