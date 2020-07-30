@@ -3,6 +3,7 @@
 
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
+#define MAX_DEPTH 31 // hash only uses 5 bits for depth
 
 //white, black   nopiece, bishop, rook, queen, pawn, knight, promotions (minus pawn)
 #define MATERIAL_B 325

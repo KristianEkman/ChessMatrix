@@ -186,7 +186,7 @@ void EnterUciMode() {
 		else if (StartsWith(buf, "go ")) {
 			SetSearchDefaults();
 			if (Contains(buf, "infinite")) {
-				g_topSearchParams.MaxDepth = 40;
+				g_topSearchParams.MaxDepth = MAX_DEPTH;
 				g_topSearchParams.TimeControl = false;
 				Search(true);
 			}
@@ -197,7 +197,7 @@ void EnterUciMode() {
 						char* depth = strtok(NULL, " ");
 						uint dep;
 						if (sscanf(depth, "%d", &dep) == 1)
-							g_topSearchParams.MaxDepth = dep - 1;
+							g_topSearchParams.MaxDepth = dep;
 					}
 					else if (Streq(token, "movetime")) {
 						char* movetime = strtok(NULL, " ");

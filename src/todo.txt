@@ -1,8 +1,6 @@
 Counter moves
 	2 previous, i så fall kanske packa coordinater.
 
-Iterativt öka full depth moves.
-
 LMR och Extensions
 ===
 	Depth limit

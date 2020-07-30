@@ -10,7 +10,7 @@
 #include <time.h>
 #include <stdio.h>
 
-uchar lmr_matrix[42][100];
+uchar lmr_matrix[MAX_DEPTH][100];
 
 void InitLmr() {
 	/*
@@ -18,7 +18,7 @@ void InitLmr() {
 	i > 6 & depth > 6 -- > 3
 	i > 9 & depth > 9 -- > 4
 	*/
-	for (size_t depth = 0; depth < 42; depth++)
+	for (size_t depth = 0; depth < MAX_DEPTH; depth++)
 	{
 		for (size_t moveNo = 0; moveNo < 100; moveNo++)
 		{
@@ -39,7 +39,7 @@ void InitLmr() {
 void SetSearchDefaults() {
 	g_topSearchParams.BlackIncrement = 0;
 	g_topSearchParams.BlackTimeLeft = 0;
-	g_topSearchParams.MaxDepth = 40;
+	g_topSearchParams.MaxDepth = MAX_DEPTH;
 	g_topSearchParams.MoveTime = 0;
 	g_topSearchParams.TimeControl = false;
 	g_topSearchParams.WhiteIncrement = 0;
@@ -550,7 +550,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 	noMove.To = 0;
 	noMove.MoveInfo = NotAMove;
 
-	for (int depth = 1; depth < g_topSearchParams.MaxDepth + 2; depth++)
+	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
 		clock_t depStart = clock();
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
