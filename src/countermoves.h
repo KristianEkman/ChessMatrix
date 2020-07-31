@@ -2,8 +2,8 @@
 
 #include "commons.h"
 
-void AddCounterMove(Move move, Move previousMove);
+void AddCounterMove(int engineId, Move move, Move previousMove);
 
-bool IsCounterMove(Move move, Move previousMove);
+bool IsCounterMove(int engineId, Move move, Move previousMove);
 
 void ClearCounterMoves();
