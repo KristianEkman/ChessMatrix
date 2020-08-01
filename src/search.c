@@ -625,7 +625,7 @@ DWORD WINAPI RunEngines() {
 	short score0 = move0.Score * neg;
 	short score1 = move1.Score * neg;
 
-	// if engine 0 score is much better, us it.
+	// If engine0 score is much better, us it. Only mates.
 	// todo: tune in this value
 	if (score0 - score1 > 400) {
 		bestCoords.From = move0.From;
