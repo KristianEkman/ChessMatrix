@@ -71,7 +71,6 @@ typedef struct {
 	char From; // Using char type instead of Square enum makes the struct half size. 8 vs 16 bytes, and test cases runs ~10% faster.
 	char To;
 	char MoveInfo;
-	short Score;
 	// Index of the piece moved in Pieces List.
 	char PieceIdx;
 } Move;

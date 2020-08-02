@@ -3,7 +3,6 @@
 #include "patterns.h"
 #include "evaluation.h"
 #include "hashTable.h"
-#include "sort.h"
 #include "countermoves.h"
 
 int SetCaptureOff(Game* game, int side, int squareIndex) {
@@ -491,14 +490,6 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 	return false;
 }
 
-void SortMoves(Move* moves, int moveCount, Side side) {
-
-	if (side == WHITE)
-		QuickSort(moves, 0, moveCount - 1);
-	else
-		QuickSortDescending(moves, 0, moveCount - 1);
-}
-
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, char pieceIdx) {
 	Move move;
 	move.From = fromSquare;
@@ -506,7 +497,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* game, cha
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 
-	move.Score = GetLightScore(move, game);
+	//move.Score = GetLightScore(move, game);
 
 	//move.Score = GetEval(game, move.Score);
 
@@ -521,7 +512,7 @@ void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* ga
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 
-	move.Score = GetLightScore(move, game);
+	//move.Score = GetLightScore(move, game);
 	//move.Score = GetEval(game, move.Score);
 
 	game->MovesBuffer[game->MovesBufferLength++] = move;
