@@ -469,16 +469,18 @@ short GetEval(Game* game) {
 			case BISHOP:
 			case KNIGHT: {
 				bishopCount += (pt == BISHOP);
-				//scr += ProtectedByPawn(i, game);
+				scr += ProtectedByPawn(i, game);
 			}
 					   break;
 			case PAWN: {
 				scr -= DoublePawns(i, game, pieceType);
 				scr += PassedPawn(i, game);
-				//scr += ProtectedByPawn(i, game);
+				scr += ProtectedByPawn(i, game);
 			}
 					 break;
 			case KING: {
+				/*int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
+				posScore += KingPositionValueMatrix[endGame][game->Side01][i];*/				
 				scr -= KingExposed(i, game);
 			}
 					 break;

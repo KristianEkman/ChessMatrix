@@ -624,7 +624,7 @@ MoveCoordinates Search(bool async) {
 		}
 	}
 
-	ClearCounterMoves();
+	// ClearCounterMoves();
 
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
