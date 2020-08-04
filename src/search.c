@@ -608,7 +608,7 @@ DWORD WINAPI RunEngines() {
 
 	//g_SearchedNodes = 0;
 	HANDLE threadHandles[ENGINE_COUNT];
-	int cpus[] = { 1, 16 }; // bitmask for cpu 1 and 5. Different physical cores
+	int cpus[] = { 1, 16 }; // bitmask for cpu 1 and 5. Different physical cores. Todo: count cores of system to make it dynamic.
 	for (int engineId = 0; engineId < ENGINE_COUNT; engineId++)
 	{
 		threadHandles[engineId] = CreateThread(NULL, 0, IterativeSearch, (LPVOID)engineId, 0, NULL);
