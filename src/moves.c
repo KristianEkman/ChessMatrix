@@ -68,7 +68,7 @@ void AssertGame(Game* game) {
 
 short KingPositionScore(Move move, Game* game) {
 	//aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
+	int endGame = abs(game->Material[!game->Side01]) < ENDGAME ? 1 : 0;
 	return KingPositionValueMatrix[endGame][game->Side01][move.To] -
 		KingPositionValueMatrix[endGame][game->Side01][move.From];
 }

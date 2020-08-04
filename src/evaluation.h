@@ -9,7 +9,7 @@
 #define KING_EXPOSED 16
 #define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8
-#define ENDGAME 1800
+#define ENDGAME 1500  //E.g 2 Rooks 2 pawns one pice
 #define SAME_TWICE 18
 #define QUEEN_EARLY 15
 #define BISHOP_PAIR 30

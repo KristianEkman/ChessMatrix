@@ -479,8 +479,8 @@ short GetEval(Game* game) {
 			}
 					 break;
 			case KING: {
-				/*int endGame = game->Material[1] - game->Material[0] < ENDGAME ? 1 : 0;
-				posScore += KingPositionValueMatrix[endGame][game->Side01][i];*/				
+				int endGame = abs(game->Material[!game->Side01]) < ENDGAME ? 1 : 0;
+				posScore += KingPositionValueMatrix[endGame][color >> 4][i];	
 				scr -= KingExposed(i, game);
 			}
 					 break;
