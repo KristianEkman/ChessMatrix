@@ -3,12 +3,13 @@
 #include "search.h"
 #include <stdio.h>
 
-int DepthTimeHistory[1024][32];
+// engine, moveNo, depth
+int DepthTimeHistory[ENGINE_COUNT][1024][MAX_DEPTH];
 
-bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
-// Goal:
-//	1. Time should not end
-//	2. Time should be used
+bool SearchDeeper(int engineId, int currentDepth, int moveNo, int ellapsed, Side side) {
+	// Goal:
+	//	1. Time should not end
+	//	2. Time should be used
 
 	int myTimeLeft = g_topSearchParams.BlackTimeLeft;
 	int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
@@ -28,27 +29,30 @@ bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
 		bonus = 0; // Don't panic if behind in time.
 
 	int givenTime = myTimeLeft / normalMoves + increment + bonus;
-	int prevMaxDepth = DepthTimeHistory[moveNo - 1][0];
-	int estimatedNextDepth = ellapsed * 2; // Default estimation i wild be the engin losses more when this is increased.
+	int prevMaxDepth = DepthTimeHistory[engineId][moveNo - 1][0];
+	int estimatedNextDepth = ellapsed * 2; // Default estimation is wild guess, but the engin loses more when this is increased.
 	if (moveNo > 0 && currentDepth > 1 && prevMaxDepth > currentDepth) {
-		estimatedNextDepth = DepthTimeHistory[moveNo - 1][currentDepth + 1];
+		estimatedNextDepth = DepthTimeHistory[engineId][moveNo - 1][currentDepth + 1];
 	}
 	// Guessing that there is time for one more depth.
 	if (ellapsed + estimatedNextDepth < givenTime)
 		return true;
 
-	return false; 
+	return false;
 }
 
-void RegisterDepthTime(int moveNo, int depth, int time) {
-	
-	DepthTimeHistory[moveNo][depth] = time;
-	DepthTimeHistory[moveNo][0] = depth;
+void RegisterDepthTime(int engineId, int moveNo, int depth, int time) {
+
+	DepthTimeHistory[engineId][moveNo][depth] = time;
+	DepthTimeHistory[engineId][moveNo][0] = depth;
 }
 
 void ResetDepthTimes() {
-	for (int i = 0; i < 1024; i++)
-		DepthTimeHistory[i][0] = 0;
+	for (int engineId = 0; engineId < ENGINE_COUNT; engineId++)
+	{
+		for (int i = 0; i < 1024; i++)
+			DepthTimeHistory[engineId][i][0] = 0;
+	}
 }
 
 void SetMoveTimeFallBack(Side side) {

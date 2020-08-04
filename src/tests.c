@@ -106,22 +106,22 @@ void HashTableRoundTrip() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	AddHashScore(hash, expected, 1, EXACT, 1, 2);
+	AddHashScore(0, hash, expected, 1, EXACT, 1, 2);
 	int depth = 0;
 	short score = 0;
 	Move move;
-	GetScoreFromHash(hash, 1, &score, &move, 3000 ,0);
+	GetScoreFromHash(0, hash, 1, &score, &move, 3000 ,0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 
 	U64 hash2 = hash + 1;
 	short expected2 = -4000;
-	AddHashScore(hash2, expected2, 1, EXACT, 10, 12);
+	AddHashScore(0, hash2, expected2, 1, EXACT, 10, 12);
 
 	short score2;
-	GetScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
+	GetScoreFromHash(0, hash2, 1, &score2, &move, 0 ,0);
 	AssertAreEqualInts(expected2, score2, "hash table score missmatch");
 	
-	GetScoreFromHash(hash, 1, &score, &move, 0, 0);
+	GetScoreFromHash(0, hash, 1, &score, &move, 0, 0);
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
@@ -130,20 +130,20 @@ void HashTableDepthTest() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 
-	AddHashScore(hash, 3000, 2, EXACT, 40, 50 );
+	AddHashScore(0, hash, 3000, 2, EXACT, 40, 50 );
 	int depth = 2;
 	short score;
 	Move move;
-	GetScoreFromHash(hash, depth, &score, &move, 100, 200);
+	GetScoreFromHash(0, hash, depth, &score, &move, 100, 200);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	AddHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
+	AddHashScore(0, hash, 4000, 1, EXACT, 10, 10); //smaller depth
 	short score2 = 0;
-	GetScoreFromHash(hash, 2,  &score2, &move, 30, 60);
+	GetScoreFromHash(0, hash, 2,  &score2, &move, 30, 60);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	AddHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
-	GetScoreFromHash(hash, 3, &score, &move, 30, 31);
+	AddHashScore(0, hash, 5000, 3, EXACT, 20, 30); //smaller depth
+	GetScoreFromHash(0, hash, 3, &score, &move, 30, 31);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
 
@@ -162,8 +162,8 @@ void HashTablePerformance(int iterations) {
 		if (expected > MAX_SCORE)
 			expected = MIN_SCORE;
 		hash++;
-		AddHashScore(hash, expected, 1, EXACT, 1, 1);		
-		Assert(GetScoreFromHash(hash, depth, &score, &move, 100, 200), "No score returned from hash");
+		AddHashScore(0, hash, expected, 1, EXACT, 1, 1);
+		Assert(GetScoreFromHash(0, hash, depth, &score, &move, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
@@ -683,6 +683,11 @@ void EngineMated() {
 	AssertBestMove(8, __func__, fen, "g8h7");
 }
 
+void MateIn6() {
+	char* fen = "q7/n2BNp2/5k1P/1p5P/1p2RP2/1K6/8/8 w - - 0 1";
+	AssertBestMoveTimed(10000, __func__, fen, "e4e3");
+}
+
 void DeepTest() {
 	printf("%s\n", __func__);
 	char* fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
@@ -818,10 +823,10 @@ void runAllTests() {
 	PerftSaveHashTest();
 #endif // _DEBUG
 
-	HashKeyTest();
+	/*HashKeyTest();
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
-	HashTableRoundTrip();
+	HashTableRoundTrip();*/
 	HashTableDepthTest();
 	PerftTestStart();
 	PerfTestPosition2();
@@ -860,6 +865,7 @@ void runAllTests() {
 	RookSacrificeByWhite();
 	BlackMatesIn5a();
 	WhiteMatesIn5b();
+	MateIn6();
 	WhiteMatesIn7();
 	EngineMated();
 

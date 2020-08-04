@@ -29,16 +29,18 @@ typedef struct {
 typedef struct {
 	uint EntryCount;
 	EntrySlot* Entries;
+	uint AddCount;
+	uint OverWrites;
 } HashTable;
 
 
-void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char from, char to);
-bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white);
-bool GetBestMoveFromHash(U64 hash, Move* move);
+void AddHashScore(int thread, U64 hash, short score, char depth, HashEntryType type, char from, char to);
+bool GetScoreFromHash(int thread, U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white);
+bool GetBestMoveFromHash(int thread, U64 hash, Move* move);
 
 void AllocateHashTable(uint megabytes);
 void GenerateZobritsKeys();
 void ClearHashTable();
-bool GetBestMoveFromHash(U64 hash, Move* move);
+bool GetBestMoveFromHash(int thread, U64 hash, Move* move);
 void PrintHashStats();
-uint HashFull();
+uint HashFull(int thread);

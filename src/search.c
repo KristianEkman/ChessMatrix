@@ -105,11 +105,11 @@ static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
 //
 //
 
-void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength) {
+void MoveCounterMoveToTop(int engineId, Move previousMove, Move* moveList, int moveListLength) {
 	//int moved = 0;
 	for (int i = 0; i < moveListLength; i++)
 	{
-		if (IsCounterMove(moveList[i], previousMove)) {
+		if (IsCounterMove(engineId, moveList[i], previousMove)) {
 			Move temp = moveList[i];
 			memmove(&moveList[1], moveList, i * sizeof(Move));
 			moveList[0] = temp;
@@ -232,7 +232,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	//Probe hash
 	short score = 0; Move pvMove;
 	pvMove.MoveInfo = NotAMove;
-	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
+	if (GetScoreFromHash(game->EngineId, game->Hash, depth, &score, &pvMove, best_black, best_white)) {
 		return score;
 	}
 
@@ -271,15 +271,13 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(prevMove, localMoves, moveCount);
+	MoveCounterMoveToTop(game->EngineId, prevMove, localMoves, moveCount);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
 		MoveToTop(pvMove, localMoves, moveCount, game->Side);
 	}
 
-	//Not reducing for the first number of moves of each depth.
-	const int fullDepthMoves = 10;
 	//Not reducing when depth is or lower
 	const int reductionLimit = 3;
 
@@ -314,8 +312,8 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				extension=1;
 
 			int lmrRed = 2;// lmr_matrix[depth][i];
-			// Late Move Reduction, full depth for the first moves, and interesting moves.
-			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
+			 //Late Move Reduction, full depth for the first moves, and interesting moves.
+			if (i >= game->SearchSpec.FullDepthLMR && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
 			else
 				score = best_black + 1;  // Hack to ensure that full-depth is done.
@@ -331,10 +329,10 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				bestMove = childMove;
 				if (score > best_black) {
 					if (score >= best_white) {
-						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
+						AddHashScore(game->EngineId, game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
 						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+							AddCounterMove(game->EngineId, childMove, prevMove);
 
 						/*if (undos.CaptIndex == -1) {
 							AddKiller(game, childMove);
@@ -358,9 +356,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			return best_black;
 
 		if (best_black != oldBestBlack)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->EngineId, game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+			AddHashScore(game->EngineId, game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
 
 		return best_black;
 	}
@@ -389,7 +387,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 
 			// late move reduction
 			int lmrRed = 2; // lmr_matrix[depth][i];
-			if (i >= fullDepthMoves && depth >= reductionLimit && IsReductionOk(childMove, undos))
+			if (i >= game->SearchSpec.FullDepthLMR && depth >= reductionLimit && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
 			else
 				score = best_white - 1;  // Hack to ensure that full-depth  is done.
@@ -405,9 +403,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 				bestMove = childMove;
 				if (score < best_white) {
 					if (score <= best_black) {
-						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+						AddHashScore(game->EngineId, game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
 						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+							AddCounterMove(game->EngineId, childMove, prevMove);
 						//if (undos.CaptIndex == -1)
 						//   AddKiller(game, childMove);
 						free(localMoves);
@@ -429,9 +427,9 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			return best_white;
 
 		if (best_white != oldBestWhite)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->EngineId, game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
 		else
-			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);
+			AddHashScore(game->EngineId, game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);
 		return best_white;
 	}
 }
@@ -450,7 +448,7 @@ void CopyMainGame(Game* copy) {
 	//memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 
-void PrintBestLine(Move move, int depth, float ellapsed) {
+void PrintBestLine(Game * game, Move move, int depth, float ellapsed) {
 	char buffer[1800];
 	char* pv = &buffer;
 	char sMove[5];
@@ -459,15 +457,14 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 	pv += 4;
 	strcpy(pv, " ");
 	pv++;
-	Game* game = &g_mainGame;
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
 	int index = 0;
-	PlayerMove moves[300];
+	PlayerMove moves[350];
 	int movesCount = 0;
 	while (movesCount < (depth + 5)) // hack: shows moves found when extending search (checks), but not going into cycles.
 	{
 		Move bestMove;
-		if (!GetBestMoveFromHash(game->Hash, &bestMove))
+		if (!GetBestMoveFromHash(game->EngineId, game->Hash, &bestMove))
 			break;
 
 		char sMove[5];
@@ -506,7 +503,7 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 		printf("cp %d ", score);
 	}
 
-	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(), buffer);
+	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(game->EngineId), buffer);
 	fflush(stdout);
 }
 
@@ -534,11 +531,19 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	return 0;
 }
 
+SearchSpec searchSpecs[ENGINE_COUNT] = { 
+	{ .FullDepthLMR = 100 }, 
+	{ .FullDepthLMR = 10} 
+};
 
-DWORD WINAPI IterativeSearch(void* v) {
+DWORD WINAPI IterativeSearch(LPVOID params) {
 	Game game = g_mainGame;
-	Game* pGame = &game;
-	CopyMainGame(pGame);
+	Game* gameCopy = &game;
+	CopyMainGame(gameCopy);
+	
+	gameCopy->EngineId = (int)params;
+	gameCopy->SearchSpec = searchSpecs[gameCopy->EngineId];
+
 	clock_t start = clock();
 	Move bestMove;
 	bestMove.From = 0;
@@ -553,22 +558,21 @@ DWORD WINAPI IterativeSearch(void* v) {
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
 		clock_t depStart = clock();
-		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
+		bool incheck = SquareAttacked(gameCopy->KingSquares[gameCopy->Side01], gameCopy->Side ^ 24, gameCopy);
 		
-		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, gameCopy, true, noMove, 0, incheck);
 		if (g_Stopped)
 			break;
 
 		float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
-		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
+		if (GetBestMoveFromHash(gameCopy->EngineId, gameCopy->Hash, &bestMove))
 		{
 			bestMove.Score = score;
 			if (depth > 3)
-				PrintBestLine(bestMove, depth, ellapsed);
+				PrintBestLine(gameCopy, bestMove, depth, ellapsed);
 		}
-		g_topSearchParams.BestMove = bestMove;
-
-		if ((pGame->Side == WHITE && score < -7000) || (pGame->Side == BLACK && score > 7000))
+		g_topSearchParams.BestMove[gameCopy->EngineId] = bestMove;
+		if ((gameCopy->Side == WHITE && score < -7000) || (gameCopy->Side == BLACK && score > 7000))
 		{
 			g_Stopped = true;
 			break; //A check mate is found, no need to search further.
@@ -577,21 +581,69 @@ DWORD WINAPI IterativeSearch(void* v) {
 		// At the end of each depth, checks if it is smart to search deeper.
 		// todo: if score has gone down, is it worth spending some more time?
 		float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
-		int moveNo = pGame->PositionHistoryLength;
-		RegisterDepthTime(moveNo, depth, depthTime * 1000);
-		if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, pGame->Side)) {
+		int moveNo = gameCopy->PositionHistoryLength;
+		RegisterDepthTime(gameCopy->EngineId, moveNo, depth, depthTime * 1000);
+		if (g_topSearchParams.TimeControl && !SearchDeeper(gameCopy->EngineId, depth, moveNo, ellapsed * 1000, gameCopy->Side)) {
 			g_Stopped = true;
 			break;
 		}
 	}
 
+	ExitThread(0);
+	return 0;
+}
+
+MoveCoordinates FinalBestCoords;
+HANDLE EngineThread;
+
+DWORD WINAPI RunEngines() {
+	ClearCounterMoves();
+	HANDLE timeLimitThread = 0;
+	if (g_topSearchParams.MoveTime > 0) {
+		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
+	}
+
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+	HANDLE threadHandles[ENGINE_COUNT];
+	for (int engineId = 0; engineId < ENGINE_COUNT; engineId++)
+	{
+		threadHandles[engineId] = CreateThread(NULL, 0, IterativeSearch, (LPVOID)engineId, 0, NULL);
+	}
+
+	WaitForMultipleObjects(ENGINE_COUNT, threadHandles, TRUE, INFINITE);
+	if (timeLimitThread != 0)
+		TerminateThread(timeLimitThread, 0);
+
+	MoveCoordinates bestCoords;
+	int neg = 1;
+	if (g_mainGame.Side == WHITE)
+		neg = -1;
+
+	Move move0 = g_topSearchParams.BestMove[0];
+	Move move1 = g_topSearchParams.BestMove[1];
+	short score0 = move0.Score * neg;
+	short score1 = move1.Score * neg;
+
+	// If engine0 score is much better, us it. Only mates.
+	// todo: tune in this value
+	if (score0 - score1 > 400) {
+		bestCoords.From = move0.From;
+		bestCoords.To = move0.To;
+	}
+	else { // use the one that does not do lmr
+		bestCoords.From = move1.From;
+		bestCoords.To = move1.To;
+	}
+	FinalBestCoords = bestCoords;
 	char sMove[5];
-	MoveToString(bestMove, sMove);
+	CoordinatesToString(bestCoords, sMove);
 	printf("bestmove %s\n", sMove);
 	fflush(stdout);
 	ExitThread(0);
 	return 0;
 }
+
 
 // Starting point of a search for best move.
 // Continues until time millis is reached or depth is reached.
@@ -631,24 +683,13 @@ MoveCoordinates Search(bool async) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
 	}
 
-	g_Stopped = false;
-	g_SearchedNodes = 0;
-
-	HANDLE handle = CreateThread(NULL, 0, IterativeSearch, NULL, 0, NULL);
-	if (!async)
-	{
-		WaitForSingleObject(handle, INFINITE);
-		if (timeLimitThread != 0)
-			TerminateThread(timeLimitThread, 0);
-		MoveCoordinates coords;
-		coords.From = g_topSearchParams.BestMove.From;
-		coords.To = g_topSearchParams.BestMove.To;
+	MoveCoordinates coords = {.From = 0 , .To = 0 };
+	EngineThread = CreateThread(NULL, 0, RunEngines, NULL, 0, NULL);
+	if (!async) {
+		WaitForSingleObject(EngineThread, INFINITE);
+		coords = FinalBestCoords;
 		return coords;
 	}
 
-	//this will not be used.
-	MoveCoordinates nomove;
-	nomove.From = -1;
-	nomove.To = -1;
-	return nomove;
+	return coords;
 }
