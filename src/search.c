@@ -121,7 +121,7 @@ void MoveCounterMoveToTop(int engineId, Move previousMove, Move* moveList, int m
 
 short QuiteSearch(short best_black, short best_white, Game* game, int deep_in) {
 
-	g_SearchedNodes++;
+	game->SearchedNodes++;
 
 	if (IsDraw(game))
 		return 0;
@@ -218,7 +218,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	if (g_Stopped)
 		return 0; // should not be used;
 
-	g_SearchedNodes++;
+	game->SearchedNodes++;
 
 	if (depth <= 0) {
 		return QuiteSearch(best_black, best_white, game, deep_in);
@@ -482,7 +482,7 @@ void PrintBestLine(Game * game, Move move, int depth, float ellapsed) {
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	int nps = (float)g_SearchedNodes / ellapsed;
+	int nps = (float)game->SearchedNodes / ellapsed;
 	int time = ellapsed * 1000;
 	short score = move.Score;
 
@@ -503,7 +503,7 @@ void PrintBestLine(Game * game, Move move, int depth, float ellapsed) {
 		printf("cp %d ", score);
 	}
 
-	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, g_SearchedNodes, time, nps, HashFull(game->EngineId), buffer);
+	printf("depth %d nodes %d time %d nps %d hashfull %d pv %s\n", depth, game->SearchedNodes, time, nps, HashFull(game->EngineId), buffer);
 	fflush(stdout);
 }
 
@@ -538,6 +538,7 @@ SearchSpec searchSpecs[ENGINE_COUNT] = {
 
 DWORD WINAPI IterativeSearch(LPVOID params) {
 	Game game = g_mainGame;
+	g_mainGame.SearchedNodes = 0;
 	Game* gameCopy = &game;
 	CopyMainGame(gameCopy);
 	
@@ -597,18 +598,21 @@ MoveCoordinates FinalBestCoords;
 HANDLE EngineThread;
 
 DWORD WINAPI RunEngines() {
-	ClearCounterMoves();
+	//ClearCounterMoves();
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
 	}
 
 	g_Stopped = false;
-	g_SearchedNodes = 0;
+
+	//g_SearchedNodes = 0;
 	HANDLE threadHandles[ENGINE_COUNT];
+	int cpus[] = { 1, 16 }; // bitmask for cpu 1 and 5. Different physical cores
 	for (int engineId = 0; engineId < ENGINE_COUNT; engineId++)
 	{
 		threadHandles[engineId] = CreateThread(NULL, 0, IterativeSearch, (LPVOID)engineId, 0, NULL);
+		SetThreadAffinityMask(threadHandles[engineId], cpus[engineId]);
 	}
 
 	WaitForMultipleObjects(ENGINE_COUNT, threadHandles, TRUE, INFINITE);

@@ -564,15 +564,15 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	g_SearchedNodes = 0;
+	g_mainGame.SearchedNodes = 0;
 	clock_t start = clock();
 	SetSearchDefaults();
 	g_topSearchParams.MaxDepth = depth;
 	MoveCoordinates bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
-	printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
+	printf("%.2fk leafs in %.2fs\n", (float)g_mainGame.SearchedNodes / 1000, secs);
+	printf("%.2fk leafs/s\n", g_mainGame.SearchedNodes / (1000 * secs));
 	char sMove[6];
 	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
@@ -585,7 +585,7 @@ void AssertBestMoveTimed(int ms, char* testName, char* fen, char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
-	g_SearchedNodes = 0;
+	g_mainGame.SearchedNodes = 0;
 	SetSearchDefaults();
 	g_topSearchParams.MoveTime = ms;
 	MoveCoordinates bestMove = Search(false);
@@ -823,10 +823,10 @@ void runAllTests() {
 	PerftSaveHashTest();
 #endif // _DEBUG
 
-	/*HashKeyTest();
+	HashKeyTest();
 	TimedTest(50000000, HashTablePerformance);
 	PerftHashDbTest();
-	HashTableRoundTrip();*/
+	HashTableRoundTrip();
 	HashTableDepthTest();
 	PerftTestStart();
 	PerfTestPosition2();

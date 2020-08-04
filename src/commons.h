@@ -139,6 +139,7 @@ typedef struct {
 	uchar FiftyMoveRuleCount;
 	uchar EngineId;
 	SearchSpec SearchSpec;
+	uint SearchedNodes;
 } Game;
 
 typedef struct {
