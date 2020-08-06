@@ -131,6 +131,7 @@ typedef struct {
 	Piece Pieces[2][16];
 	//MoveCoordinates KillerMoves[500][2];
 	uchar FiftyMoveRuleCount;
+	Move BestRootMove;
 } Game;
 
 typedef struct {

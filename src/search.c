@@ -57,7 +57,7 @@ void MoveToTop(Move move, Move* list, int length, Side side) {
 	}
 }
 
-static void PickBlacksNextMove(int moveNum, Move * moves, int moveCount) {
+static void PickBlacksNextMove(int moveNum, Move* moves, int moveCount) {
 
 	int bestScore = -9000;
 	int bestNum = moveNum;
@@ -214,7 +214,7 @@ bool IsReductionOk(Move move, Undos undos) {
 		move.MoveInfo != SoonPromoting;
 }
 
-short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, Move prevMove, int deep_in, bool incheck) {
+short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, Move prevMove, int deep_in, bool incheck, bool isRoot) {
 	if (g_Stopped)
 		return 0; // should not be used;
 
@@ -246,7 +246,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			U64 prevHash = game->Hash;
 			DoNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
+				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck, false);
 				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
 					UndoNullMove(prevState, game, prevHash);
 					return best_black;
@@ -254,7 +254,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			}
 			else //(game->Side == WHITE)
 			{
-				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
+				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck, false);
 				if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
 					UndoNullMove(prevState, game, prevHash);
 					return best_white;
@@ -311,17 +311,17 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			int extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
-				extension=1;
+				extension = 1;
 
 			int lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
 			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
+				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove, deep_in + 1, checked, false);
 			else
 				score = best_black + 1;  // Hack to ensure that full-depth is done.
 
 			if (score > best_black) { // surprisingly good, re-search att full depth.
-				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked, false);
 			}
 
 			UndoMove(game, childMove, undos);
@@ -329,6 +329,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			if (score > bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
+				if (isRoot) game->BestRootMove = childMove;
 				if (score > best_black) {
 					if (score >= best_white) {
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
@@ -390,12 +391,12 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			// late move reduction
 			int lmrRed = 2; // lmr_matrix[depth][i];
 			if (i >= fullDepthMoves && depth >= reductionLimit && IsReductionOk(childMove, undos))
-				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
+				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked, false);
 			else
 				score = best_white - 1;  // Hack to ensure that full-depth  is done.
 
 			if (score < best_white) {
-				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked, false);
 			}
 
 			UndoMove(game, childMove, undos);
@@ -403,6 +404,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			if (score < bestScore && !g_Stopped) {
 				bestScore = score;
 				bestMove = childMove;
+				if (isRoot) game->BestRootMove = childMove;
 				if (score < best_white) {
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
@@ -534,16 +536,11 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	return 0;
 }
 
-
 DWORD WINAPI IterativeSearch(void* v) {
 	Game game = g_mainGame;
 	Game* pGame = &game;
 	CopyMainGame(pGame);
 	clock_t start = clock();
-	Move bestMove;
-	bestMove.From = 0;
-	bestMove.To = 0;
-	bestMove.MoveInfo = NotAMove;
 
 	Move noMove;
 	noMove.From = 0;
@@ -554,19 +551,17 @@ DWORD WINAPI IterativeSearch(void* v) {
 	{
 		clock_t depStart = clock();
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
-		
-		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+
+		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck, true);
 		if (g_Stopped)
 			break;
 
 		float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
-		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
-		{
-			bestMove.Score = score;
-			if (depth > 3)
-				PrintBestLine(bestMove, depth, ellapsed);
-		}
-		g_topSearchParams.BestMove = bestMove;
+		game.BestRootMove.Score = score;
+		if (depth > 3)
+			PrintBestLine(game.BestRootMove, depth, ellapsed);
+
+		g_topSearchParams.BestMove = pGame->BestRootMove;
 
 		if ((pGame->Side == WHITE && score < -7000) || (pGame->Side == BLACK && score > 7000))
 		{
@@ -586,7 +581,7 @@ DWORD WINAPI IterativeSearch(void* v) {
 	}
 
 	char sMove[5];
-	MoveToString(bestMove, sMove);
+	MoveToString(pGame->BestRootMove, sMove);
 	printf("bestmove %s\n", sMove);
 	fflush(stdout);
 	ExitThread(0);
