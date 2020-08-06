@@ -56,7 +56,7 @@ Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move hist
 Resultat
 ========
    Schackmotor               Poäng                    Ch
-1: ChessMatrixFeat           31,0/60 ···················· 
-2: Vice10                    12,0/20 01110=110011101=0101 
-3: ChessMatrix               10,0/20 =0000=11==11=11=0010 
-4: ChessterfieldCL_i5a_intel 7,0/20  11=0000010=01=01000= 
+1: ChessMatrixFeat           32,0/60 ···················· 
+2: Vice10                    17,0/20 1=1=11111011111=1=11 
+3: ChessMatrix               7,5/20  1011=100010===00=000 
+4: ChessterfieldCL_i5a_intel 3,5/20  00=100=1000000000=00 

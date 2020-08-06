@@ -560,6 +560,21 @@ void EnPassantMaterial() {
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
+void MaterialDrawWhite() {
+	printf("%s\n", __func__);
+	ReadFen("2k5/3b4/8/8/5N2/4N3/2K5/8 w - - 0 1");
+	short score = GetEval(&g_mainGame);
+	AssertAreEqualInts(0, score, "Game should be drawn");
+}
+
+
+void MaterialDrawBlack() {
+	printf("%s\n", __func__);
+	ReadFen("2k5/3n4/4n3/8/8/8/4B3/3K4 b - - 0 1");
+	short score = GetEval(&g_mainGame);
+	AssertAreEqualInts(0, score, "Game should be drawn");
+}
+
 void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
@@ -839,6 +854,8 @@ void runAllTests() {
 	MaterialPromotion();
 	MaterialCaptureAndPromotion();
 	EnPassantMaterial();
+	MaterialDrawBlack();
+	MaterialDrawWhite();
 	//MobilityRookTest();
 	DoublePawnsTest();
 	KingExposureTest();
