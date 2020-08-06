@@ -10,8 +10,8 @@
 #define MATERIAL_R 550
 #define MATERIAL_Q 1000
 #define MATERIAL_P 100
-#define MATERIAL_N 325
-#define MATERIAL_N_N 650
+#define MATERIAL_N 320
+#define MATERIAL_N_N 640
 
 
 typedef unsigned long long U64;

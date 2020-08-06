@@ -433,11 +433,12 @@ short GetEval(Game* game) {
 	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
+	uchar pwnCount[2] = { 0, 0 };
 
 	for (size_t s = 0; s < 2; s++)
 	{
 		short scr = 0;
-		int bishopCount = 0;
+		uchar bishopCount = 0;
 		for (size_t p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
@@ -476,6 +477,7 @@ short GetEval(Game* game) {
 				scr -= DoublePawns(i, game, pieceType);
 				scr += PassedPawn(i, game);
 				scr += ProtectedByPawn(i, game);
+				pwnCount[s]++;
 			}
 					 break;
 			case KING: {
@@ -488,6 +490,9 @@ short GetEval(Game* game) {
 				break;
 			}
 		}
+
+		
+
 		scr += BISHOP_PAIR * (bishopCount == 2);
 		score += (neg * scr);
 		neg += 2; // -1 --> 1 // White then black
@@ -500,6 +505,20 @@ short GetEval(Game* game) {
 	/*short materialLead = game->Material[1] - game->Material[0];
 	if (materialLead)
 		return score + posScore + (float)(score * 50) / (float)materialLead;*/
+
+		//insuficient material check
+	if (pwnCount[game->Side01] == 0) {
+		if (game->Side == WHITE) {
+			if (game->Material[0] >= -MATERIAL_N_N) {
+				return max(0, score + posScore); // minimizing, 0 as best
+			}
+		}
+		else {
+			if (game->Material[1] <= MATERIAL_N_N) {
+				return min(0, score + posScore); // maximizing, 0 as best. 
+			}
+		}
+	}
 
 	return score + posScore;
 }
