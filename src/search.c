@@ -594,25 +594,40 @@ DWORD WINAPI IterativeSearch(LPVOID params) {
 	return 0;
 }
 
+int engineRuns = 0;
+
+// For every search, an engine runs a new core, but never on the same as the other running engine.
+int GetCoreBitMask(uchar engineId) {
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	int numCPU = sysinfo.dwNumberOfProcessors;
+
+	int physCores = numCPU / ENGINE_COUNT; // todo: read from os.
+	int cpuBit = engineRuns % physCores;
+	int cors[] = { 0, 0 };
+	cors[0] = 1 << cpuBit;
+	cors[1] = 1 << (cpuBit + physCores);
+	return cors[engineId];
+}
+
 MoveCoordinates FinalBestCoords;
 HANDLE EngineThread;
 
 DWORD WINAPI RunEngines() {
 	//ClearCounterMoves();
+	engineRuns++;
 	HANDLE timeLimitThread = 0;
 	if (g_topSearchParams.MoveTime > 0) {
 		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
 	}
 
 	g_Stopped = false;
-
-	//g_SearchedNodes = 0;
+	
 	HANDLE threadHandles[ENGINE_COUNT];
-	int cpus[] = { 1, 16 }; // bitmask for cpu 1 and 5. Different physical cores. Todo: count cores of system to make it dynamic.
 	for (int engineId = 0; engineId < ENGINE_COUNT; engineId++)
 	{
 		threadHandles[engineId] = CreateThread(NULL, 0, IterativeSearch, (LPVOID)engineId, 0, NULL);
-		SetThreadAffinityMask(threadHandles[engineId], cpus[engineId]);
+		SetThreadAffinityMask(threadHandles[engineId], GetCoreBitMask(engineId));
 	}
 
 	WaitForMultipleObjects(ENGINE_COUNT, threadHandles, TRUE, INFINITE);
@@ -629,13 +644,13 @@ DWORD WINAPI RunEngines() {
 	short score0 = move0.Score * neg;
 	short score1 = move1.Score * neg;
 
-	// If engine0 score is much better, us it. Only mates.
+	// If engine0 score is much better, use it. Only mates.
 	// todo: tune in this value
-	if (score0 - score1 > 400) {
+	if (score0 - score1 > 5000) {
 		bestCoords.From = move0.From;
 		bestCoords.To = move0.To;
 	}
-	else { // use the one that does not do lmr
+	else { // use the one that does lmr
 		bestCoords.From = move1.From;
 		bestCoords.To = move1.To;
 	}
@@ -681,11 +696,6 @@ MoveCoordinates Search(bool async) {
 	}
 
 	// ClearCounterMoves();
-
-	HANDLE timeLimitThread = 0;
-	if (g_topSearchParams.MoveTime > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
-	}
 
 	MoveCoordinates coords = {.From = 0 , .To = 0 };
 	EngineThread = CreateThread(NULL, 0, RunEngines, NULL, 0, NULL);

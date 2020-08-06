@@ -56,8 +56,6 @@ void AddHashScore(int engineId, U64 hash, short score, char depth, HashEntryType
 			HashTableOverWrites++;
 		}*/
 	}
-	if (engineId == 0 && abs(score) > 7000)
-		AddHashScore(1, hash, score, depth, type, from, to);
 }
 
 
