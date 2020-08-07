@@ -220,19 +220,20 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 
 	g_SearchedNodes++;
 
+	if (!isRoot && IsDraw(game))
+		return 0;
+
 	if (depth <= 0) {
 		return QuiteSearch(best_black, best_white, game, deep_in);
 	}
-
-	if (IsDraw(game))
-		return 0;
-
+	
 	int side01 = game->Side01;
 
 	//Probe hash
 	short score = 0; Move pvMove;
 	pvMove.MoveInfo = NotAMove;
 	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
+		if (isRoot) game->BestRootMove = pvMove;
 		return score;
 	}
 
@@ -578,6 +579,14 @@ DWORD WINAPI IterativeSearch(void* v) {
 			g_Stopped = true;
 			break;
 		}
+	}
+
+	if (!IsValidMove(pGame->BestRootMove, pGame)) {
+		printf("info invalid move found. aborting.\n");
+		fflush(stdout);
+		// search again
+		ExitThread(0);
+		return 0;
 	}
 
 	char sMove[5];

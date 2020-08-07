@@ -810,6 +810,17 @@ void RemoveInvalidMoves(Game* game) {
 	game->MovesBufferLength = validMovesCount;
 }
 
+bool IsValidMove(Move move, Game* game) {
+	Move moves[200];
+	int count = ValidMoves(moves);
+	for (int i = 0; i < count; i++)
+	{
+		if (move.From == moves[i].From && move.To == moves[i].To)
+			return true;
+	}
+	return false;
+}
+
 int ValidMoves(Move* moves) {
 	CreateMoves(&g_mainGame);
 	RemoveInvalidMoves(&g_mainGame);
