@@ -18,7 +18,7 @@
 typedef char bool;
 typedef unsigned long long U64;
 typedef unsigned int uint;
-typedef unsigned short uchar;
+typedef unsigned char uchar;
 
 typedef enum {
 	NOPIECE,
