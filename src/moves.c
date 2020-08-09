@@ -624,7 +624,7 @@ void CreateMoves(Game* game) {
 			int castleBlackOffset = CastlesOffset[game->Side01];
 			if (i == castleBlackOffset + 4) { //King on origin pos
 				if ((game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort)) {
-					if ((game->Squares[castleBlackOffset + 7] & 7) == ROOK &&
+					if ((game->Squares[castleBlackOffset + 7]) == (ROOK | game->Side) &&
 						game->Squares[castleBlackOffset + 5] == NOPIECE &&
 						game->Squares[castleBlackOffset + 6] == NOPIECE)
 					{
@@ -633,7 +633,7 @@ void CreateMoves(Game* game) {
 					}
 				}
 				if ((game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong)) {
-					if ((game->Squares[castleBlackOffset] & 7) == ROOK &&
+					if ((game->Squares[castleBlackOffset]) == (ROOK | game->Side ) &&
 						game->Squares[castleBlackOffset + 1] == NOPIECE &&
 						game->Squares[castleBlackOffset + 2] == NOPIECE &&
 						game->Squares[castleBlackOffset + 3] == NOPIECE)

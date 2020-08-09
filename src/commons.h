@@ -1,5 +1,7 @@
 #pragma once
-#include <stdbool.h>
+
+#define false 0
+#define true 1
 
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
@@ -13,7 +15,7 @@
 #define MATERIAL_N 320
 #define MATERIAL_N_N 640
 
-
+typedef char bool;
 typedef unsigned long long U64;
 typedef unsigned int uint;
 typedef unsigned short uchar;

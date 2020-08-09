@@ -214,9 +214,10 @@ bool IsDraw(Game* game) {
 	//This draw can happen early also, but cheating for performance reasons.
 	/*if (game->PositionHistoryLength < 20)
 		return false;*/
-		// However this optimization did not give measurable improvment
+	// However this optimization did not give measurable improvment
 
-	int start = game->PositionHistoryLength - 5; //Only checking back some moves. Possible to miss repetions but must be quite rare.
+	int start = game->PositionHistoryLength - 5;
+	//Only checking back some moves. Possible to miss repetions but must be quite rare.
 	int end = max(0, game->PositionHistoryLength - 30);
 	for (int i = start; i > end; i -= 2)
 	{
@@ -224,12 +225,9 @@ bool IsDraw(Game* game) {
 			return true;
 	}
 
-	//Draw by material if both players have two knights or less material.
-	// todo: And no pawn.
-	//if (game->Material[0] >= -MATERIAL_N_N && game->Material[1] <= MATERIAL_N_N)
-	//	return true;
-
 	return game->FiftyMoveRuleCount >= 100;
+
+	// material draw is calculated in GetEval function
 }
 
 //When king is castled at back rank, penalty for missing pawns.
