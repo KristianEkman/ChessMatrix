@@ -119,7 +119,7 @@ void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength)
 	}
 }
 
-short QuiteSearch(short best_black, short best_white, Game* game, int deep_in) {
+short QuiteSearch(short best_black, short best_white, Game* game, uchar deep_in) {
 
 	g_SearchedNodes++;
 
@@ -214,7 +214,7 @@ bool IsReductionOk(Move move, Undos undos) {
 		move.MoveInfo != SoonPromoting;
 }
 
-short RecursiveSearch(short best_black, short best_white, int depth, Game* game, bool doNull, Move prevMove, int deep_in, bool incheck) {
+short RecursiveSearch(short best_black, short best_white, uchar depth, Game* game, bool doNull, Move prevMove, uchar deep_in, bool incheck) {
 	if (g_Stopped)
 		return 0; // should not be used;
 
@@ -227,7 +227,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	if (IsDraw(game))
 		return 0;
 
-	int side01 = game->Side01;
+	uchar side01 = game->Side01;
 
 	//Probe hash
 	short score = 0; Move pvMove;
@@ -237,7 +237,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	}
 
 	//NULL move check
-	int r = 3;
+	uchar r = 3;
 	if ((game->Side == WHITE && game->Material[side01] < -500) ||
 		(game->Side == BLACK && game->Material[side01] > 500))
 	{
@@ -246,7 +246,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			U64 prevHash = game->Hash;
 			DoNullMove(game);
 			if (game->Side == BLACK) {
-				int nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
+				short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
 				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
 					UndoNullMove(prevState, game, prevHash);
 					return best_black;
@@ -254,7 +254,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			}
 			else //(game->Side == WHITE)
 			{
-				int nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
+				short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
 				if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
 					UndoNullMove(prevState, game, prevHash);
 					return best_white;
@@ -266,7 +266,7 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 
 	//Move generation
 	CreateMoves(game, prevMove);
-	int moveCount = game->MovesBufferLength;
+	uchar moveCount = game->MovesBufferLength;
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
@@ -279,13 +279,13 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 	}
 
 	//Not reducing for the first number of moves of each depth.
-	const int fullDepthMoves = 10;
+	const uchar fullDepthMoves = 10;
 	//Not reducing when depth is or lower
-	const int reductionLimit = 3;
+	const uchar reductionLimit = 3;
 
 	// alpha beta pruning
 	short bestScore = 0;
-	int legalCount = 0;
+	uchar legalCount = 0;
 	short oldBestBlack = best_black;
 	short oldBestWhite = best_white;
 	Move bestMove = localMoves[0];
@@ -308,12 +308,12 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			legalCount++;
 
 			//extensions
-			int extension = 0;
+			uchar extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension=1;
 
-			int lmrRed = 2;// lmr_matrix[depth][i];
+			uchar lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
 			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
@@ -382,13 +382,13 @@ short RecursiveSearch(short best_black, short best_white, int depth, Game* game,
 			legalCount++;
 
 			//extensions
-			int extension = 0;
+			uchar extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension = 1;
 
 			// late move reduction
-			int lmrRed = 2; // lmr_matrix[depth][i];
+			uchar lmrRed = 2; // lmr_matrix[depth][i];
 			if (i >= fullDepthMoves && depth >= reductionLimit && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
 			else
