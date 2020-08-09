@@ -18,9 +18,9 @@ void InitLmr() {
 	i > 6 & depth > 6 -- > 3
 	i > 9 & depth > 9 -- > 4
 	*/
-	for (size_t depth = 0; depth < MAX_DEPTH; depth++)
+	for (int depth = 0; depth < MAX_DEPTH; depth++)
 	{
-		for (size_t moveNo = 0; moveNo < 100; moveNo++)
+		for (int moveNo = 0; moveNo < 100; moveNo++)
 		{
 			if (depth > 12 && moveNo > 15)
 				lmr_matrix[depth][moveNo] = 3;
@@ -48,7 +48,7 @@ void SetSearchDefaults() {
 }
 
 void MoveToTop(Move move, Move* list, int length, Side side) {
-	for (size_t i = 0; i < length; i++)
+	for (int i = 0; i < length; i++)
 	{
 		if (move.From == list[i].From && move.To == list[i].To && i > 0) {
 			list[i].Score += (side == BLACK ? 10000 : -10000);

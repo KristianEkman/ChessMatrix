@@ -237,7 +237,7 @@ short KingExposed(int square, Game* game) {
 	PieceType pawn = PAWN | kingColor;
 
 	short score = 0;
-	for (size_t i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
+	for (int i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
 	{
 		int protectSquare = InfrontOfKingSquares[color01][square][i];
 		score += game->Squares[protectSquare] != pawn;
@@ -246,9 +246,9 @@ short KingExposed(int square, Game* game) {
 }
 
 void CalculateInfrontOfKing() {
-	for (size_t side = 0; side < 2; side++)
+	for (int side = 0; side < 2; side++)
 	{
-		for (size_t square = 0; square < 64; square++)
+		for (int square = 0; square < 64; square++)
 		{
 			InfrontOfKingSquares[side][square][0] = 0;
 			InfrontOfKingSquares[side][square][1] = 0;
@@ -353,9 +353,9 @@ short PassedPawn(int square, Game* game) {
 }
 
 void CalculatePawnProtection() {
-	for (size_t side = 0; side < 2; side++)
+	for (int side = 0; side < 2; side++)
 	{
-		for (size_t square = 0; square < 64; square++)
+		for (int square = 0; square < 64; square++)
 		{
 			int file = square % 8;
 			//special case for file a and h (a and h)
@@ -413,7 +413,7 @@ short ProtectedByPawn(int square, Game* game) {
 	PieceType pawn = PAWN | pieceColor;
 	int score = 0;
 
-	for (size_t i = 1; i <= PawnProtectionSquares[color01][square][0]; i++)
+	for (int i = 1; i <= PawnProtectionSquares[color01][square][0]; i++)
 	{
 		short pps = PawnProtectionSquares[color01][square][i];
 		score = (game->Squares[pps] == pawn);
@@ -433,11 +433,11 @@ short GetEval(Game* game) {
 	}
 	uchar pwnCount[2] = { 0, 0 };
 
-	for (size_t s = 0; s < 2; s++)
+	for (int s = 0; s < 2; s++)
 	{
 		short scr = 0;
 		uchar bishopCount = 0;
-		for (size_t p = 0; p < 16; p++)
+		for (int p = 0; p < 16; p++)
 		{
 			Piece piece = game->Pieces[s][p];
 			if (piece.Off)

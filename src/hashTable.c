@@ -65,7 +65,7 @@ bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short be
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
-	for (size_t i = 0; i < SLOTS; i++)
+	for (int i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
 		uint dbKey = entry & 0x7FFFFFFF;
@@ -110,7 +110,7 @@ bool GetBestMoveFromHash(U64 hash, Move* move) {
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
-	for (size_t i = 0; i < SLOTS; i++)
+	for (int i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
 		uint dbKey = entry & 0x7FFFFFFF;

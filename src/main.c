@@ -470,9 +470,9 @@ void InitScores() {
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
 
-	for (size_t s = 0; s < 2; s++)
+	for (int s = 0; s < 2; s++)
 	{
-		for (size_t p = 0; p < 16; p++)
+		for (int p = 0; p < 16; p++)
 		{
 			Piece piece = g_mainGame.Pieces[s][p];
 			if (piece.Off)
@@ -487,9 +487,9 @@ void InitScores() {
 
 void InitHash() {
 	g_mainGame.Hash = StartHash;
-	for (size_t s = 0; s < 2; s++)
+	for (int s = 0; s < 2; s++)
 	{
-		for (size_t p = 0; p < 16; p++)
+		for (int p = 0; p < 16; p++)
 		{
 			Piece piece = g_mainGame.Pieces[s][p];
 			if (piece.Off)
@@ -515,7 +515,7 @@ void ReadFen(char* fen) {
 	InitPieceList();
 
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-	for (size_t i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 		g_mainGame.Squares[i] = NOPIECE;
 	int index = 0;
 	int file = 0;
@@ -570,7 +570,7 @@ void ReadFen(char* fen) {
 	index++; // skipping enp rank, not important
 
 	// tokens
-	size_t len = strlen(fen);
+	int len = strlen(fen);
 	char fenCopy[100];
 	memcpy(fenCopy, fen, len);
 	int tokNo = 0;

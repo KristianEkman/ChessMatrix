@@ -224,7 +224,7 @@ void PerftSaveHash(depth) {
 	WriteFen(fen);
 
 	// checking all previous fens
-	for (size_t i = 0; i < perftSaveHashCount; i++)
+	for (int i = 0; i < perftSaveHashCount; i++)
 	{
 		if (HashFenDb[i].Hash == g_mainGame.Hash) {
 			hasHash = TRUE;
@@ -329,7 +329,7 @@ int PerftTest(char * fen, int depth) {
 	ReadFen(fen);
 	//PrintGame(&mainGame);
 	int perftCount = 0;
-	for (size_t i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		clock_t start = clock();
 		perftResult.Captures = 0;

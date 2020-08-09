@@ -34,9 +34,9 @@ void MovePiece(Game* game, int side01, int from, int to) {
 
 void AssertGame(Game* game) {
 #ifdef _DEBUG
-	for (size_t s = 0; s < 2; s++)
+	for (int s = 0; s < 2; s++)
 	{
-		for (size_t p = 0; p < 16; p++)
+		for (int p = 0; p < 16; p++)
 		{
 			Piece* piece = &game->Pieces[s][p];
 			PieceType squareType = game->Squares[piece->SquareIndex];
@@ -47,12 +47,12 @@ void AssertGame(Game* game) {
 		}
 	}
 
-	for (size_t i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 	{
 		PieceType pt = game->Squares[i];
 		int side01 = (pt & 24) >> 4;
 		bool found = false;
-		for (size_t p = 0; p < 16; p++)
+		for (int p = 0; p < 16; p++)
 		{
 			Piece* piece = &game->Pieces[side01][p];
 			if (piece->Type == pt && !piece->Off) {
@@ -421,7 +421,7 @@ void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 
 bool SquareAttacked(int square, Side attackedBy, Game* game) {
 	int side01 = attackedBy >> 4;
-	for (size_t pi = 0; pi < 16; pi++)
+	for (int pi = 0; pi < 16; pi++)
 	{
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
@@ -530,7 +530,7 @@ void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* ga
 
 void CreateMoves(Game* game) {
 	game->MovesBufferLength = 0;
-	for (size_t pi = 0; pi < 16; pi++)
+	for (int pi = 0; pi < 16; pi++)
 	{
 		Piece* piece = &game->Pieces[game->Side01][pi];
 		if (piece->Off)
@@ -683,7 +683,7 @@ void CreateCaptureMoves(Game* game) {
 	int side01 = game->Side >> 4;
 	char otherSide = game->Side ^ 24;
 
-	for (size_t pi = 0; pi < 16; pi++)
+	for (int pi = 0; pi < 16; pi++)
 	{
 		Piece* piece = &game->Pieces[side01][pi];
 		if (piece->Off)
@@ -796,7 +796,7 @@ void RemoveInvalidMoves(Game* game) {
 	int validMovesCount = 0;
 	Move validMoves[100];
 
-	for (size_t m = 0; m < game->MovesBufferLength; m++)
+	for (int m = 0; m < game->MovesBufferLength; m++)
 	{
 		Move move = game->MovesBuffer[m];
 		Undos undos = DoMove(move, game);
