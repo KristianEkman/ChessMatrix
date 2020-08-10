@@ -203,6 +203,40 @@ void TestCreateMovesFromFen(char * fen) {
 
 }
 
+void TestCreateCaptureMovesFromFen(char* fen) {
+	printf("TestCreateCaptureMovesFromFen %s\n", fen);
+	ReadFen(fen);
+	Move move;
+	//Move CreateNextMove(Game * game, int* pPiece, int* pPattern, int* pRay, int* pPawnCaptPat);
+	int pieceIdx = 0;
+	int pattern = 1;
+	int ray = 1;
+	int pawnCaptPat = 1;
+	char list1[100][5];
+	int count = 0;
+	do {
+		move = CreateNextCaptureMove(&g_mainGame, &pieceIdx, &pattern, &ray, &pawnCaptPat);
+		if (move.MoveInfo == NotAMove)
+			break;
+		char sMove[5];
+		MoveToString(move, list1[count++]);
+		//printf("Piece: %d   pattern: %d   ray: %d   PawnCaptPat: %d   CastleCount: %d\n", pieceIdx, pattern, ray, pawnCaptPat, castleCount);
+	} while (move.MoveInfo != NotAMove);
+	printf("\n");
+
+	CreateCaptureMoves(&g_mainGame);
+	AssertAreEqualInts(g_mainGame.MovesBufferLength, count, "Move counts differ");
+
+	for (int i = 0; i < g_mainGame.MovesBufferLength; i++)
+	{
+		char sMove[5];
+		MoveToString(g_mainGame.MovesBuffer[i], sMove);
+		AssertAreEqual(list1[i], sMove, "Moves should be same");
+		printf("%s   %s\n", sMove, list1[i]);
+	}
+
+}
+
 int Perft(depth) {
 	if (depth == 0)
 	{
@@ -854,13 +888,15 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*
+	
+	TestCreateCaptureMovesFromFen("k7/6p1/2q5/4N1Q1/b3n3/3P4/2B5/R6K w - - 0 1");
+	TestCreateCaptureMovesFromFen("k7/5rp1/2q4p/4N1Q1/b3n3/3P4/2B5/R2n3K w - - 0 1");
 
 	if (_failedAsserts == 0)
 		PrintGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
+	return;
 	
 	_failedAsserts = 0;
 
@@ -904,6 +940,8 @@ void runAllTests() {
 	TestCreateMovesFromFen("3k4/8/8/8/8/8/8/R3K2R w KQ - 0 1"); // Castling
 	TestCreateMovesFromFen("7k/8/3p4/8/1P1R4/8/8/K7 w - - 0 1"); // Rook
 	TestCreateMovesFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/1PN2Q1p/2PBBPPP/R3K2R b KQkq a3 0 1"); // Crazy much
+
+	TestCreateCaptureMovesFromFen("k7/6p1/2q5/4N1Q1/b3n3/3P4/2B5/R6K w - - 0 1");
 	
 	clock_t start = clock();
 
