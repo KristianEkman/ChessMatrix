@@ -100,6 +100,7 @@ typedef struct {
 	bool Off;
 	unsigned char SquareIndex;
 	unsigned char MoveCount;
+	uint Weight;
 	//unsigned char Mobility; // this performed bad, but nice idea
 } Piece;
 
@@ -132,6 +133,12 @@ typedef struct {
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
 	//MoveCoordinates KillerMoves[500][2];
+
+	//Most important piece index at each depth.
+	uint PieceWeights[MAX_DEPTH][16];
+	//Each depth has its order of piece indexes. Moves are created in that order.
+	uchar PieceIndexOrder[MAX_DEPTH][16];
+
 	uchar FiftyMoveRuleCount;
 } Game;
 

@@ -57,7 +57,7 @@ void MoveToTop(Move move, Move* list, int length, Side side) {
 	}
 }
 
-static void PickBlacksNextMove(int moveNum, Move * moves, int moveCount) {
+static void PickBlacksNextMove(int moveNum, Move* moves, int moveCount) {
 
 	int bestScore = -9000;
 	int bestNum = moveNum;
@@ -142,67 +142,66 @@ short QuiteSearch(short best_black, short best_white, Game* game, uchar deep_in)
 	}
 
 
-	CreateCaptureMoves(game);
+	/*CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 		return score;
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
-	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));*/
 	//MoveKillersToTop(game, localMoves, moveCount);
+
+	int pieceIdx = 0, patternIdx = 1, rayIdx = 1, pawnCapPattern = 1;
+	Move childMove = CreateNextCaptureMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern);
 
 	if (game->Side == BLACK) { //maximizing
 		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
+		while (childMove.MoveInfo != NotAMove)
 		{
-			PickBlacksNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[!game->Side01];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
 				UndoMove(game, childMove, undos);
+				childMove = CreateNextCaptureMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern);
 				continue;
 			}
 			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
 			UndoMove(game, childMove, undos);
 			if (score > best_black) {
 				if (score >= best_white) {
-					free(localMoves);
 					return best_white;
 				}
 				best_black = score;
 			}
+			childMove = CreateNextCaptureMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern);
 		}
-		free(localMoves);
 		return best_black;
 	}
 	else { //minimizing
 		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
+		while (childMove.MoveInfo != NotAMove)
 		{
-			PickWhitesNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[!game->Side];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
 				UndoMove(game, childMove, undos);
+				childMove = CreateNextCaptureMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern);
 				continue;
 			}
 			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
 			UndoMove(game, childMove, undos);
 			if (score < best_white) {
 				if (score <= best_black) {
-					free(localMoves);
 					return best_black;
 				}
 				best_white = score;
 			}
+			childMove = CreateNextCaptureMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern);
 		}
-		free(localMoves);
 		return best_white;
 	}
 }
@@ -265,18 +264,18 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 
 	//Move generation
-	CreateMoves(game, prevMove);
-	uchar moveCount = game->MovesBufferLength;
+	//CreateMoves(game, prevMove);
+	//uchar moveCount = game->MovesBufferLength;
 
-	Move* localMoves = malloc(moveCount * sizeof(Move));
-	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	//Move* localMoves = malloc(moveCount * sizeof(Move));
+	//memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(prevMove, localMoves, moveCount);
+	//MoveCounterMoveToTop(prevMove, localMoves, moveCount);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
-	if (pvMove.MoveInfo != NotAMove) {
-		MoveToTop(pvMove, localMoves, moveCount, game->Side);
-	}
+	//if (pvMove.MoveInfo != NotAMove) {
+	//	MoveToTop(pvMove, localMoves, moveCount, game->Side);
+	//}
 
 	//Not reducing for the first number of moves of each depth.
 	const uchar fullDepthMoves = 10;
@@ -288,14 +287,17 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	uchar legalCount = 0;
 	short oldBestBlack = best_black;
 	short oldBestWhite = best_white;
-	Move bestMove = localMoves[0];
+
+	int pieceIdx = 0, patternIdx = 1, rayIdx = 1, pawnCapPattern = 1, castleCount = 0;
+	Move childMove = CreateNextMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern, &castleCount);
+
+	Move bestMove = childMove;
 	if (game->Side == BLACK) { //maximizing, black
 		bestScore = MIN_SCORE;
 		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
+		int i = 0;
+		while (childMove.MoveInfo != NotAMove)
 		{
-			PickBlacksNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 
 			int kingSquare = game->KingSquares[!game->Side01];
@@ -303,6 +305,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			if (!isLegal)
 			{
 				UndoMove(game, childMove, undos);
+				childMove = CreateNextMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern, &castleCount);
 				continue;
 			}
 			legalCount++;
@@ -311,7 +314,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			uchar extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
-				extension=1;
+				extension = 1;
 
 			uchar lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
@@ -331,22 +334,18 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				bestMove = childMove;
 				if (score > best_black) {
 					if (score >= best_white) {
-						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
-						free(localMoves);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
-
-						/*if (undos.CaptIndex == -1) {
-							AddKiller(game, childMove);
-						}*/
+						//AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
+						game->Pieces[game->Side01][childMove.PieceIdx].Weight += (depth * depth);
 						return best_white;
 					}
 					best_black = score;
 				}
 			}
+
+			i++;
+			childMove = CreateNextMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern, &castleCount);
 		}
 
-		free(localMoves);
 		if (legalCount == 0) {
 			if (incheck)
 				return -8000 + deep_in;
@@ -359,24 +358,24 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 		if (best_black != oldBestBlack)
 			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
-		else
-			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+		/*else
+			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);*/
 
 		return best_black;
 	}
 	else { //minimizing, white
 		bestScore = MAX_SCORE;
 		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
+		int i = 0;
+		while (childMove.MoveInfo != NotAMove)
 		{
-			PickWhitesNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
 			int kingSquare = game->KingSquares[!game->Side01];
 			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!isLegal)
 			{
 				UndoMove(game, childMove, undos);
+				childMove = CreateNextMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern, &castleCount);
 				continue;
 			}
 			legalCount++;
@@ -405,19 +404,17 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				bestMove = childMove;
 				if (score < best_white) {
 					if (score <= best_black) {
-						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
-						//if (undos.CaptIndex == -1)
-						//   AddKiller(game, childMove);
-						free(localMoves);
+						//AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+						game->Pieces[game->Side01][childMove.PieceIdx].Weight += (depth * depth);
 						return best_black;
 					}
 					best_white = score;
 				}
 			}
+			i++;
+			childMove = CreateNextMove(game, &pieceIdx, &patternIdx, &rayIdx, &pawnCapPattern, &castleCount);
 		}
-		free(localMoves);
+
 		if (legalCount == 0) {
 			if (incheck)
 				return 8000 - deep_in; //mate
@@ -430,8 +427,9 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 		if (best_white != oldBestWhite)
 			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
-		else
-			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);
+		/*else
+			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);*/
+
 		return best_white;
 	}
 }
@@ -534,6 +532,29 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	return 0;
 }
 
+void SortPieces(Game * game) {
+	for (int s = 0; s < 2; s++)
+	{
+		bool switched = false;
+		do
+		{
+			switched = false;
+			for (int p = 0; p < 15; p++)
+			{
+				if (game->Pieces[s][p].Weight < game->Pieces[s][p + 1].Weight) {
+					Piece temp = game->Pieces[s][p];
+					game->Pieces[s][p] = game->Pieces[s][p + 1];
+					game->Pieces[s][p + 1] = temp;
+					switched = true;
+				}
+			}
+		} while (switched);
+	}
+
+	for (int s = 0; s < 2; s++)
+		for (int p = 0; p < 16; p++)
+			g_mainGame.Pieces[s][p].Weight = 0;
+}
 
 DWORD WINAPI IterativeSearch(void* v) {
 	Game game = g_mainGame;
@@ -553,8 +574,10 @@ DWORD WINAPI IterativeSearch(void* v) {
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
 		clock_t depStart = clock();
+		SortPieces(pGame);
+
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
-		
+
 		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
 		if (g_Stopped)
 			break;

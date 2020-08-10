@@ -5,7 +5,7 @@ ge piece weight vid cutoff
 ordna inför varje search, nollställ weight
 ta bort move list på game
 kanske ta bort counter moves?
-
+hur bäst utnyttja pv-moves? Ordna om to square. Försök först med piece weight. Kanske bara spara EXACT scores.
 
 Counter moves
 	2 previous, i så fall kanske packa coordinater.
