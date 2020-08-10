@@ -67,6 +67,7 @@ void InitPieceList() {
 }
 
 int main(int argc, char* argv[]) {
+
 	SwitchSignOfWhitePositionValue();
 	SetSearchDefaults();
 	ResetDepthTimes();
@@ -85,6 +86,7 @@ int main(int argc, char* argv[]) {
 	printf("info Branch %s\n", GitBranch);
 	printf("info Commit %s\n", GitCommit);
 	printf("Initialized\n");
+
 	EnterUciMode();
 	return 0;
 }

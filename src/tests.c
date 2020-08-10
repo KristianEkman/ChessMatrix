@@ -167,6 +167,27 @@ void HashTablePerformance(int iterations) {
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
+
+void TestCreateMoves() {
+
+	ReadFen("3k4/8/8/2nrb3/3P4/6q1/7P/3K4 w - - 0 1");
+	Move move;
+	//Move CreateNextMove(Game * game, int* pPiece, int* pPattern, int* pRay, int* pPawnCaptPat);
+	int pieceIdx = 0;
+	int pattern = 1;
+	int ray = 1;
+	int pawnCaptPat = 1;
+	int castleCount = 0;
+	do {
+		move = CreateNextMove(&g_mainGame, &pieceIdx, &pattern, &ray, &pawnCaptPat, &castleCount);
+		char sMove[5];
+		
+		printf("Piece: %d   pattern: %d   ray: %d   PawnCaptPat: %d   CastleCount: %d\n", pieceIdx, pattern, ray, pawnCaptPat, castleCount);
+		MoveToString(move, sMove);
+		printf("%s\n", sMove);
+	} while (move.MoveInfo != NotAMove);
+}
+
 int Perft(depth) {
 	if (depth == 0)
 	{
@@ -818,13 +839,13 @@ void _runTests() {
 }
 
 void runAllTests() {
-	/*DoublePawnsTest();
+	TestCreateMoves();
 
 	if (_failedAsserts == 0)
 		PrintGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;*/
+	return;
 	
 	_failedAsserts = 0;
 

@@ -22,4 +22,4 @@ Move ParseMove(char* sMove, MoveInfo info);
 bool SquareAttacked(int square, Side attackedBy, Game* game);
 void SortMoves(Move* moves, int moveCount, Side side);
 void CoordinatesToString(MoveCoordinates move, char* sMove);
-
+Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPawnCaptPat, int* pCastleCount);
