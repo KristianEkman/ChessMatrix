@@ -168,9 +168,9 @@ void HashTablePerformance(int iterations) {
 	}
 }
 
-void TestCreateMoves() {
-
-	ReadFen("3k4/8/8/2nrb3/3P4/6q1/7P/3K4 w - - 0 1");
+void TestCreateMovesFromFen(char * fen) {
+	printf("TestCreateMovesFromFen %s\n", fen);
+	ReadFen(fen);
 	Move move;
 	//Move CreateNextMove(Game * game, int* pPiece, int* pPattern, int* pRay, int* pPawnCaptPat);
 	int pieceIdx = 0;
@@ -178,14 +178,29 @@ void TestCreateMoves() {
 	int ray = 1;
 	int pawnCaptPat = 1;
 	int castleCount = 0;
+	char list1[100][5];
+	int count = 0;
 	do {
 		move = CreateNextMove(&g_mainGame, &pieceIdx, &pattern, &ray, &pawnCaptPat, &castleCount);
+		if (move.MoveInfo == NotAMove)
+			break;
 		char sMove[5];
-		
-		printf("Piece: %d   pattern: %d   ray: %d   PawnCaptPat: %d   CastleCount: %d\n", pieceIdx, pattern, ray, pawnCaptPat, castleCount);
-		MoveToString(move, sMove);
-		printf("%s\n", sMove);
+		MoveToString(move, list1[count++]);
+		//printf("Piece: %d   pattern: %d   ray: %d   PawnCaptPat: %d   CastleCount: %d\n", pieceIdx, pattern, ray, pawnCaptPat, castleCount);
 	} while (move.MoveInfo != NotAMove);
+	printf("\n");
+
+	CreateMoves(&g_mainGame);
+	AssertAreEqualInts(g_mainGame.MovesBufferLength, count, "Move counts differ");
+
+	for (int i = 0; i < g_mainGame.MovesBufferLength; i++)
+	{
+		char sMove[5];
+		MoveToString(g_mainGame.MovesBuffer[i], sMove);
+		AssertAreEqual(list1[i], sMove, "Moves should be same");
+		//printf("%s   %s\n", sMove, list1[i]);
+	}
+
 }
 
 int Perft(depth) {
@@ -839,13 +854,13 @@ void _runTests() {
 }
 
 void runAllTests() {
-	TestCreateMoves();
+	/*
 
 	if (_failedAsserts == 0)
 		PrintGreen("Success! Tests are good!\n");
 	printf("Press any key to continue.\n");
 	int c = _getch();
-	return;
+	return;*/
 	
 	_failedAsserts = 0;
 
@@ -884,6 +899,11 @@ void runAllTests() {
 	/*PositionScorePawns();
 	PositionScoreKnights();
 	PositionScoreCastling();*/
+
+	TestCreateMovesFromFen("3k4/8/8/2nrb3/3P4/6q1/7P/3K4 w - - 0 1"); // Pawn captures
+	TestCreateMovesFromFen("3k4/8/8/8/8/8/8/R3K2R w KQ - 0 1"); // Castling
+	TestCreateMovesFromFen("7k/8/3p4/8/1P1R4/8/8/K7 w - - 0 1"); // Rook
+	TestCreateMovesFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/Pp2P3/1PN2Q1p/2PBBPPP/R3K2R b KQkq a3 0 1"); // Crazy much
 	
 	clock_t start = clock();
 

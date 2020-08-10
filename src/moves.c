@@ -797,6 +797,7 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 	game->MovesBufferLength = 0;
 	for (int pi = *pPiece; pi < 16; pi++)
 	{
+		*pPiece = pi;
 		Piece* piece = &game->Pieces[game->Side01][pi];
 		if (piece->Off)
 			continue;
@@ -816,7 +817,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 				int toSquare = PieceTypeSquarePatterns[pat][i][pp];
 				if (game->Squares[toSquare] != NOPIECE)
 					break;
-				*pPiece = pi;
 				*pPattern = pp + 1;
 				if (toSquare < 8 || toSquare > 55) {
 					return CreateMove(i, toSquare, PromotionQueen, game, pi);
@@ -840,7 +840,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 				//Must be a piece of opposite color.
 				if (game->Squares[toSquare] & (game->Side ^ 24))
 				{
-					*pPiece = pi;
 					*pPawnCaptPat = pc + 1;
 					if (toSquare < 8 || toSquare > 55) {
 						return CreateMove(i, toSquare, PromotionQueen, game, pi);
@@ -856,7 +855,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 						int toRank = toSquare >> 3;
 						if (toFile == enpFile && toRank == EnpassantRankPattern[game->Side01])
 						{
-							*pPiece = pi;
 							*pPawnCaptPat = pc + 1;
 							return CreateMove(i, toSquare, EnPassantCapture, game, pi);
 						}
@@ -872,7 +870,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 			{
 				int toSquare = PieceTypeSquarePatterns[0][i][p];
 				if (!(game->Squares[toSquare] & game->Side)) {
-					*pPiece = pi;
 					*pPattern = p + 1;
 					return CreateMove(i, toSquare, 0, game, pi);
 				}
@@ -886,7 +883,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 			{
 				int toSquare = PieceTypeSquarePatterns[1][i][p];
 				if (!(game->Squares[toSquare] & game->Side)) { // not own piece here
-					*pPiece = pi;
 					*pPattern = p + 1;
 					return CreateMove(i, toSquare, KingMove, game, pi);
 				}
@@ -894,7 +890,7 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 
 			int castleBlackOffset = CastlesOffset[game->Side01];
 			if (i == castleBlackOffset + 4) { //King on origin pos
-				if (*pCastleCount < 1 && (game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort)) {
+				if (*pCastleCount < 1 && ((game->Side & WHITE && game->State & WhiteCanCastleShort) || (game->Side & BLACK && game->State & BlackCanCastleShort))) {
 					(*pCastleCount)++;
 					if ((game->Squares[castleBlackOffset + 7] & 7) == ROOK &&
 						game->Squares[castleBlackOffset + 5] == NOPIECE &&
@@ -902,13 +898,12 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 					{
 						if (!SquareAttacked(5 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game))
 						{
-							*pPiece = pi;
 							return CreateMove(i, 6 + castleBlackOffset, CastleShort, game, pi);
 						}
 					}
 				}
 
-				if (*pCastleCount < 2 && (game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong)) {
+				if (*pCastleCount < 2 && ((game->Side & WHITE && game->State & WhiteCanCastleLong) || (game->Side & BLACK && game->State & BlackCanCastleLong))) {
 					(*pCastleCount)++;
 					if ((game->Squares[castleBlackOffset] & 7) == ROOK &&
 						game->Squares[castleBlackOffset + 1] == NOPIECE &&
@@ -917,7 +912,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 					{
 						if (!SquareAttacked(4 + castleBlackOffset, game->Side ^ 24, game) && !SquareAttacked(3 + castleBlackOffset, game->Side ^ 24, game))
 						{
-							*pPiece = pi;
 							return CreateMove(i, 2 + castleBlackOffset, CastleLong, game, pi);
 						}
 					}
@@ -932,32 +926,32 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 			int raysCount = PieceTypeSquareRaysPatterns[piecePat][i][0][0];
 			for (int r = *pRay; r <= raysCount; r++)
 			{
+				*pRay = r;
 				int rayLength = PieceTypeSquareRaysPatterns[piecePat][i][r][0];
 				for (int pat = *pPattern; pat <= rayLength; pat++)
 				{
+					*pPattern = pat;
 					//piece->Mobility++;
 					int toSquare = PieceTypeSquareRaysPatterns[piecePat][i][r][pat];
 					PieceType toPiece = game->Squares[toSquare];
 					MoveInfo moveInfo = pt == ROOK ? RookMove : PlainMove;
 
 					if (toPiece != NOPIECE) {
-						if (!(toPiece & game->Side)) {
-							*pPiece = pi;
-							*pRay = r;
-							*pPattern = pat + 1;
+						if (!(toPiece & game->Side)) { // hits a piece of oposit color. ray ends, next
+							*pRay = r + 1;
+							*pPattern = 1;
 							return CreateMove(i, toSquare, moveInfo, game, pi);
-						}
+						}						
 						break;
 					}
 					else {
-						*pPiece = pi;
-						*pRay = r;
 						*pPattern = pat + 1;
 						return CreateMove(i, toSquare, moveInfo, game, pi);
 					}
 				}
-				*pRay = r + 1;
+				*pPattern = 1; // here no move was created on the ray, reset pattern befor next ray
 			}
+			*pRay = 1; // end of rays. first ray of next piece
 			break;
 		}
 		}
@@ -965,7 +959,6 @@ Move CreateNextMove(Game* game, int* pPiece, int* pPattern, int* pRay, int* pPaw
 		//
 		*pPattern = 1;
 		*pPawnCaptPat = 1;
-		*pRay = 1;
 	}
 	return (Move) { .From = 0, .To = 0, .MoveInfo = NotAMove, .Score = 0 };
 }

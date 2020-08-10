@@ -1,8 +1,10 @@
-CreateMove
+CreateMove, X
 CreateCaptureMove
 TestFall, fler olikapositioner
 ge piece weight vid cutoff
 ordna inför varje search, nollställ weight
+ta bort move list på game
+kanske ta bort counter moves?
 
 
 Counter moves
