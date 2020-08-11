@@ -105,14 +105,12 @@ static void PickWhitesNextMove(int moveNum, Move* moves, int moveCount) {
 //
 //
 
-void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength) {
+void MoveCounterMoveToTop(Move previousMove, Move* moveList, int moveListLength, Side side) {
 	//int moved = 0;
 	for (int i = 0; i < moveListLength; i++)
 	{
 		if (IsCounterMove(moveList[i], previousMove)) {
-			Move temp = moveList[i];
-			memmove(&moveList[1], moveList, i * sizeof(Move));
-			moveList[0] = temp;
+			moveList[i].Score += (side == BLACK ? 9000 : -9000);
 			//moved++;
 			break;
 		}
@@ -271,7 +269,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(prevMove, localMoves, moveCount);
+	MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
