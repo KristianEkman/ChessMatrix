@@ -262,6 +262,14 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 		}
 	}
 
+	if (pvMove.MoveInfo == NotAMove && depth > 5) {
+		//internal iterative deepening. IDD
+		RecursiveSearch(best_black, best_white, depth - 3, game, true, prevMove, deep_in + 1, incheck);
+		if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
+			return score;
+		}
+	}
+
 	//Move generation
 	CreateMoves(game, prevMove);
 	uchar moveCount = game->MovesBufferLength;
@@ -277,7 +285,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 
 	//Not reducing for the first number of moves of each depth.
-	const uchar fullDepthMoves = 10;
+	const uchar fullDepthMoves = 5;
 	//Not reducing when depth is or lower
 	const uchar reductionLimit = 3;
 
