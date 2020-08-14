@@ -43,25 +43,31 @@ void InitPieceList() {
 	char side[2] = { WHITE, BLACK };
 	for (int s = 0; s < 2; s++)
 	{
-		for (int p = 0; p < 8; p++)
+		g_mainGame.Pieces[s][0].Type = KING | side[s];
+
+		for (int p = 1; p < 9; p++)
 			g_mainGame.Pieces[s][p].Type = PAWN | side[s];
 
-		g_mainGame.Pieces[s][8].Type = ROOK | side[s];
 		g_mainGame.Pieces[s][9].Type = ROOK | side[s];
+		g_mainGame.Pieces[s][10].Type = ROOK | side[s];
 
-		g_mainGame.Pieces[s][10].Type = KNIGHT | side[s];
 		g_mainGame.Pieces[s][11].Type = KNIGHT | side[s];
+		g_mainGame.Pieces[s][12].Type = KNIGHT | side[s];
 
-		g_mainGame.Pieces[s][12].Type = BISHOP | side[s];
 		g_mainGame.Pieces[s][13].Type = BISHOP | side[s];
+		g_mainGame.Pieces[s][14].Type = BISHOP | side[s];
 
-		g_mainGame.Pieces[s][14].Type = QUEEN | side[s];
-		g_mainGame.Pieces[s][15].Type = KING | side[s];
+		g_mainGame.Pieces[s][15].Type = QUEEN | side[s];
 
 		for (int p = 0; p < 16; p++)
 		{
 			g_mainGame.Pieces[s][p].Off = true;
 			g_mainGame.Pieces[s][p].MoveCount = 0;
+			g_mainGame.Pieces[s][p].Index = p;
+			if (p < 15)
+				g_mainGame.Pieces[s][p].Next = &g_mainGame.Pieces[s][p + 1];
+			else
+				g_mainGame.Pieces[s][p].Next = NULL;
 		}
 	}
 }
@@ -78,7 +84,7 @@ int main(int argc, char* argv[]) {
 	StartPosition();
 	OwnBook = false;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
-	LoadBook("openings.abk");
+	//LoadBook("openings.abk");
 #endif // DEBUG
 
 	printf("info Built date %s\n", BuildDate);
@@ -591,7 +597,7 @@ void ReadFen(char* fen) {
 			g_mainGame.KingSquares[color] = i;
 		}
 	}
-
+	FixPieceChain(&g_mainGame);
 	InitScores();
 	InitHash();
 }

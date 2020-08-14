@@ -95,11 +95,17 @@ typedef struct {
 	int CheckMates;
 } PerftResult;
 
+
 typedef struct {
 	PieceType Type;
 	bool Off;
-	unsigned char SquareIndex;
-	unsigned char MoveCount;
+	uchar Index;
+	uchar SquareIndex;
+	uchar MoveCount;
+	// Next Piece in the Piece Link List
+	struct Piece* Next;
+	// Previous Piece in the Piece Link List
+	struct Piece * Prev;
 	//unsigned char Mobility; // this performed bad, but nice idea
 } Piece;
 

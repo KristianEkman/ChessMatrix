@@ -9,3 +9,4 @@ TopSearchParams g_topSearchParams;
 void SetSearchDefaults();
 MoveCoordinates Search(bool async);
 void InitLmr();
+bool FixPieceChain(Game* game);

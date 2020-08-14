@@ -437,23 +437,20 @@ short GetEval(Game* game) {
 	{
 		short scr = 0;
 		uchar bishopCount = 0;
-		for (int p = 0; p < 16; p++)
+		Piece * piece = &game->Pieces[s][0];
+		while (piece != NULL)
 		{
-			Piece piece = game->Pieces[s][p];
-			if (piece.Off)
-				continue;
-
 			// penalty for moving a piece more than once in the opening.
 			if (opening)
 			{
-				if (piece.MoveCount > 1)
+				if (piece->MoveCount > 1)
 					scr -= SAME_TWICE;
-				if (piece.Type == QUEEN)
+				if (piece->Type == QUEEN)
 					scr -= QUEEN_EARLY;
 			}
 
-			int i = piece.SquareIndex;
-			PieceType pieceType = piece.Type;
+			int i = piece->SquareIndex;
+			PieceType pieceType = piece->Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
 			posScore += PositionValueMatrix[pt][s][i];
@@ -487,6 +484,8 @@ short GetEval(Game* game) {
 			default:
 				break;
 			}
+
+			piece = piece->Next;
 		}
 
 		

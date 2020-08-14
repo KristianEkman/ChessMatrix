@@ -434,6 +434,33 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 }
 
+bool FixPieceChain(Game* game) {
+	for (int s = 0; s < 2; s++)
+	{
+		Piece* lastOn = NULL;
+		for (int p = 15; p >= 0; p--)
+		{
+			Piece* piece = &game->Pieces[s][p];
+			// It is not possible to include a piece in the piece chain if it is Off at this stage.
+			// But this is before the search starts
+
+			// The real linking
+			if (!piece->Off) {
+				piece->Next = lastOn;
+				if (lastOn)
+					lastOn->Prev = piece;
+				lastOn = piece;
+			}
+		}
+
+		if (game->Pieces[s][0].Off) {
+			printf("King piece is not on the table. This is not allowed\n");
+			fflush(stdout);
+			return false;
+		}
+	}
+}
+
 void CopyMainGame(Game* copy) {
 
 	copy->KingSquares[0] = g_mainGame.KingSquares[0];
@@ -445,6 +472,8 @@ void CopyMainGame(Game* copy) {
 	memcpy(g_mainGame.Squares, copy->Squares, 64 * sizeof(PieceType));
 	memcpy(g_mainGame.PositionHistory, copy->PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(g_mainGame.Pieces, copy->Pieces, 32 * sizeof(Piece));
+	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
+
 	//memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 
