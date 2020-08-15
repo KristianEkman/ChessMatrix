@@ -269,7 +269,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
+	//MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
@@ -331,8 +331,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 					if (score >= best_white) {
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+						/*if (undos.CaptIndex == -1)
+							AddCounterMove(childMove, prevMove);*/
 
 						/*if (undos.CaptIndex == -1) {
 							AddKiller(game, childMove);
@@ -404,8 +404,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				if (score < best_white) {
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+						/*if (undos.CaptIndex == -1)
+							AddCounterMove(childMove, prevMove);*/
 						//if (undos.CaptIndex == -1)
 						//   AddKiller(game, childMove);
 						free(localMoves);

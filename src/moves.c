@@ -56,9 +56,10 @@ void AssertGame(Game* game) {
 			if (!piece->Off && squareType != piece->Type) {
 				printf("Invalid game. piece Type and square type not equal.\n");
 			}
+
 			Piece* next = piece->Next;
-			/*if (next && !piece->Off && next->Off)
-				printf("Invalid game. Next piece sould not be Off.\n");*/
+			if (next && !piece->Off && next->Off)
+				printf("Invalid game. Next piece sould not be Off.\n");
 		}
 	}
 

@@ -68,6 +68,11 @@ void InitPieceList() {
 				g_mainGame.Pieces[s][p].Next = &g_mainGame.Pieces[s][p + 1];
 			else
 				g_mainGame.Pieces[s][p].Next = NULL;
+
+			if (p > 0)
+				g_mainGame.Pieces[s][p].Prev = &g_mainGame.Pieces[s][p - 1];
+			else
+				g_mainGame.Pieces[s][p].Prev = NULL;
 		}
 	}
 }
