@@ -51,8 +51,8 @@ Testfallen, async funkar inte.
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)
 
-   Schackmotor               Poäng                    Ch
-1: ChessMatrixFeat           32,5/60 ···················· 
-2: Vice10                    12,5/20 1000==0=1111=0=11111 
-3: ChessMatrix               9,0/20  ==0=010100==0111=100 
-4: ChessterfieldCL_i5a_intel 6,0/20  100100=1000=00=00=01 
+   Schackmotor               Poäng                                          Ch
+1: ChessMatrixFeat           65,0/120 ········································· 
+2: Vice10                    20,0/40  000100=1=0=10010=10=0111011=1011=1=10010  
+3: ChessMatrix               18,0/40  =1=11011=10=00=011=1110=0=0=00=101000000? 
+4: ChessterfieldCL_i5a_intel 17,0/40  ==010==0=10=10010==00000=1011001=110=10=  
