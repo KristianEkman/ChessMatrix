@@ -1,6 +1,8 @@
 Counter moves
 	2 previous, i så fall kanske packa coordinater.
 
+Ger ENMR förbättring?
+
 LMR och Extensions
 ===
 	Depth limit
@@ -51,8 +53,8 @@ Testfallen, async funkar inte.
 Fortsätt på befintligt Game, dvs parsa bara sista move. Jämför med move history.
 (Fast det tar bara 2 ms)
 
-   Schackmotor               Poäng                                          Ch
-1: ChessMatrixFeat           65,0/120 ········································· 
-2: Vice10                    20,0/40  000100=1=0=10010=10=0111011=1011=1=10010  
-3: ChessMatrix               18,0/40  =1=11011=10=00=011=1110=0=0=00=101000000? 
-4: ChessterfieldCL_i5a_intel 17,0/40  ==010==0=10=10010==00000=1011001=110=10=  
+   Schackmotor               Poäng                                                                                                      Ch
+1: ChessMatrix               150,0/300 ···································································································· 
+2: Gk_090_x64_ja             68,0/100  =00110100110111111110=10=1====1111=01=111=111111101111101111110====000===0==10111=1=1==1111011101=01 
+3: Vice10                    53,0/100  111110=001=10001==101=01==11010=10=0111101=10====0101=011000=011111=01==1====1011000=1000===01010=10 
+4: ChessterfieldCL_i5a_intel 29,0/100  101000==00=100000101=0=0010=0=0001=1000=100100110001=0=0=1000=00100=00000=00001000==0100110=01000000 
