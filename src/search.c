@@ -228,7 +228,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 		U64 prevHash = game->Hash;
 		DoNullMove(game);
 		if (game->Side == BLACK) {
-			short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
+			short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck, true);
 			UndoNullMove(prevState, game, prevHash);
 			if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
 				depth -= DR;
@@ -240,7 +240,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 		}
 		else //(game->Side == WHITE)
 		{
-			short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
+			short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck, true);
 			UndoNullMove(prevState, game, prevHash);
 			if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
 				depth -= DR;
