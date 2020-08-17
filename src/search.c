@@ -10,6 +10,11 @@
 #include <time.h>
 #include <stdio.h>
 
+#define MAX_R 4
+#define MIN_R 3
+#define DR 4 // depth reduction value for normal search
+
+uchar lmr_matrix[MAX_DEPTH][100];
 #define LMR_RED 2
 //Not reducing for the first number of moves of each depth.
 #define LMR_FULL_DEPTH_MOVES 4
@@ -38,7 +43,7 @@ void MoveToTop(Move move, Move* list, int length, Side side) {
 	}
 }
 
-static void PickBlacksNextMove(int moveNum, Move * moves, int moveCount) {
+static void PickBlacksNextMove(int moveNum, Move* moves, int moveCount) {
 
 	int bestScore = -9000;
 	int bestNum = moveNum;
@@ -216,32 +221,37 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 
 	//NULL move check
-	uchar r = 3;
-	if ((game->Side == WHITE && game->Material[side01] < -500) ||
-		(game->Side == BLACK && game->Material[side01] > 500))
-	{
-		if (doNull && !incheck && game->PositionHistoryLength && depth >= r) {
-			GameState prevState = game->State;
-			U64 prevHash = game->Hash;
-			DoNullMove(game);
-			if (game->Side == BLACK) {
-				short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck, true);
-				if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
-					UndoNullMove(prevState, game, prevHash);
-					return best_black;
-				}
-			}
-			else //(game->Side == WHITE)
-			{
-				short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck, true);
-				if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
-					UndoNullMove(prevState, game, prevHash);
-					return best_white;
-				}
-			}
+
+	if (doNull && !incheck && depth > 3) {
+		GameState prevState = game->State;
+		uchar r = depth > 6 ? MAX_R : MIN_R;
+		U64 prevHash = game->Hash;
+		DoNullMove(game);
+		if (game->Side == BLACK) {
+			short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
 			UndoNullMove(prevState, game, prevHash);
+			if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000) { //todo, review if this is correct.
+				depth -= DR;
+				if (depth <= 0)
+				{
+					return QuiteSearch(best_black, best_white, game, deep_in);
+				}
+			}
+		}
+		else //(game->Side == WHITE)
+		{
+			short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
+			UndoNullMove(prevState, game, prevHash);
+			if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000) {
+				depth -= DR;
+				if (depth <= 0)
+				{
+					return QuiteSearch(best_black, best_white, game, deep_in);
+				}
+			}
 		}
 	}
+
 
 	//Move generation
 	CreateMoves(game, prevMove);
@@ -250,7 +260,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	Move* localMoves = malloc(moveCount * sizeof(Move));
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
+	//MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
 	//MoveKillersToTop(game, localMoves, moveCount, deep_in);
 
 	if (pvMove.MoveInfo != NotAMove) {
@@ -285,7 +295,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			uchar extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
-				extension=1;
+				extension = 1;
 
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
 			// todo: incheck, checks, not pvs
@@ -307,8 +317,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 					if (score >= best_white) {
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
 						free(localMoves);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+						/*if (undos.CaptIndex == -1)
+							AddCounterMove(childMove, prevMove);*/
 
 						/*if (undos.CaptIndex == -1) {
 							AddKiller(game, childMove);
@@ -379,8 +389,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				if (score < best_white) {
 					if (score <= best_black) {
 						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
-						if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);
+						/*if (undos.CaptIndex == -1)
+							AddCounterMove(childMove, prevMove);*/
 						//if (undos.CaptIndex == -1)
 						//   AddKiller(game, childMove);
 						free(localMoves);
@@ -409,6 +419,33 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 }
 
+bool FixPieceChain(Game* game) {
+	for (int s = 0; s < 2; s++)
+	{
+		Piece* lastOn = NULL;
+		for (int p = 15; p >= 0; p--)
+		{
+			Piece* piece = &game->Pieces[s][p];
+			// It is not possible to include a piece in the piece chain if it is Off at this stage.
+			// But this is before the search starts
+
+			// The real linking
+			if (!piece->Off) {
+				piece->Next = lastOn;
+				if (lastOn)
+					lastOn->Prev = piece;
+				lastOn = piece;
+			}
+		}
+
+		if (game->Pieces[s][0].Off) {
+			printf("King piece is not on the table. This is not allowed\n");
+			fflush(stdout);
+			return false;
+		}
+	}
+}
+
 void CopyMainGame(Game* copy) {
 
 	copy->KingSquares[0] = g_mainGame.KingSquares[0];
@@ -420,6 +457,8 @@ void CopyMainGame(Game* copy) {
 	memcpy(g_mainGame.Squares, copy->Squares, 64 * sizeof(PieceType));
 	memcpy(g_mainGame.PositionHistory, copy->PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(g_mainGame.Pieces, copy->Pieces, 32 * sizeof(Piece));
+	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
+
 	//memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 

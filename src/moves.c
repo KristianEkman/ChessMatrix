@@ -6,14 +6,25 @@
 #include "sort.h"
 #include "countermoves.h"
 
-int SetCaptureOff(Game* game, int side, int squareIndex) {
-	for (int i = 0; i < 16; i++)
+void SetCaptureOff(Game* game, int side, int squareIndex, Undos * undos) {
+	Piece* capture = &game->Pieces[side][0];
+	while (capture)
 	{
-		Piece* capture = &game->Pieces[side][i];
-		if (capture->SquareIndex == squareIndex && !capture->Off) {
+		if (capture->SquareIndex == squareIndex) {
 			capture->Off = true;
-			return i;
+			Piece* prev = capture->Prev; //King is first so it will always be on the board.
+			Piece* next = capture->Next;
+
+			undos->CaptIndex = capture->Index;
+			if (prev)
+			   prev->Next = next; // jumping over the capture.
+			
+			if (next)
+				next->Prev = prev; // skipping it both directions in the linked list
+			
+			return;
 		}
+		capture = capture->Next;
 	}
 
 	printf("Invalid SetCaptureOff parameters\n");
@@ -21,13 +32,14 @@ int SetCaptureOff(Game* game, int side, int squareIndex) {
 }
 
 void MovePiece(Game* game, int side01, int from, int to) {
-	for (int i = 0; i < 16; i++)
+	Piece* piece = &game->Pieces[side01][0];
+	while (piece != NULL)
 	{
-		Piece* capture = &game->Pieces[side01][i];
-		if (capture->SquareIndex == from && !capture->Off) {
-			capture->SquareIndex = to;
+		if (piece->SquareIndex == from) {
+			piece->SquareIndex = to;
 			return;
 		}
+		piece = piece->Next;
 	}
 	printf("Invalid MovePiece parameters\n");
 }
@@ -42,8 +54,12 @@ void AssertGame(Game* game) {
 			PieceType squareType = game->Squares[piece->SquareIndex];
 
 			if (!piece->Off && squareType != piece->Type) {
-				printf("Invalid game\n");
+				printf("Invalid game. piece Type and square type not equal.\n");
 			}
+
+			Piece* next = piece->Next;
+			if (next && !piece->Off && next->Off)
+				printf("Invalid game. Next piece sould not be Off.\n");
 		}
 	}
 
@@ -77,6 +93,7 @@ Undos DoMove(Move move, Game* game) {
 	Undos undos;
 	undos.PrevGameState = game->State;
 	undos.PrevHash = game->Hash;
+	undos.CaptIndex = -1;
 
 	char f = move.From;
 	char t = move.To;
@@ -93,10 +110,10 @@ Undos DoMove(Move move, Game* game) {
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
 
-	int captIndex = -1;
+	//int captIndex = -1;
 	if (captType && move.MoveInfo != EnPassantCapture)
 	{
-		captIndex = SetCaptureOff(game, !side01, t);
+		SetCaptureOff(game, !side01, t, &undos);
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
@@ -237,7 +254,7 @@ Undos DoMove(Move move, Game* game) {
 	{
 		char behind = t + Behind[side01];
 		game->Squares[behind] = NOPIECE;
-		captIndex = SetCaptureOff(game, !side01, behind);
+		SetCaptureOff(game, !side01, behind, &undos);
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
 		hash ^= ZobritsPieceTypesSquares[PAWN | (game->Side ^ 24)][behind];
 	}
@@ -251,7 +268,6 @@ Undos DoMove(Move move, Game* game) {
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
 	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
-	undos.CaptIndex = captIndex;
 	undos.FiftyMoveRuleCount = game->FiftyMoveRuleCount;
 	if (pt == PAWN || captType)
 		game->FiftyMoveRuleCount = 0;
@@ -341,7 +357,18 @@ void UndoMove(Game* game, Move move, Undos undos) {
 	game->Pieces[otherSide01][move.PieceIdx].SquareIndex = move.From;
 	game->Pieces[otherSide01][move.PieceIdx].MoveCount--;
 	if (capture)
-		game->Pieces[!otherSide01][undos.CaptIndex].Off = false;
+	{
+		Piece* pCapt = &game->Pieces[!otherSide01][undos.CaptIndex];
+		Piece* prev = pCapt->Prev;  // these are not changed (hopefully)
+		Piece* next = pCapt->Next;
+		pCapt->Off = false;
+
+		// restoring the piece links
+		if (prev)
+			prev->Next = pCapt;
+		if (next)
+			next->Prev = pCapt;
+	}
 
 	switch (move.MoveInfo)
 	{
@@ -421,11 +448,9 @@ void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash) {
 
 bool SquareAttacked(int square, Side attackedBy, Game* game) {
 	int side01 = attackedBy >> 4;
-	for (int pi = 0; pi < 16; pi++)
+	Piece* piece = &game->Pieces[side01][0];
+	while (piece != NULL)
 	{
-		Piece* piece = &game->Pieces[side01][pi];
-		if (piece->Off)
-			continue;
 		//piece->Mobility = 0;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
@@ -487,6 +512,7 @@ bool SquareAttacked(int square, Side attackedBy, Game* game) {
 			break;
 		}
 		}
+		piece = piece->Next;
 	}
 	return false;
 }
@@ -530,12 +556,11 @@ void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game* ga
 
 void CreateMoves(Game* game) {
 	game->MovesBufferLength = 0;
-	for (int pi = 0; pi < 16; pi++)
+	Piece* piece = &game->Pieces[game->Side01][0];
+	while (piece != NULL)
 	{
-		Piece* piece = &game->Pieces[game->Side01][pi];
-		if (piece->Off)
-			continue;
 		//piece->Mobility = 0;
+		char pi = piece->Index;
 		int i = piece->SquareIndex;
 		PieceType pieceType = game->Squares[i];
 		PieceType pt = pieceType & 7;
@@ -673,7 +698,7 @@ void CreateMoves(Game* game) {
 			break;
 		}
 		}
-
+		piece = piece->Next;
 	}
 	//SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
@@ -682,12 +707,10 @@ void CreateCaptureMoves(Game* game) {
 	game->MovesBufferLength = 0;
 	int side01 = game->Side >> 4;
 	char otherSide = game->Side ^ 24;
-
-	for (int pi = 0; pi < 16; pi++)
+	Piece* piece = &game->Pieces[side01][0];
+	while (piece != NULL)
 	{
-		Piece* piece = &game->Pieces[side01][pi];
-		if (piece->Off)
-			continue;
+		uchar pi = piece->Index;
 		//piece->Mobility = 0;
 		int i = piece->SquareIndex;
 
@@ -788,6 +811,8 @@ void CreateCaptureMoves(Game* game) {
 			break;
 		}
 		}
+		
+		piece = piece->Next;
 	}
 	//SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
