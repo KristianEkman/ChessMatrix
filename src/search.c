@@ -303,6 +303,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 		{
 			PickBlacksNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
+
+			
 			Undos undos = DoMove(childMove, game);
 
 			int kingSquare = game->KingSquares[!game->Side01];
@@ -319,6 +321,15 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension = 1;
+
+			// futility pruning
+			if (depth == 1) {
+				if (childMove.Score < best_black - 50 && legalCount > 0 && !incheck && !checked) {
+					UndoMove(game, childMove, undos);
+					// Should this be stores in TT? It might not be exact?
+					continue;
+				}
+			}
 
 			uchar lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
@@ -391,6 +402,16 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			//extensions
 			uchar extension = 0;
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+
+			// futility pruning
+			if (depth == 1) {
+				if (childMove.Score > best_white + 50 && legalCount > 0 && !incheck && !checked) {
+					UndoMove(game, childMove, undos);
+					// Should this be stores in TT? It might not be exact?
+					continue;
+				}
+			}
+
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension = 1;
 
