@@ -242,7 +242,7 @@ void EnterUciMode() {
 					token = strtok(NULL, " ");
 				}
 
-				SetMoveTimeFallBack(g_mainGame.Side);
+				SetMoveTimeFallBack(g_mainGame.Side01);
 
 				fflush(stdout);
 				Search(true);
@@ -369,7 +369,6 @@ void StartPosition() {
 
 	for (int i = 0; i < 8; i++)
 		InitPiece(i, 6, PAWN, BLACK);
-	g_mainGame.Side = WHITE;
 	g_mainGame.Side01 = 0;
 
 	g_mainGame.State = WhiteCanCastleLong | WhiteCanCastleShort | BlackCanCastleLong | BlackCanCastleShort;
@@ -551,8 +550,8 @@ void ReadFen(char* fen) {
 	}
 
 	index++;
-	g_mainGame.Side = parseSide(fen[index]);
-	g_mainGame.Side01 = g_mainGame.Side >> 4;
+	Side side = parseSide(fen[index]);
+	g_mainGame.Side01 = side >> 4;
 	index++;
 	index++;
 	g_mainGame.State = 0;
@@ -632,7 +631,7 @@ void WriteFen(char* fenBuffer) {
 			fenBuffer[index++] = '/';
 	}
 	fenBuffer[index++] = ' ';
-	fenBuffer[index++] = g_mainGame.Side == WHITE ? 'w' : 'b';
+	fenBuffer[index++] = g_mainGame.Side01 == 0 ? 'w' : 'b';
 	fenBuffer[index++] = ' ';
 	if (g_mainGame.State & WhiteCanCastleShort) fenBuffer[index++] = 'K';
 	if (g_mainGame.State & WhiteCanCastleLong) fenBuffer[index++] = 'Q';
@@ -647,7 +646,7 @@ void WriteFen(char* fenBuffer) {
 	else
 	{
 		fenBuffer[index++] = enPassantFile;
-		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
+		fenBuffer[index++] = g_mainGame.Side01 == 0 ? '6' : '3';
 	}
 	fenBuffer[index++] = ' ';
 	itoa(g_mainGame.FiftyMoveRuleCount, &fenBuffer[index], 10); // Also terminates string with 0. Thanks.

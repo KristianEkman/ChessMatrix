@@ -613,6 +613,9 @@ char CastlesOffset[2] = { 0, 56 };
 int SideCastlingRights[2] = { WhiteCanCastleLong | WhiteCanCastleShort, BlackCanCastleLong | BlackCanCastleShort };
 int Behind[] = { -8, 8 };
 
+Side Sides[2] = { WHITE, BLACK };
+
+
 
 
 

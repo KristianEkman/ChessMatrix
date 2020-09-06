@@ -123,9 +123,8 @@ typedef struct {
 	bool Invalid;
 } PlayerMove;
 
-
 typedef struct {
-	Side Side;
+	//Side Side;
 	int Side01;
 	int MovesBufferLength;
 	Move MovesBuffer[100];

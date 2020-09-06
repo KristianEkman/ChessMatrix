@@ -5,7 +5,7 @@
 
 int DepthTimeHistory[1024][32];
 
-bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
+bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, int side) {
 // Goal:
 //	1. Time should not end
 //	2. Time should be used
@@ -13,7 +13,7 @@ bool SearchDeeper(int currentDepth, int moveNo, int ellapsed, Side side) {
 	int myTimeLeft = g_topSearchParams.BlackTimeLeft;
 	int opponentTimeLeft = g_topSearchParams.WhiteTimeLeft;
 	int increment = g_topSearchParams.BlackIncrement;
-	if (side == WHITE) {
+	if (side == 0) { // white
 		opponentTimeLeft = g_topSearchParams.BlackTimeLeft;
 		myTimeLeft = g_topSearchParams.WhiteTimeLeft;
 		increment = g_topSearchParams.WhiteIncrement;
@@ -51,7 +51,7 @@ void ResetDepthTimes() {
 		DepthTimeHistory[i][0] = 0;
 }
 
-void SetMoveTimeFallBack(Side side) {
+void SetMoveTimeFallBack(int side) {
 	// Fallback if time control fails
 	// If last depth takes much longer than estimated this sets max time when searching will end.
 	int moves = 20;
@@ -61,7 +61,7 @@ void SetMoveTimeFallBack(Side side) {
 	if (g_topSearchParams.TimeControl)
 	{
 		g_topSearchParams.MoveTime = g_topSearchParams.WhiteTimeLeft / moves;
-		if (side == BLACK)
+		if (side == 1)
 			g_topSearchParams.MoveTime = g_topSearchParams.BlackTimeLeft / moves;
 	}
 }

@@ -19,7 +19,7 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove);
 void UnMakePlayerMoveOnThread(Game* game, PlayerMove playerMove);
 void MoveToString(Move move, char * sMove);
 Move ParseMove(char* sMove, MoveInfo info);
-bool SquareAttacked(int square, Side attackedBy, Game* game);
+bool SquareAttacked(int square, int attackedBy, Game* game);
 void SortMoves(Move* moves, int moveCount, Side side);
 void CoordinatesToString(MoveCoordinates move, char* sMove);
 

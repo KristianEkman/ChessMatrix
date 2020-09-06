@@ -486,9 +486,7 @@ short GetEval(Game* game) {
 			}
 
 			piece = piece->Next;
-		}
-
-		
+		}	
 
 		scr += BISHOP_PAIR * (bishopCount == 2);
 		score += (neg * scr);
@@ -505,7 +503,7 @@ short GetEval(Game* game) {
 
 		//insuficient material check
 	if (pwnCount[game->Side01] == 0) {
-		if (game->Side == WHITE) {
+		if (game->Side01 == 0) {
 			if (game->Material[0] >= -MATERIAL_N_N) {
 				return max(0, score + posScore); // minimizing, 0 as best
 			}
