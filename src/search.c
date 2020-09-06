@@ -234,7 +234,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	//Probe hash
 	short score = 0; Move pvMove;
 	pvMove.MoveInfo = NotAMove;
-	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
+	if (ProbeHashTable(game->Hash, depth, &score, &pvMove, best_black, best_white)) {
 		return score;
 	}
 
@@ -272,7 +272,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 
 	//Move generation
-	CreateMoves(game, prevMove);
+	CreateMoves(game, depth);
 	uchar moveCount = game->MovesBufferLength;
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
@@ -286,7 +286,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 
 	//Not reducing for the first number of moves of each depth.
-	const uchar fullDepthMoves = 10;
+	const uchar fullDepthMoves = 5;
 	//Not reducing when depth is or lower
 	const uchar reductionLimit = 3;
 
@@ -319,6 +319,15 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension = 1;
+
+			// futility pruning
+			if (depth == 1) {
+				if (childMove.Score < best_black - 10 && legalCount > 0 && !incheck && !checked) {
+					UndoMove(game, childMove, undos);
+					// Should this be stores in TT? It might not be exact?
+					continue;
+				}
+			}
 
 			uchar lmrRed = 2;// lmr_matrix[depth][i];
 			// Late Move Reduction, full depth for the first moves, and interesting moves.
@@ -393,6 +402,15 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 			if (checked || childMove.MoveInfo == SoonPromoting)
 				extension = 1;
+
+			// futility pruning
+			if (depth == 1) {
+				if (childMove.Score > best_white + 10 && legalCount > 0 && !incheck && !checked) {
+					UndoMove(game, childMove, undos);
+					// Should this be stores in TT? It might not be exact?
+					continue;
+				}
+			}
 
 			// late move reduction
 			uchar lmrRed = 2; // lmr_matrix[depth][i];

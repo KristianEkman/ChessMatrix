@@ -61,7 +61,7 @@ void AddHashScore(U64 hash, short score, char depth, HashEntryType type, char fr
 }
 
 
-bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white) {
+bool ProbeHashTable(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white) {
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	uint key2 = hash & 0x7FFFFFFF;
 	EntrySlot* slot = &H_Table.Entries[idx];
@@ -99,6 +99,29 @@ bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short be
 				default:
 					break;
 				}
+			}
+		}
+	}
+	return false;
+}
+
+
+bool GetScoreFromHash(U64 hash, char depth, short* score) {
+	uint idx = (uint)(hash % H_Table.EntryCount);
+	uint key2 = hash & 0x7FFFFFFF;
+	EntrySlot* slot = &H_Table.Entries[idx];
+	for (int i = 0; i < SLOTS; i++)
+	{
+		U64 entry = slot->EntrySlots[i];
+		uint dbKey = entry & 0x7FFFFFFF;
+		int dbDepth = (entry >> 45) & 0x1F;
+		if (dbKey == key2) {
+			if (dbDepth >= depth)
+			{
+				*score = ((entry >> 31) & 0x3FFF) - MAX_SCORE;
+				HashEntryType type = (entry >> 50) & 0x3;
+				if (type == EXACT)
+					return true;
 			}
 		}
 	}
