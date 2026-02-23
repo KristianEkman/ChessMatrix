@@ -3,7 +3,6 @@
 #include <time.h>
 #include <ctype.h>
 #include <string.h>
-#include <Windows.h>
 #include <stdio.h>
 
 #include "commons.h"
@@ -322,7 +321,7 @@ int EnterInteractiveMode() {
 	return 0;
 }
 
-void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
+void PutFreePieceAt(int square, PieceType pieceType, int side01) {
 	for (int p = 0; p < 16; p++) {
 		Piece* piece = &(g_mainGame.Pieces[side01][p]);
 		if (piece->Off && piece->Type == pieceType) {
@@ -333,7 +332,7 @@ void PutFreePieceAt(int square, enum PieceType pieceType, int side01) {
 	}
 }
 
-void InitPiece(int file, int rank, enum PieceType type, Side color) {
+void InitPiece(int file, int rank, PieceType type, Side color) {
 	g_mainGame.Squares[rank * 8 + file] = type | color;
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
@@ -405,14 +404,10 @@ char PieceChar(PieceType pieceType) {
 }
 
 void PrintGame(Game* game) {
-	// ╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗
-	char top[] = { 201,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,209,205,205,205,187,0 };
-	// ╟───┼───┼───┼───┼───┼───┼───┼───╢
-	char rowLine[] = { 199,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,197,196,196,196,182,0 };
-	// ╚═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╝
-	char lastLine[] = { 200,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 207,205,205,205, 188, 0 };
-	// ║
-	char vBorder = 186; 
+	char top[] = "+---+---+---+---+---+---+---+---+";
+	char rowLine[] = "+---+---+---+---+---+---+---+---+";
+	char lastLine[] = "+---+---+---+---+---+---+---+---+";
+	char vBorder = '|';
 
 	printf("   %s\n", top);	
 
@@ -583,16 +578,26 @@ void ReadFen(char* fen) {
 	// tokens
 	int len = strlen(fen);
 	char fenCopy[100];
-	memcpy(fenCopy, fen, len);
+	memcpy(fenCopy, fen, len + 1);
 	int tokNo = 0;
+	char* token = NULL;
+#ifdef _WIN32
 	char* context;
-	char* token = strtok_s(fenCopy, " ", &context);
+	token = strtok_s(fenCopy, " ", &context);
+#else
+	char* context = NULL;
+	token = strtok_r(fenCopy, " ", &context);
+#endif
 	while (token != NULL)
 	{
 		tokNo++;
 		if (tokNo == 5)
 			g_mainGame.FiftyMoveRuleCount = atoi(token);
+#ifdef _WIN32
 		token = strtok_s(NULL, " ", &context);
+#else
+		token = strtok_r(NULL, " ", &context);
+#endif
 	}
 
 	for (int i = 0; i < 64; i++)
@@ -650,7 +655,8 @@ void WriteFen(char* fenBuffer) {
 		fenBuffer[index++] = g_mainGame.Side == WHITE ? '6' : '3';
 	}
 	fenBuffer[index++] = ' ';
-	itoa(g_mainGame.FiftyMoveRuleCount, &fenBuffer[index], 10); // Also terminates string with 0. Thanks.
+	index += snprintf(&fenBuffer[index], 16, "%d", g_mainGame.FiftyMoveRuleCount);
+	fenBuffer[index] = '\0';
 }
 
 void AdjustPositionImportance() {

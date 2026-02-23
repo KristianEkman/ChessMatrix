@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <Windows.h>
-#include <conio.h>
 
 #include "main.h"
 #include "commons.h"
@@ -11,6 +9,7 @@
 #include "evaluation.h"
 #include "search.h"
 #include "moves.h"
+#include "platform.h"
 
 #pragma region TestsHelpers
 
@@ -167,7 +166,7 @@ void HashTablePerformance(int iterations) {
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
-int Perft(depth) {
+int Perft(int depth) {
 	if (depth == 0)
 	{
 		return 1;
@@ -218,7 +217,7 @@ typedef struct {
 } HashFen;
 
 HashFen HashFenDb[3000000];
-void PerftSaveHash(depth) {
+void PerftSaveHash(int depth) {
 	char hasHash = FALSE;
 	char fen[100];
 	WriteFen(fen);
@@ -813,8 +812,8 @@ void containsNotTest() {
 void _runTests() {
 	//BestMoveTest();
 	printf("\nPress any key to continue.");
-	int c = _getch();
-	system("@cls||clear");
+	PlatformGetChar();
+	PlatformClearScreen();
 }
 
 void runAllTests() {
@@ -890,6 +889,6 @@ void runAllTests() {
 		PrintRed("There are failed tests.\n");
 
 	printf("Press any key to continue.\n");
-	_getch();
-	system("@cls||clear");
+	PlatformGetChar();
+	PlatformClearScreen();
 }

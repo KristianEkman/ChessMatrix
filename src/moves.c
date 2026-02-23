@@ -5,6 +5,7 @@
 #include "hashTable.h"
 #include "sort.h"
 #include "countermoves.h"
+#include <string.h>
 
 void SetCaptureOff(Game* game, int side, int squareIndex, Undos * undos) {
 	Piece* capture = &game->Pieces[side][0];
@@ -28,7 +29,7 @@ void SetCaptureOff(Game* game, int side, int squareIndex, Undos * undos) {
 	}
 
 	printf("Invalid SetCaptureOff parameters\n");
-	return -1;
+	return;
 }
 
 void MovePiece(Game* game, int side01, int from, int to) {
@@ -218,7 +219,7 @@ Undos DoMove(Move move, Game* game) {
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 
-		//gör inte detta om det redan är gjort
+		//gï¿½r inte detta om det redan ï¿½r gjort
 		if ((game->Side == WHITE && (game->State & WhiteCanCastleLong)) || (game->Side == BLACK && (game->State & BlackCanCastleLong)))
 			hash ^= ZobritsCastlingRights[side01 * 2]; // 0 eller 2, white long, black long
 

@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <Windows.h>
 #include "search.h"
 #include "evaluation.h"
 #include "moves.h"
@@ -9,6 +8,7 @@
 #include "countermoves.h"
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_R 4
 #define MIN_R 3
@@ -272,7 +272,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 
 	//Move generation
-	CreateMoves(game, prevMove);
+	CreateMoves(game);
 	uchar moveCount = game->MovesBufferLength;
 
 	Move* localMoves = malloc(moveCount * sizeof(Move));
@@ -547,14 +547,14 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 }
 
 // Background thread that sets Stopped flag after specified time in ms.
-DWORD WINAPI TimeLimitWatch(void* args) {
+PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void* args) {
 	int ms = g_topSearchParams.MoveTime;
 	clock_t start = clock();
 	clock_t now = clock();
 	printf("TimeLimitWatch %d\n", ms);
 	while (!g_Stopped)
 	{
-		Sleep(100);
+		PlatformSleepMs(100);
 		now = clock();
 
 		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
@@ -566,12 +566,11 @@ DWORD WINAPI TimeLimitWatch(void* args) {
 	}
 
 	g_Stopped = true;
-	ExitThread(0);
-	return 0;
+	return PLATFORM_THREAD_RETURN_VALUE;
 }
 
 
-DWORD WINAPI IterativeSearch(void* v) {
+PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
 	Game game = g_mainGame;
 	Game* pGame = &game;
 	CopyMainGame(pGame);
@@ -625,8 +624,8 @@ DWORD WINAPI IterativeSearch(void* v) {
 	MoveToString(bestMove, sMove);
 	printf("bestmove %s\n", sMove);
 	fflush(stdout);
-	ExitThread(0);
-	return 0;
+	g_Stopped = true;
+	return PLATFORM_THREAD_RETURN_VALUE;
 }
 
 // Starting point of a search for best move.
@@ -662,24 +661,39 @@ MoveCoordinates Search(bool async) {
 
 	// ClearCounterMoves();
 
-	HANDLE timeLimitThread = 0;
+	PlatformThread timeLimitThread;
+	bool hasTimeLimitThread = false;
 	if (g_topSearchParams.MoveTime > 0) {
-		timeLimitThread = CreateThread(NULL, 0, TimeLimitWatch, NULL, 0, NULL);
+		hasTimeLimitThread = PlatformCreateThread(&timeLimitThread, TimeLimitWatch, NULL);
 	}
 
 	g_Stopped = false;
 	g_SearchedNodes = 0;
 
-	HANDLE handle = CreateThread(NULL, 0, IterativeSearch, NULL, 0, NULL);
+	PlatformThread handle;
+	bool hasSearchThread = PlatformCreateThread(&handle, IterativeSearch, NULL);
+	if (!hasSearchThread) {
+		IterativeSearch(NULL);
+	}
+
 	if (!async)
 	{
-		WaitForSingleObject(handle, INFINITE);
-		if (timeLimitThread != 0)
-			TerminateThread(timeLimitThread, 0);
+		if (hasSearchThread)
+			PlatformJoinThread(handle);
+		if (hasTimeLimitThread) {
+			g_Stopped = true;
+			PlatformJoinThread(timeLimitThread);
+		}
 		MoveCoordinates coords;
 		coords.From = g_topSearchParams.BestMove.From;
 		coords.To = g_topSearchParams.BestMove.To;
 		return coords;
+	}
+	else {
+		if (hasSearchThread)
+			PlatformDetachThread(handle);
+		if (hasTimeLimitThread)
+			PlatformDetachThread(timeLimitThread);
 	}
 
 	//this will not be used.

@@ -3,9 +3,11 @@
 #include "utils.h"
 #include <string.h>
 
-#include <Windows.h>
-#include <conio.h> 
 #include <time.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 int ParseChar(char c) {
 	switch (c)
@@ -81,6 +83,7 @@ void Stdout_wl(char* text) {
 }
 
 void printColor(char* msg, int color) {
+#ifdef _WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
 	WORD saved_attributes;
@@ -94,6 +97,19 @@ void printColor(char* msg, int color) {
 
 	/* Restore original attributes */
 	SetConsoleTextAttribute(hConsole, saved_attributes);
+#else
+	int textColor = color % 16;
+	int background = color / 16;
+
+	int ansiFg = 30 + (textColor % 8);
+	int ansiBg = 40 + (background % 8);
+	if (textColor >= 8)
+		ansiFg += 60;
+	if (background >= 8)
+		ansiBg += 60;
+
+	printf("\033[%d;%dm%s\033[0m", ansiFg, ansiBg, msg);
+#endif
 }
 
 void PrintRed(char* msg) {

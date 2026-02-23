@@ -1,6 +1,6 @@
 // see https://www.chessprogramming.org/Countermove_Heuristic
 #include "commons.h"
-#include <Windows.h>
+#include <string.h>
 
 // previous from, previous to
 Move counterMoves[64][64];
