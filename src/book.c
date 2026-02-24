@@ -65,7 +65,7 @@ void PlayBookPosition(Game* game, int bookIndex) {
 	Move move;
 	move.From = hbe.bookEntry.from;
 	move.To = hbe.bookEntry.to;
-	char sMove[5];
+	char sMove[6];
 	MoveToString(move, sMove);
 	PlayerMove pMove = MakePlayerMoveOnThread(game, sMove);
 	if (pMove.Invalid)
@@ -133,7 +133,7 @@ MoveCoordinates BestBookMove(Game* game)
 	printf("Selecting best book move from %d moves\n", moveCount);
 
 	//This is tricky. It resolves some more information needed. I.e. index of piece being moved.
-	char sMove[5];
+	char sMove[6];
 	CoordinatesToString(foundMove, sMove);
 	PlayerMove pm = MakePlayerMoveOnThread(game, sMove);
 	UnMakePlayerMoveOnThread(game, pm);
@@ -175,7 +175,7 @@ MoveCoordinates RandomBookMove(Game* game)
 	printf("Selecting best book move from %d moves\n", moveCount);
 
 	//This is tricky. It resolves some more information needed. I.e. index of piece being moved.
-	char sMove[5];
+	char sMove[6];
 	CoordinatesToString(foundMoves[random], sMove);
 	PlayerMove pm = MakePlayerMoveOnThread(game, sMove);
 	UnMakePlayerMoveOnThread(game, pm);

@@ -105,7 +105,8 @@ void HashTableRoundTrip() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 	short expected = 3000;
-	AddHashScore(hash, expected, 1, EXACT, 1, 2);
+	Move move1 = ParseMove("b1c1", PlainMove);
+	AddHashScore(hash, expected, 1, EXACT, move1);
 	int depth = 0;
 	short score = 0;
 	Move move;
@@ -114,7 +115,8 @@ void HashTableRoundTrip() {
 
 	U64 hash2 = hash + 1;
 	short expected2 = -4000;
-	AddHashScore(hash2, expected2, 1, EXACT, 10, 12);
+	Move move2 = ParseMove("c2e2", PlainMove);
+	AddHashScore(hash2, expected2, 1, EXACT, move2);
 
 	short score2;
 	GetScoreFromHash(hash2, 1, &score2, &move, 0 ,0);
@@ -129,19 +131,22 @@ void HashTableDepthTest() {
 	ClearHashTable();
 	U64 hash = 0x1234567890ABCDEF;
 
-	AddHashScore(hash, 3000, 2, EXACT, 40, 50 );
+	Move move1 = ParseMove("a6c7", PlainMove);
+	AddHashScore(hash, 3000, 2, EXACT, move1);
 	int depth = 2;
 	short score;
 	Move move;
 	GetScoreFromHash(hash, depth, &score, &move, 100, 200);
 	AssertAreEqualInts(3000, score, "hash table score missmatch");
 
-	AddHashScore(hash, 4000, 1, EXACT, 10, 10); //smaller depth
+	Move move2 = ParseMove("c2c2", PlainMove);
+	AddHashScore(hash, 4000, 1, EXACT, move2); //smaller depth
 	short score2 = 0;
 	GetScoreFromHash(hash, 2,  &score2, &move, 30, 60);
 	AssertAreEqualInts(3000, score2, "smaller depth should not replace score");
 
-	AddHashScore(hash, 5000, 3, EXACT, 20, 30); //smaller depth
+	Move move3 = ParseMove("e3g4", PlainMove);
+	AddHashScore(hash, 5000, 3, EXACT, move3); //smaller depth
 	GetScoreFromHash(hash, 3, &score, &move, 30, 31);
 	AssertAreEqualInts(5000, score, "larger depth should replace value");
 }
@@ -161,7 +166,8 @@ void HashTablePerformance(int iterations) {
 		if (expected > MAX_SCORE)
 			expected = MIN_SCORE;
 		hash++;
-		AddHashScore(hash, expected, 1, EXACT, 1, 1);		
+		Move move1 = ParseMove("b1b1", PlainMove);
+		AddHashScore(hash, expected, 1, EXACT, move1);		
 		Assert(GetScoreFromHash(hash, depth, &score, &move, 100, 200), "No score returned from hash");
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}

@@ -867,6 +867,25 @@ Move ParseMove(char* sMove, MoveInfo info) {
 	move.From = fromRank * 8 + fromFile;
 	move.To = toRank * 8 + toFile;
 	move.MoveInfo = info;
+	if (move.MoveInfo == PlainMove && sMove[4] != '\0') {
+		switch (sMove[4])
+		{
+		case 'q':
+			move.MoveInfo = PromotionQueen;
+			break;
+		case 'r':
+			move.MoveInfo = PromotionRook;
+			break;
+		case 'b':
+			move.MoveInfo = PromotionBishop;
+			break;
+		case 'n':
+			move.MoveInfo = PromotionKnight;
+			break;
+		default:
+			break;
+		}
+	}
 	return move;
 }
 
@@ -878,6 +897,7 @@ PlayerMove MakePlayerMoveOnThread(Game* game, char* sMove) {
 	for (int i = 0; i < length; i++)
 	{
 		if (validMoves[i].From == move.From && validMoves[i].To == move.To) {
+			
 			playerMove.Move = validMoves[i];
 			playerMove.Invalid = false;
 			Undos undos = DoMove(validMoves[i], game);
@@ -911,7 +931,28 @@ void MoveToString(Move move, char* sMove) {
 	sMove[1] = fromRank;
 	sMove[2] = toFile;
 	sMove[3] = toRank;
-	sMove[4] = '\0';
+	switch (move.MoveInfo)
+	{
+	case PromotionQueen:
+		sMove[4] = 'q';
+		sMove[5] = '\0';
+		break;
+	case PromotionRook:
+		sMove[4] = 'r';
+		sMove[5] = '\0';
+		break;
+	case PromotionBishop:
+		sMove[4] = 'b';
+		sMove[5] = '\0';
+		break;
+	case PromotionKnight:
+		sMove[4] = 'n';
+		sMove[5] = '\0';
+		break;
+	default:
+		sMove[4] = '\0';
+		break;
+	}
 }
 
 void CoordinatesToString(MoveCoordinates move, char* sMove) {

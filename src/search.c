@@ -338,7 +338,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				bestMove = childMove;
 				if (score > best_black) {
 					if (score >= best_white) {
-						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove.From, childMove.To);
+						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove);
 						free(localMoves);
 						/*if (undos.CaptIndex == -1)
 							AddCounterMove(childMove, prevMove);*/
@@ -365,9 +365,9 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			return best_black;
 
 		if (best_black != oldBestBlack)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove);
 		else
-			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove);
 
 		return best_black;
 	}
@@ -412,7 +412,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 				bestMove = childMove;
 				if (score < best_white) {
 					if (score <= best_black) {
-						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove.From, bestMove.To);
+						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove);
 						/*if (undos.CaptIndex == -1)
 							AddCounterMove(childMove, prevMove);*/
 						//if (undos.CaptIndex == -1)
@@ -436,9 +436,9 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 			return best_white;
 
 		if (best_white != oldBestWhite)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove);
 		else
-			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove.From, bestMove.To);
+			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove);
 		return best_white;
 	}
 }
@@ -489,10 +489,10 @@ void CopyMainGame(Game* copy) {
 void PrintBestLine(Move move, int depth, float ellapsed) {
 	char buffer[1800];
 	char* pv = &buffer;
-	char sMove[5];
+	char sMove[6];
 	MoveToString(move, sMove);
 	strcpy(pv, sMove);
-	pv += 4;
+	pv += strlen(sMove);
 	strcpy(pv, " ");
 	pv++;
 	Game* game = &g_mainGame;
@@ -506,14 +506,14 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 		if (!GetBestMoveFromHash(game->Hash, &bestMove))
 			break;
 
-		char sMove[5];
+		char sMove[6];
 		MoveToString(bestMove, sMove);
 
 		PlayerMove plMove = MakePlayerMoveOnThread(game, sMove);
 		if (plMove.Invalid)
 			break;
 		moves[movesCount++] = plMove;
-		strcpy(pv, sMove); pv += 4;
+		strcpy(pv, sMove); pv += strlen(sMove);
 		strcpy(pv, " "); pv++;
 	}
 	strcpy(pv, "\0");
@@ -620,7 +620,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
 		}
 	}
 
-	char sMove[5];
+	char sMove[6];
 	MoveToString(bestMove, sMove);
 	printf("bestmove %s\n", sMove);
 	fflush(stdout);
@@ -637,7 +637,7 @@ MoveCoordinates Search(bool async) {
 	Move moves[100];
 	int count = ValidMoves(moves);
 	if (count == 1) {
-		char sMove[5];
+		char sMove[6];
 		MoveToString(moves[0], sMove);
 		printf("bestmove %s\n", sMove);
 		fflush(stdout);
@@ -651,7 +651,7 @@ MoveCoordinates Search(bool async) {
 	if (g_mainGame.PositionHistoryLength < 6) {
 		MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
 		if (bookMove.From != -1) {
-			char sMove[5];
+			char sMove[6];
 			CoordinatesToString(bookMove, sMove);
 			printf("bestmove %s\n", sMove);
 			fflush(stdout);

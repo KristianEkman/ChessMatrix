@@ -23,15 +23,15 @@
 void ComputerMove() {
 	g_topSearchParams.MoveTime = 5000;
 	MoveCoordinates move = Search(false);
-	char sMove[5];
+	char sMove[6];
 	CoordinatesToString(move, sMove);
 	MakePlayerMove(sMove);
 }
 
 void ManualMove() {
-	printf("\nYour move (format e2e4): ");
-	char sMove[5];
-	fgets(sMove, 5, stdin);
+	printf("\nYour move (format e2e4 or e7e8q): ");
+	char sMove[8];
+	fgets(sMove, 8, stdin);
 	fseek(stdin, 0, SEEK_END);
 	PlayerMove pm = MakePlayerMove(sMove);
 	if (pm.Invalid)
