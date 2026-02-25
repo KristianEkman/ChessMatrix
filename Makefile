@@ -14,7 +14,19 @@ $(TARGET): $(SOURCES)
 run: $(TARGET)
 	./$(TARGET)
 
+test: $(TARGET)
+	@tmp=$$(mktemp); \
+	printf "i\nt\n\nq\nquit\n" | ./$(TARGET) | tee "$$tmp"; \
+	if grep -q "There are failed tests\." "$$tmp"; then \
+		rm -f "$$tmp"; \
+		exit 1; \
+	fi; \
+	grep -q "Success! Tests are good!" "$$tmp"; \
+	status=$$?; \
+	rm -f "$$tmp"; \
+	exit $$status
+
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all run clean
+.PHONY: all run test clean
