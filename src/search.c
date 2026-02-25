@@ -479,15 +479,22 @@ void FixPieceChain(Game* game) {
 
 void CopyMainGame(Game* copy) {
 
+	copy->Side = g_mainGame.Side;
+	copy->Side01 = g_mainGame.Side01;
+	copy->State = g_mainGame.State;
+	copy->Hash = g_mainGame.Hash;
+	copy->PositionHistoryLength = g_mainGame.PositionHistoryLength;
+	copy->MovesBufferLength = g_mainGame.MovesBufferLength;
+	copy->FiftyMoveRuleCount = g_mainGame.FiftyMoveRuleCount;
 	copy->KingSquares[0] = g_mainGame.KingSquares[0];
 	copy->KingSquares[1] = g_mainGame.KingSquares[1];
 	copy->Material[0] = g_mainGame.Material[0];
 	copy->Material[1] = g_mainGame.Material[1];
 
-	memcpy(g_mainGame.MovesBuffer, copy->MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
-	memcpy(g_mainGame.Squares, copy->Squares, 64 * sizeof(PieceType));
-	memcpy(g_mainGame.PositionHistory, copy->PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
-	memcpy(g_mainGame.Pieces, copy->Pieces, 32 * sizeof(Piece));
+	memcpy(copy->MovesBuffer, g_mainGame.MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
+	memcpy(copy->Squares, g_mainGame.Squares, 64 * sizeof(PieceType));
+	memcpy(copy->PositionHistory, g_mainGame.PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
+	memcpy(copy->Pieces, g_mainGame.Pieces, 32 * sizeof(Piece));
 	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
 
 	//memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
@@ -650,6 +657,7 @@ MoveCoordinates Search(bool async) {
 		MoveToString(moves[0], sMove);
 		printf("bestmove %s\n", sMove);
 		fflush(stdout);
+		g_topSearchParams.BestMove = moves[0];
 		MoveCoordinates singleMove;
 		singleMove.From = moves[0].From;
 		singleMove.To = moves[0].To;
@@ -670,14 +678,14 @@ MoveCoordinates Search(bool async) {
 
 	// ClearCounterMoves();
 
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+
 	PlatformThread timeLimitThread;
 	bool hasTimeLimitThread = false;
 	if (g_topSearchParams.MoveTime > 0) {
 		hasTimeLimitThread = PlatformCreateThread(&timeLimitThread, TimeLimitWatch, NULL);
 	}
-
-	g_Stopped = false;
-	g_SearchedNodes = 0;
 
 	PlatformThread handle;
 	bool hasSearchThread = PlatformCreateThread(&handle, IterativeSearch, NULL);
