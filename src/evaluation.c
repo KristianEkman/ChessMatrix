@@ -192,16 +192,33 @@ int InfrontOfKingSquares[2][64][4] = { 0 };
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
 
-short OpenRookFile(int square, Game* game) {
+short OpenRookFile(int square, Game* game, PieceType rook) {
 	int file = square % 8;
-	short open = OPEN_ROOK_FILE;
-	for (int i = 0; i < 7; i++)
+	Side rookColor = rook & (BLACK | WHITE);
+	PieceType ownPawn = PAWN | rookColor;
+	PieceType oppPawn = PAWN | (rookColor ^ 24);
+	bool hasOwnPawn = false;
+	bool hasOppPawn = false;
+	for (int rank = 0; rank < 8; rank++)
 	{
-		file += 8;
-		if ((game->Squares[file] & PAWN)) //semi open
-			open -= SEMI_OPEN_FILE;
+		int fileSquare = (rank * 8) + file;
+		PieceType piece = game->Squares[fileSquare];
+		if (piece == ownPawn)
+			hasOwnPawn = true;
+		else if (piece == oppPawn)
+			hasOppPawn = true;
+
+		if (hasOwnPawn && hasOppPawn)
+			break;
 	}
-	return open;
+
+	if (!hasOwnPawn && !hasOppPawn)
+		return OPEN_ROOK_FILE;
+
+	if (!hasOwnPawn)
+		return OPEN_ROOK_FILE - SEMI_OPEN_FILE;
+
+	return 0;
 }
 
 short DoublePawns(int square, Game* game, PieceType pawn) {
@@ -380,7 +397,7 @@ void CalculatePawnProtection() {
 
 			}
 			else { // BLACK
-				if (square > 56)
+				if (square >= 56)
 					PawnProtectionSquares[side][square][0] = 0; // has no protecting pawns
 				else if (file == 0)
 				{
@@ -416,9 +433,29 @@ short ProtectedByPawn(int square, Game* game) {
 	for (int i = 1; i <= PawnProtectionSquares[color01][square][0]; i++)
 	{
 		short pps = PawnProtectionSquares[color01][square][i];
-		score = (game->Squares[pps] == pawn);
+		score += (game->Squares[pps] == pawn);
 	}
 	return score * PAWN_PROTECT;
+}
+
+static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
+static const int MaxGamePhase = 24;
+
+static int GetGamePhase(Game* game) {
+	int phase = 0;
+
+	for (int s = 0; s < 2; s++)
+	{
+		Piece* piece = &game->Pieces[s][0];
+		while (piece != NULL)
+		{
+			PieceType pt = piece->Type & 7;
+			phase += PiecePhase[pt];
+			piece = piece->Next;
+		}
+	}
+
+	return min(MaxGamePhase, phase);
 }
 
 short GetEval(Game* game) {
@@ -431,6 +468,7 @@ short GetEval(Game* game) {
 	if (game->PositionHistoryLength < 12) {
 		opening = 1;
 	}
+	int gamePhase = GetGamePhase(game);
 	uchar pwnCount[2] = { 0, 0 };
 
 	for (int s = 0; s < 2; s++)
@@ -458,7 +496,7 @@ short GetEval(Game* game) {
 			{
 			case ROOK:
 			{
-				scr += OpenRookFile(i, game);
+				scr += OpenRookFile(i, game, pieceType);
 				//mobil += piece.Mobility;
 			}
 			break;
@@ -476,9 +514,11 @@ short GetEval(Game* game) {
 			}
 					 break;
 			case KING: {
-				int endGame = abs(game->Material[!game->Side01]) < ENDGAME ? 1 : 0;
-				posScore += KingPositionValueMatrix[endGame][color >> 4][i];	
-				scr -= KingExposed(i, game);
+				int color01 = color >> 4;
+				int kingSafety = KingPositionValueMatrix[0][color01][i];
+				int kingActivity = KingPositionValueMatrix[1][color01][i];
+				posScore += (short)((kingSafety * gamePhase + kingActivity * (MaxGamePhase - gamePhase)) / MaxGamePhase);
+				scr -= (short)((KingExposed(i, game) * gamePhase) / MaxGamePhase);
 			}
 					 break;
 			default:
@@ -487,8 +527,6 @@ short GetEval(Game* game) {
 
 			piece = piece->Next;
 		}
-
-		
 
 		scr += BISHOP_PAIR * (bishopCount == 2);
 		score += (neg * scr);
@@ -504,20 +542,22 @@ short GetEval(Game* game) {
 		return score + posScore + (float)(score * 50) / (float)materialLead;*/
 
 		//insuficient material check
-	if (pwnCount[game->Side01] == 0) {
-		if (game->Side == WHITE) {
-			if (game->Material[0] >= -MATERIAL_N_N) {
-				return max(0, score + posScore); // minimizing, 0 as best
-			}
-		}
-		else {
-			if (game->Material[1] <= MATERIAL_N_N) {
-				return min(0, score + posScore); // maximizing, 0 as best. 
-			}
-		}
-	}
+	int eval = score + posScore;
+	bool whiteNoPawns = pwnCount[0] == 0;
+	bool blackNoPawns = pwnCount[1] == 0;
+	bool whiteInsufficient = game->Material[0] >= -MATERIAL_N_N;
+	bool blackInsufficient = game->Material[1] <= MATERIAL_N_N;
 
-	return score + posScore;
+	if (whiteNoPawns && blackNoPawns && whiteInsufficient && blackInsufficient)
+		return 0;
+
+	if (whiteNoPawns && whiteInsufficient)
+		return max(0, eval);
+
+	if (blackNoPawns && blackInsufficient)
+		return min(0, eval);
+
+	return eval;
 }
 
 short TotalMaterial(Game* game) {

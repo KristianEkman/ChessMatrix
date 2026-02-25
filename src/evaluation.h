@@ -23,7 +23,7 @@ extern short CastlingPoints[2];
 //[middle or end][side][square]
 extern short KingPositionValueMatrix[2][2][64];
 
-short OpenRookFile(int square, Game* game);
+short OpenRookFile(int square, Game* game, PieceType rook);
 
 short DoublePawns(int square, Game* game, PieceType pawn);
 
