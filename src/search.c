@@ -16,6 +16,12 @@
 
 uchar lmr_matrix[MAX_DEPTH][100];
 
+static long long NowMs() {
+	struct timespec ts;
+	timespec_get(&ts, TIME_UTC);
+	return (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+}
+
 void InitLmr() {
 	/*
 	i > 3 & depth > 3 -- > 2
@@ -396,7 +402,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 			// late move reduction
 			uchar lmrRed = 2; // lmr_matrix[depth][i];
-			if (i >= fullDepthMoves && depth >= reductionLimit && IsReductionOk(childMove, undos))
+			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
 			else
 				score = best_white - 1;  // Hack to ensure that full-depth  is done.
@@ -443,7 +449,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 	}
 }
 
-bool FixPieceChain(Game* game) {
+void FixPieceChain(Game* game) {
 	for (int s = 0; s < 2; s++)
 	{
 		Piece* lastOn = NULL;
@@ -465,7 +471,6 @@ bool FixPieceChain(Game* game) {
 		if (game->Pieces[s][0].Off) {
 			printf("King piece is not on the table. This is not allowed\n");
 			fflush(stdout);
-			return false;
 		}
 	}
 }
@@ -549,17 +554,17 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 // Background thread that sets Stopped flag after specified time in ms.
 PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void* args) {
 	int ms = g_topSearchParams.MoveTime;
-	clock_t start = clock();
-	clock_t now = clock();
+	long long start = NowMs();
+	long long now = start;
 	printf("TimeLimitWatch %d\n", ms);
 	while (!g_Stopped)
 	{
 		PlatformSleepMs(100);
-		now = clock();
+		now = NowMs();
 
-		if ((now - start > (ms / (float)1000) * CLOCKS_PER_SEC))
+		if (now - start > ms)
 		{
-			printf("Search stopped by timeout after %dms.\n", now - start); // This is not preferable since it is more economic to stop before going to next depth.
+			printf("Search stopped by timeout after %lldms.\n", now - start); // This is not preferable since it is more economic to stop before going to next depth.
 			fflush(stdout);
 			break;
 		}
@@ -574,7 +579,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
 	Game game = g_mainGame;
 	Game* pGame = &game;
 	CopyMainGame(pGame);
-	clock_t start = clock();
+	long long start = NowMs();
 	Move bestMove;
 	bestMove.From = 0;
 	bestMove.To = 0;
@@ -587,14 +592,14 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
 
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
-		clock_t depStart = clock();
+		long long depStart = NowMs();
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
 
 		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
 		if (g_Stopped)
 			break;
 
-		float ellapsed = (float)(clock() - start) / CLOCKS_PER_SEC;
+		float ellapsed = (float)(NowMs() - start) / 1000.0f;
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
 		{
 			bestMove.Score = score;
@@ -611,10 +616,11 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
 
 		// At the end of each depth, checks if it is smart to search deeper.
 		// todo: if score has gone down, is it worth spending some more time?
-		float depthTime = (float)(clock() - depStart) / CLOCKS_PER_SEC;
+		int depthTime = (int)(NowMs() - depStart);
 		int moveNo = pGame->PositionHistoryLength;
-		RegisterDepthTime(moveNo, depth, depthTime * 1000);
-		if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, ellapsed * 1000, pGame->Side)) {
+		RegisterDepthTime(moveNo, depth, depthTime);
+		RegisterIterationResult(moveNo, depth, bestMove, score);
+		if (g_topSearchParams.TimeControl && !SearchDeeper(depth, moveNo, (int)(ellapsed * 1000), pGame->Side)) {
 			g_Stopped = true;
 			break;
 		}
