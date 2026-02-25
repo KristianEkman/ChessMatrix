@@ -46,6 +46,7 @@ void MovePiece(Game* game, int side01, int from, int to) {
 }
 
 void AssertGame(Game* game) {
+	(void)game;
 #ifdef _DEBUG
 	for (int s = 0; s < 2; s++)
 	{
@@ -96,8 +97,8 @@ Undos DoMove(Move move, Game* game) {
 	undos.PrevHash = game->Hash;
 	undos.CaptIndex = -1;
 
-	char f = move.From;
-	char t = move.To;
+	int f = move.From;
+	int t = move.To;
 
 	PieceType captType = game->Squares[t];
 	int captColor = captType >> 4;
@@ -106,7 +107,7 @@ Undos DoMove(Move move, Game* game) {
 	//removing piece from square removes its position score
 
 	PieceType pieceType = game->Squares[f];
-	char pt = pieceType & 7;
+	PieceType pt = pieceType & 7;
 
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
@@ -210,8 +211,8 @@ Undos DoMove(Move move, Game* game) {
 	case CastleShort:
 	{
 		game->KingSquares[side01] = t;
-		char rookFr = 7 + CastlesOffset[side01];
-		char rookTo = 5 + CastlesOffset[side01];
+		int rookFr = 7 + CastlesOffset[side01];
+		int rookTo = 5 + CastlesOffset[side01];
 		PieceType rook = ROOK | game->Side;
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
@@ -230,8 +231,8 @@ Undos DoMove(Move move, Game* game) {
 	case CastleLong:
 	{
 		game->KingSquares[side01] = t;
-		char rookFr = CastlesOffset[side01];
-		char rookTo = 3 + CastlesOffset[side01];
+		int rookFr = CastlesOffset[side01];
+		int rookTo = 3 + CastlesOffset[side01];
 		PieceType rook = ROOK | game->Side;
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
@@ -253,7 +254,7 @@ Undos DoMove(Move move, Game* game) {
 		break;
 	case EnPassantCapture:
 	{
-		char behind = t + Behind[side01];
+		int behind = t + Behind[side01];
 		game->Squares[behind] = NOPIECE;
 		SetCaptureOff(game, !side01, behind, &undos);
 		game->Material[side01] += MaterialMatrix[side01][PAWN];
@@ -285,8 +286,8 @@ const char PieceOrder[2][7] = { {0,3,4,6,1,2,5}, {0,-3,-4,-6,-1,-2,-5} };
 
 short GetLightScore(Move move, Game* game) {
 	short lightScore = game->Material[0] + game->Material[1];
-	char f = move.From;
-	char t = move.To;
+	int f = move.From;
+	int t = move.To;
 
 	PieceType captType = game->Squares[t];
 	int captColor = captType >> 4;
@@ -583,7 +584,7 @@ void CreateMoves(Game* game) {
 					CreateMove(i, toSquare, PromotionBishop, game, pi);
 					CreateMove(i, toSquare, PromotionKnight, game, pi);
 				}
-				else if (color == BLACK && toSquare < 24 || color == WHITE && toSquare > 39) {
+				else if ((color == BLACK && toSquare < 24) || (color == WHITE && toSquare > 39)) {
 					CreateMove(i, toSquare, SoonPromoting, game, pi);
 				}
 				else if (pp == 2) {

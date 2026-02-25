@@ -14,9 +14,9 @@
 #pragma region TestsHelpers
 
 int _failedAsserts = 0;
-PerftResult perftResult;
+PerftResult perftResult = { 0 };
 
-void Assert(int goodResult, char * msg) {
+void Assert(int goodResult, const char* msg) {
 	if (goodResult == 0)
 	{
 		printf("\n");
@@ -26,7 +26,7 @@ void Assert(int goodResult, char * msg) {
 	}
 }
 
-void AssertNot(int result, char * msg) {
+void AssertNot(int result, const char* msg) {
 	if (result != 0)
 	{
 		printf("\n");
@@ -36,7 +36,7 @@ void AssertNot(int result, char * msg) {
 	}
 }
 
-void AssertAreEqual(char * s1, char * s2, char * msg) {
+void AssertAreEqual(const char* s1, const char* s2, const char* msg) {
 	if (strcmp(s1, s2))
 	{
 		PrintRed(msg);
@@ -47,7 +47,7 @@ void AssertAreEqual(char * s1, char * s2, char * msg) {
 	}
 }
 
-void AssertAreEqualInts(int expected, int actual, char * msg) {
+void AssertAreEqualInts(int expected, int actual, const char* msg) {
 	if (expected != actual)
 	{
 		printf("\n");
@@ -63,7 +63,7 @@ void AssertAreEqualInts(int expected, int actual, char * msg) {
 	}
 }
 
-void AssertAreEqualLongs(U64 expected, U64 actual, char* msg) {
+void AssertAreEqualLongs(U64 expected, U64 actual, const char* msg) {
 	if (expected != actual)
 	{
 		printf("\n");
@@ -90,10 +90,10 @@ void printPerftResults() {
 void HashKeyTest() {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 	U64 hash1 = g_mainGame.Hash;
- 	PlayerMove pl1 = MakePlayerMove("g1f3");
-	PlayerMove pl2 = MakePlayerMove("g8f6");
-	PlayerMove pl3 = MakePlayerMove("f3g1");
-	PlayerMove pl4 = MakePlayerMove("f6g8");
+	MakePlayerMove("g1f3");
+	MakePlayerMove("g8f6");
+	MakePlayerMove("f3g1");
+	MakePlayerMove("f6g8");
 	U64 hash2 = g_mainGame.Hash;
 
 	AssertAreEqualLongs(hash1, hash2, "Hash keys should be equal");
@@ -107,7 +107,6 @@ void HashTableRoundTrip() {
 	short expected = 3000;
 	Move move1 = ParseMove("b1c1", PlainMove);
 	AddHashScore(hash, expected, 1, EXACT, move1);
-	int depth = 0;
 	short score = 0;
 	Move move;
 	GetScoreFromHash(hash, 1, &score, &move, 3000 ,0);
@@ -580,7 +579,7 @@ void MaterialDrawBlack() {
 	AssertAreEqualInts(0, score, "Game should be drawn");
 }
 
-void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
+void AssertBestMove(int depth, const char* testName, const char* fen, const char* expected) {
 	printf("\n\n****   %s   ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
@@ -601,7 +600,7 @@ void AssertBestMove(int depth, char * testName, char * fen, char * expected) {
 	printf("\nFull count: %d", HashTableFullCount);*/
 }
 
-void AssertBestMoveTimed(int ms, char* testName, char* fen, char* expected) {
+void AssertBestMoveTimed(int ms, const char* testName, const char* fen, const char* expected) {
 	printf("\n\n****   %s  (timed) ****\n", testName);
 	ReadFen(fen);
 	ClearHashTable();
@@ -715,7 +714,7 @@ void MobilityRookTest() {
 	ReadFen(fen);
 	g_topSearchParams.MaxDepth = 1;
 	Search(true); // mobility is calculated in movegenearion and alphabeta ... incheck
-	short score = GetEval(&g_mainGame);
+	GetEval(&g_mainGame);
 	// no asserts, just entrypoint for debugging.
 }
 

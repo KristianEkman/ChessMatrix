@@ -11,7 +11,7 @@ bool Streq(char s1[], char s2[]);
 
 bool StartsWith(char a[], char b[]);
 
-void Stdout_wl(char* text);
+void Stdout_wl(const char* text);
 
 bool Contains(char a[], char b[]);
 
@@ -36,9 +36,9 @@ typedef enum {
 	white,
 } ConsoleColor;
 
-void PrintRed(char* msg);
+void PrintRed(const char* msg);
 
-void PrintGreen(char* msg);
-void PrintInverted(char* msg);
+void PrintGreen(const char* msg);
+void PrintInverted(const char* msg);
 
-void ColorPrint(char* text, ConsoleColor textColor, ConsoleColor background);
+void ColorPrint(const char* text, ConsoleColor textColor, ConsoleColor background);

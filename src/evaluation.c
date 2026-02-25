@@ -187,10 +187,10 @@ short CastlingPoints[2] = { -CASTLED, CASTLED };
 
 // Array of coordinates for squares infront of the king.
 // Depending on side and square of king.
-int InfrontOfKingSquares[2][64][4];
+int InfrontOfKingSquares[2][64][4] = { 0 };
 
 // Array of coordinates for squares that could have a protecting pawn
-char PawnProtectionSquares[2][64][3];
+char PawnProtectionSquares[2][64][3] = { 0 };
 
 short OpenRookFile(int square, Game* game) {
 	int file = square % 8;
@@ -254,7 +254,7 @@ void CalculateInfrontOfKing() {
 			InfrontOfKingSquares[side][square][1] = 0;
 			InfrontOfKingSquares[side][square][2] = 0;
 			InfrontOfKingSquares[side][square][3] = 0;
-			char count = 0;
+			int count = 0;
 			if (side == 1) { //BLACK
 				if (square < 56 || square == 59 || square == 60) //back rank not center
 					InfrontOfKingSquares[side][square][0] = 0;

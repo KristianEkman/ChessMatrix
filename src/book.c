@@ -6,11 +6,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define NO_BOOK_MOVE 255
+
+bool OwnBook = false;
+
 // see https://www.chessprogramming.org/ABK
 
-HashBookEntry* hashBook;
-int entryCount;
-char crap[25200];
+HashBookEntry* hashBook = NULL;
+int entryCount = 0;
+char crap[25200] = { 0 };
 void PlayBookPosition(Game* game, int bookIndex);
 
 void LoadBook(char* fileName) {
@@ -90,8 +94,8 @@ void CloseBook() {
 MoveCoordinates BestBookMove(Game* game)
 {
 	MoveCoordinates foundMove;
-	foundMove.From = -1;
-	foundMove.To = -1;
+	foundMove.From = NO_BOOK_MOVE;
+	foundMove.To = NO_BOOK_MOVE;
 	if (!OwnBook)
 		return foundMove;
 	double bestRatio = -100000;
@@ -140,8 +144,8 @@ MoveCoordinates BestBookMove(Game* game)
 	if (pm.Invalid) {
 		printf("Invalid move found in book\n");
 		MoveCoordinates noMove;
-		noMove.From = -1;
-		noMove.To = -1;
+		noMove.From = NO_BOOK_MOVE;
+		noMove.To = NO_BOOK_MOVE;
 		return noMove;
 	}
 	return foundMove;
@@ -151,8 +155,8 @@ MoveCoordinates BestBookMove(Game* game)
 MoveCoordinates RandomBookMove(Game* game)
 {
 	MoveCoordinates foundMoves[5];
-	foundMoves[0].From = -1;
-	foundMoves[0].To = -1;
+	foundMoves[0].From = NO_BOOK_MOVE;
+	foundMoves[0].To = NO_BOOK_MOVE;
 	if (!OwnBook)
 		return foundMoves[0];
 	int moveCount = 0;
@@ -182,8 +186,8 @@ MoveCoordinates RandomBookMove(Game* game)
 	if (pm.Invalid) {
 		printf("Invalid move found in book\n");
 		MoveCoordinates noMove;
-		noMove.From = -1;
-		noMove.To = -1;
+		noMove.From = NO_BOOK_MOVE;
+		noMove.To = NO_BOOK_MOVE;
 		return noMove;
 	}
 	return foundMoves[random];

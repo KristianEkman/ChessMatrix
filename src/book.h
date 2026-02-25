@@ -23,4 +23,4 @@ void LoadBook(char* fileName);
 void CloseBook();
 MoveCoordinates BestBookMove(Game* game);
 MoveCoordinates RandomBookMove(Game* game);
-bool OwnBook;
+extern bool OwnBook;

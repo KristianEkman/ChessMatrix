@@ -73,17 +73,17 @@ typedef enum {
 } MoveInfo;
 
 typedef struct {
-	char From;
-	char To;
+	uchar From;
+	uchar To;
 } MoveCoordinates;
 
 typedef struct {
-	char From; // Using char type instead of Square enum makes the struct half size. 8 vs 16 bytes, and test cases runs ~10% faster.
-	char To;
-	char MoveInfo;
+	uchar From; // Using uchar type instead of Square enum keeps the struct compact while avoiding signed char index warnings.
+	uchar To;
+	uchar MoveInfo;
 	short Score;
 	// Index of the piece moved in Pieces List.
-	char PieceIdx;
+	uchar PieceIdx;
 } Move;
 
 typedef enum {
@@ -104,7 +104,7 @@ typedef struct {
 } PerftResult;
 
 
-typedef struct {
+typedef struct Piece {
 	PieceType Type;
 	bool Off;
 	uchar Index;
@@ -119,7 +119,7 @@ typedef struct {
 
 
 typedef struct {
-	char CaptIndex;
+	int CaptIndex;
 	GameState PrevGameState;
 	U64 PrevHash;
 	uchar FiftyMoveRuleCount;
@@ -172,4 +172,4 @@ typedef struct {
 	Move BestMove;
 } TopSearchParams;
 
-Game g_mainGame;
+extern Game g_mainGame;

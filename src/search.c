@@ -10,11 +10,15 @@
 #include <stdio.h>
 #include <string.h>
 
+uint g_SearchedNodes = 0;
+bool g_Stopped = 0;
+TopSearchParams g_topSearchParams = { 0 };
+
 #define MAX_R 4
 #define MIN_R 3
 #define DR 4 // depth reduction value for normal search
 
-uchar lmr_matrix[MAX_DEPTH][100];
+uchar lmr_matrix[MAX_DEPTH][100] = { 0 };
 
 static long long NowMs() {
 	struct timespec ts;
@@ -234,8 +238,6 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game* gam
 
 	if (IsDraw(game))
 		return 0;
-
-	uchar side01 = game->Side01;
 
 	//Probe hash
 	short score = 0; Move pvMove;
@@ -493,7 +495,7 @@ void CopyMainGame(Game* copy) {
 
 void PrintBestLine(Move move, int depth, float ellapsed) {
 	char buffer[1800];
-	char* pv = &buffer;
+	char* pv = buffer;
 	char sMove[6];
 	MoveToString(move, sMove);
 	strcpy(pv, sMove);
@@ -502,7 +504,6 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 	pv++;
 	Game* game = &g_mainGame;
 	PlayerMove bestPlayerMove = MakePlayerMoveOnThread(game, sMove);
-	int index = 0;
 	PlayerMove moves[300];
 	int movesCount = 0;
 	while (movesCount < (depth + 5)) // hack: shows moves found when extending search (checks), but not going into cycles.
@@ -533,7 +534,7 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 	printf("info score ");
 	if (abs(score) > 7000) {
 		bool meMated = false;
-		if (score > 7000 && game->Side == WHITE || score < -7000 && game->Side == BLACK) {
+		if ((score > 7000 && game->Side == WHITE) || (score < -7000 && game->Side == BLACK)) {
 			meMated = true;
 		}
 		int mateIn = (8000 - abs(score)) / 2 + 1;
@@ -553,6 +554,7 @@ void PrintBestLine(Move move, int depth, float ellapsed) {
 
 // Background thread that sets Stopped flag after specified time in ms.
 PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void* args) {
+	(void)args;
 	int ms = g_topSearchParams.MoveTime;
 	long long start = NowMs();
 	long long now = start;
@@ -576,6 +578,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void* args) {
 
 
 PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void* v) {
+	(void)v;
 	Game game = g_mainGame;
 	Game* pGame = &game;
 	CopyMainGame(pGame);
@@ -656,7 +659,7 @@ MoveCoordinates Search(bool async) {
 	// book moves are just to add variation on tournament games.
 	if (g_mainGame.PositionHistoryLength < 6) {
 		MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
-		if (bookMove.From != -1) {
+		if (bookMove.From != 255) {
 			char sMove[6];
 			CoordinatesToString(bookMove, sMove);
 			printf("bestmove %s\n", sMove);

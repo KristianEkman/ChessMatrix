@@ -3,7 +3,7 @@
 #include <string.h>
 
 // previous from, previous to
-Move counterMoves[64][64];
+Move counterMoves[64][64] = { 0 };
 //const short CounterMoveBonus = 500;
 
 void AddCounterMove(Move move, Move previousMove) {

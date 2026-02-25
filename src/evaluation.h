@@ -15,13 +15,13 @@
 #define BISHOP_PAIR 30
 
 //[type][side][square]
-short PositionValueMatrix[7][2][64];
+extern short PositionValueMatrix[7][2][64];
 
 //[side][short/long]
-short CastlingPoints[2];
+extern short CastlingPoints[2];
 
 //[middle or end][side][square]
-short KingPositionValueMatrix[2][2][64];
+extern short KingPositionValueMatrix[2][2][64];
 
 short OpenRookFile(int square, Game* game);
 

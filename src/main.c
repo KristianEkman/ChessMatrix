@@ -19,6 +19,8 @@
 #include "book.h"
 #include "version.h"
 
+Game g_mainGame = { 0 };
+
 
 void ComputerMove() {
 	g_topSearchParams.MoveTime = 5000;
@@ -77,6 +79,8 @@ void InitPieceList() {
 }
 
 int main(int argc, char* argv[]) {
+	(void)argc;
+	(void)argv;
 	SwitchSignOfWhitePositionValue();
 	SetSearchDefaults();
 	ResetDepthTimes();
@@ -382,7 +386,7 @@ void StartPosition() {
 }
 
 char PieceChar(PieceType pieceType) {
-	PieceType color = pieceType & (BLACK | WHITE);
+	Side color = pieceType & (BLACK | WHITE);
 	PieceType pt = pieceType & 7;
 	switch (pt)
 	{
@@ -462,13 +466,13 @@ PieceType parsePieceType(char c) {
 	}
 }
 
-PieceType parseSide(char c) {
+Side parseSide(char c) {
 	switch (c)
 	{
 	case 'w': return WHITE;
 	case 'b': return BLACK;
 	default:
-		return NOPIECE;
+		return WHITE;
 	}
 }
 
@@ -483,7 +487,6 @@ void InitScores() {
 			Piece piece = g_mainGame.Pieces[s][p];
 			if (piece.Off)
 				continue;
-			int i = piece.SquareIndex;
 			PieceType pt = piece.Type & 7;
 			int colorSide = (piece.Type & (WHITE | BLACK)) >> 4;
 			g_mainGame.Material[colorSide] += MaterialMatrix[colorSide][pt];
@@ -517,7 +520,7 @@ void InitHash() {
 	g_mainGame.Hash ^= ZobritsEnpassantFile[g_mainGame.State & 15];
 }
 
-void ReadFen(char* fen) {
+void ReadFen(const char* fen) {
 	InitPieceList();
 
 	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1

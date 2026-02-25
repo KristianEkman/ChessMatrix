@@ -2,7 +2,7 @@
 #include "commons.h"
 
 void PrintGame(Game * game);
-void ReadFen(char * fen);
+void ReadFen(const char * fen);
 void WriteFen(char * fen);
 
 void SwitchSignOfWhitePositionValue();

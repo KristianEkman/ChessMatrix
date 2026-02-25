@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int DepthTimeHistory[1024][32];
-short DepthScoreHistory[1024][32];
-Move DepthBestMoveHistory[1024][32];
+int DepthTimeHistory[1024][32] = { 0 };
+short DepthScoreHistory[1024][32] = { 0 };
+Move DepthBestMoveHistory[1024][32] = { 0 };
 
 static int ClampInt(int value, int low, int high) {
 	if (value < low)

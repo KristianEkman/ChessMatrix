@@ -7,6 +7,12 @@
 #include "utils.h"
 #include "hashTable.h"
 
+U64 StartHash = 0;
+U64 ZobritsPieceTypesSquares[23][64] = { 0 };
+U64 ZobritsSides[2] = { 0 };
+U64 ZobritsCastlingRights[4] = { 0 };
+U64 ZobritsEnpassantFile[9] = { 0 };
+
 //		bits shift >>   mask
 //key2	28	 0	        0FFF FFFF
 //score	14	 28	        3FFF
@@ -16,9 +22,9 @@
 //to	6	 55	        3F
 //promo	3	 61	        7
 
-HashTable H_Table;
-int HashTableEntries;
-int HashTableOverWrites;
+HashTable H_Table = { 0 };
+int HashTableEntries = 0;
+int HashTableOverWrites = 0;
 
 void AddHashScore(U64 hash, short score, char depth, HashEntryType type, Move move) {
 	uint key2 = hash & 0x0FFFFFFF; // Keep 28 bits for verification key to make room for promotion info.

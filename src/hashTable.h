@@ -1,11 +1,11 @@
 #pragma once
 #define SLOTS 3
 
-U64 StartHash;
-U64 ZobritsPieceTypesSquares[23][64];
-U64 ZobritsSides[2];
-U64 ZobritsCastlingRights[4];
-U64 ZobritsEnpassantFile[9];
+extern U64 StartHash;
+extern U64 ZobritsPieceTypesSquares[23][64];
+extern U64 ZobritsSides[2];
+extern U64 ZobritsCastlingRights[4];
+extern U64 ZobritsEnpassantFile[9];
 
 typedef enum {
 	EXACT,

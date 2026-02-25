@@ -44,7 +44,7 @@ U64 Llrand() {
 
 	return r & 0xFFFFFFFFFFFFFFFFULL;
 }
-bool seeded;
+bool seeded = false;
 int RandomInt(int lower, int upper)
 {
 	if (!seeded)
@@ -77,12 +77,12 @@ int IndexOf(char* a, char* b) {
 }
 
 
-void Stdout_wl(char* text) {
+void Stdout_wl(const char* text) {
 	printf("%s\n", text);
 	fflush(stdout);
 }
 
-void printColor(char* msg, int color) {
+void printColor(const char* msg, int color) {
 #ifdef _WIN32
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
@@ -112,19 +112,19 @@ void printColor(char* msg, int color) {
 #endif
 }
 
-void PrintRed(char* msg) {
+void PrintRed(const char* msg) {
 	ColorPrint(msg, red, black);
 }
 
-void PrintGreen(char* msg) {
+void PrintGreen(const char* msg) {
 	ColorPrint(msg, green, black);
 }
 
-void PrintInverted(char* msg) {
+void PrintInverted(const char* msg) {
 	ColorPrint(msg, black, gray);
 }
 
-void ColorPrint(char* text, ConsoleColor textColor, ConsoleColor background) {
+void ColorPrint(const char* text, ConsoleColor textColor, ConsoleColor background) {
 	int color = background * 16 + textColor;
 	printColor(text, color);
 }
