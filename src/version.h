@@ -1,4 +1,5 @@
-char Version[] = "1.0.5";
-char GitBranch[] = "linked-piece-list";
-char GitCommit[] = "b572b8b";
-char BuildDate[] = "Sunday, August 16, 2020 10:42:21 AM";
+char Version[] = "1.1.0";
+char GitBranch[] = "master";
+char GitCommit[] = "1fd3651";
+char BuildDate[] = "Wednesday, February 25, 2026 9:16:33 PM";
+
