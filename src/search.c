@@ -197,7 +197,7 @@ short QuiteSearch(short best_black, short best_white, Game* game, uchar deep_in)
 			PickWhitesNextMove(i, localMoves, moveCount);
 			Move childMove = localMoves[i];
 			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[!game->Side];
+			int kingSquare = game->KingSquares[!game->Side01];
 			bool legal = !SquareAttacked(kingSquare, game->Side, game);
 			if (!legal)
 			{
