@@ -19,10 +19,10 @@
 #include "book.h"
 #include "version.h"
 
-Game g_mainGame = { 0 };
+Game g_mainGame = {0};
 
-
-void ComputerMove() {
+void ComputerMove()
+{
 	g_topSearchParams.MoveTime = 5000;
 	MoveCoordinates move = Search(false);
 	char sMove[6];
@@ -30,18 +30,21 @@ void ComputerMove() {
 	MakePlayerMove(sMove);
 }
 
-void ManualMove() {
+void ManualMove()
+{
 	printf("\nYour move (format e2e4 or e7e8q): ");
 	char sMove[8];
-	fgets(sMove, 8, stdin);
+	if (fgets(sMove, 8, stdin) == NULL)
+		return;
 	fseek(stdin, 0, SEEK_END);
 	PlayerMove pm = MakePlayerMove(sMove);
 	if (pm.Invalid)
 		Stdout_wl("Invalid move");
 }
 
-void InitPieceList() {
-	char side[2] = { WHITE, BLACK };
+void InitPieceList()
+{
+	char side[2] = {WHITE, BLACK};
 	for (int s = 0; s < 2; s++)
 	{
 		g_mainGame.Pieces[s][0].Type = KING | side[s];
@@ -78,7 +81,8 @@ void InitPieceList() {
 	}
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
 	(void)argc;
 	(void)argv;
 	SwitchSignOfWhitePositionValue();
@@ -92,8 +96,8 @@ int main(int argc, char* argv[]) {
 	StartPosition();
 	OwnBook = false;
 #ifndef _DEBUG // loadbook is to slow in debug mode.
-	//LoadBook("openings.abk");
-#endif // DEBUG
+			   // LoadBook("openings.abk");
+#endif		   // DEBUG
 
 	printf("info Built date %s\n", BuildDate);
 	printf("info Branch %s\n", GitBranch);
@@ -103,39 +107,49 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void EnterUciMode() {
+void EnterUciMode()
+{
 #define UCI_BUF_SIZE 5000
 	char buf[UCI_BUF_SIZE];
-	fgets(buf, 5000, stdin);
+	if (fgets(buf, UCI_BUF_SIZE, stdin) == NULL)
+		return;
 	while (!Streq(buf, "quit\n"))
 	{
-		if (Streq(buf, "ucinewgame\n")) {
+		if (Streq(buf, "ucinewgame\n"))
+		{
 			ClearHashTable();
 			ResetDepthTimes();
 			Stdout_wl("new game");
 		}
-		else if (Streq(buf, "uci\n")) {
+		else if (Streq(buf, "uci\n"))
+		{
 			printf("id name ChessMatrix %s\n", Version);
 			Stdout_wl("id author Kristian Ekman");
 			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			Stdout_wl("option name OwnBook type check default false");
 			Stdout_wl("uciok");
 		}
-		else if (Streq(buf, "isready\n")) {
+		else if (Streq(buf, "isready\n"))
+		{
 			Stdout_wl("readyok");
 		}
-		else if (StartsWith(buf, "setoption name Hash value")) {
-			//setoption name Hash value 32
-			char* token = strtok(buf, " ");
-			while (token != NULL) {
-				if (Streq(token, "value")) {
+		else if (StartsWith(buf, "setoption name Hash value"))
+		{
+			// setoption name Hash value 32
+			char *token = strtok(buf, " ");
+			while (token != NULL)
+			{
+				if (Streq(token, "value"))
+				{
 					token = strtok(NULL, " ");
 					int mb = atoi(token);
-					if (mb >= 1 && mb <= 2048) { // actual limit is 32760mb
+					if (mb >= 1 && mb <= 2048)
+					{ // actual limit is 32760mb
 						AllocateHashTable(mb);
 						Stdout_wl("new hash size set");
 					}
-					else {
+					else
+					{
 						Stdout_wl("invalid Hash size value (1 - 2048)");
 					}
 					break;
@@ -143,53 +157,62 @@ void EnterUciMode() {
 				token = strtok(NULL, " ");
 			}
 		}
-		else if (StartsWith(buf, "setoption name OwnBook value")) {
-			//setoption name OwnBook value false
-			char* token = strtok(buf, " ");
-			while (token != NULL) {
-				if (Streq(token, "value")) {
+		else if (StartsWith(buf, "setoption name OwnBook value"))
+		{
+			// setoption name OwnBook value false
+			char *token = strtok(buf, " ");
+			while (token != NULL)
+			{
+				if (Streq(token, "value"))
+				{
 					token = strtok(NULL, " ");
-					if (Streq("true\n", token)) {
+					if (Streq("true\n", token))
+					{
 						OwnBook = true;
 						Stdout_wl("Opening book switched on");
 					}
-					else if (Streq("false\n", token)) {
+					else if (Streq("false\n", token))
+					{
 						OwnBook = false;
 						Stdout_wl("Opening book switched off");
-					}					
+					}
 					break;
 				}
 				token = strtok(NULL, " ");
 			}
 		}
-		else if (StartsWith(buf, "position ")) {
-			//postion fen | moves
+		else if (StartsWith(buf, "position "))
+		{
+			// postion fen | moves
 			int movesPos = IndexOf(buf, " moves");
 			if (Contains(buf, " fen "))
 			{
-				char* pFen = strstr(buf, " fen ");
+				char *pFen = strstr(buf, " fen ");
 				int fenPos = pFen - buf + 5;
 
-				if (movesPos == -1) { // note sure if "moves" string is mandatory
+				if (movesPos == -1)
+				{ // note sure if "moves" string is mandatory
 					movesPos = (int)strlen(buf) - 1;
 				}
 
-				int fenLength = movesPos - fenPos; //position fen xxx...yyy moves
+				int fenLength = movesPos - fenPos; // position fen xxx...yyy moves
 				char fen[256];
 				memcpy(fen, pFen + 5, fenLength);
 				fen[fenLength + 1] = '\0';
 				ReadFen(fen);
 			}
 
-			if (Contains(buf, "startpos")) {
+			if (Contains(buf, "startpos"))
+			{
 				StartPosition();
 			}
 
 			if (Contains(buf, " moves "))
 			{
-				char* pMoves = strstr(buf, " moves ");
-				char* token = strtok(pMoves, " ");
-				while (token != NULL) {
+				char *pMoves = strstr(buf, " moves ");
+				char *token = strtok(pMoves, " ");
+				while (token != NULL)
+				{
 					MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
@@ -197,49 +220,60 @@ void EnterUciMode() {
 				AssertGame(&g_mainGame);
 			}
 		}
-		else if (StartsWith(buf, "go ")) {
+		else if (StartsWith(buf, "go "))
+		{
 			SetSearchDefaults();
-			if (Contains(buf, "infinite")) {
+			if (Contains(buf, "infinite"))
+			{
 				g_topSearchParams.MaxDepth = MAX_DEPTH;
 				g_topSearchParams.TimeControl = false;
 				Search(true);
 			}
-			else {
-				char* token = strtok(buf, " ");
-				while (token != NULL) {
-					if (Streq(token, "depth")) {
-						char* depth = strtok(NULL, " ");
+			else
+			{
+				char *token = strtok(buf, " ");
+				while (token != NULL)
+				{
+					if (Streq(token, "depth"))
+					{
+						char *depth = strtok(NULL, " ");
 						uint dep;
 						if (sscanf(depth, "%d", &dep) == 1)
 							g_topSearchParams.MaxDepth = dep;
 					}
-					else if (Streq(token, "movetime")) {
-						char* movetime = strtok(NULL, " ");
+					else if (Streq(token, "movetime"))
+					{
+						char *movetime = strtok(NULL, " ");
 						int time = 0;
 						if (sscanf(movetime, "%d", &time) == 1)
 							g_topSearchParams.MoveTime = time;
 					}
-					else if (Streq(token, "wtime")) {
+					else if (Streq(token, "wtime"))
+					{
 						g_topSearchParams.TimeControl = true;
-						char* wtime = strtok(NULL, " ");
+						char *wtime = strtok(NULL, " ");
 						sscanf(wtime, "%d", &g_topSearchParams.WhiteTimeLeft);
-						//go wtime 900000 btime 900000 winc 0 binc 0
+						// go wtime 900000 btime 900000 winc 0 binc 0
 					}
-					else if (Streq(token, "btime")) {
+					else if (Streq(token, "btime"))
+					{
 						g_topSearchParams.TimeControl = true;
-						char* btime = strtok(NULL, " ");
+						char *btime = strtok(NULL, " ");
 						sscanf(btime, "%d", &g_topSearchParams.BlackTimeLeft);
 					}
-					else if (Streq(token, "winc")) {
-						char* winc = strtok(NULL, " ");
+					else if (Streq(token, "winc"))
+					{
+						char *winc = strtok(NULL, " ");
 						sscanf(winc, "%d", &g_topSearchParams.WhiteIncrement);
 					}
-					else if (Streq(token, "binc")) {
-						char* binc = strtok(NULL, " ");
+					else if (Streq(token, "binc"))
+					{
+						char *binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.BlackIncrement);
 					}
-					else if (Streq(token, "movestogo")) {
-						char* binc = strtok(NULL, " ");
+					else if (Streq(token, "movestogo"))
+					{
+						char *binc = strtok(NULL, " ");
 						sscanf(binc, "%d", &g_topSearchParams.MovesTogo);
 					}
 					token = strtok(NULL, " ");
@@ -251,24 +285,29 @@ void EnterUciMode() {
 				Search(true);
 			}
 		}
-		else if (Streq(buf, "stop\n")) {
+		else if (Streq(buf, "stop\n"))
+		{
 			g_Stopped = true;
 		}
-		else if (Streq(buf, "i\n")) {
+		else if (Streq(buf, "i\n"))
+		{
 			EnterInteractiveMode();
 			Stdout_wl("In uci mode");
 		}
-		else if (Streq(buf, "\n")) {
-			
+		else if (Streq(buf, "\n"))
+		{
 		}
-		else {
+		else
+		{
 			Stdout_wl("unknown command");
 		}
-		fgets(buf, UCI_BUF_SIZE, stdin);
+		if (fgets(buf, UCI_BUF_SIZE, stdin) == NULL)
+			break;
 	}
 }
 
-void PrintOptions() {
+void PrintOptions()
+{
 	printf("\nm: make move\n");
 	printf("c: computer move\n");
 	printf("t: run tests\n");
@@ -278,7 +317,8 @@ void PrintOptions() {
 	printf("q: quit\n");
 }
 
-int EnterInteractiveMode() {
+int EnterInteractiveMode()
+{
 	char buffer[20];
 	char in = ' ';
 	PrintGame(&g_mainGame);
@@ -286,9 +326,10 @@ int EnterInteractiveMode() {
 
 	while (in != 'q')
 	{
-		//system("@cls||clear");
+		// system("@cls||clear");
 		printf("h for help> ");
-		fgets(buffer, 20, stdin);
+		if (fgets(buffer, 20, stdin) == NULL)
+			break;
 		if (buffer[1] == '\n')
 			in = buffer[0];
 		fseek(stdin, 0, SEEK_END);
@@ -325,10 +366,13 @@ int EnterInteractiveMode() {
 	return 0;
 }
 
-void PutFreePieceAt(int square, PieceType pieceType, int side01) {
-	for (int p = 0; p < 16; p++) {
-		Piece* piece = &(g_mainGame.Pieces[side01][p]);
-		if (piece->Off && piece->Type == pieceType) {
+void PutFreePieceAt(int square, PieceType pieceType, int side01)
+{
+	for (int p = 0; p < 16; p++)
+	{
+		Piece *piece = &(g_mainGame.Pieces[side01][p]);
+		if (piece->Off && piece->Type == pieceType)
+		{
 			piece->SquareIndex = square;
 			piece->Off = false;
 			return;
@@ -336,12 +380,14 @@ void PutFreePieceAt(int square, PieceType pieceType, int side01) {
 	}
 }
 
-void InitPiece(int file, int rank, PieceType type, Side color) {
+void InitPiece(int file, int rank, PieceType type, Side color)
+{
 	g_mainGame.Squares[rank * 8 + file] = type | color;
 	PutFreePieceAt(rank * 8 + file, type | color, color >> 4);
 }
 
-void StartPosition() {
+void StartPosition()
+{
 	InitPieceList();
 
 	for (int i = 0; i < 64; i++)
@@ -385,7 +431,8 @@ void StartPosition() {
 	g_mainGame.FiftyMoveRuleCount = 0;
 }
 
-char PieceChar(PieceType pieceType) {
+char PieceChar(PieceType pieceType)
+{
 	Side color = pieceType & (BLACK | WHITE);
 	PieceType pt = pieceType & 7;
 	switch (pt)
@@ -407,13 +454,14 @@ char PieceChar(PieceType pieceType) {
 	}
 }
 
-void PrintGame(Game* game) {
+void PrintGame(Game *game)
+{
 	char top[] = "+---+---+---+---+---+---+---+---+";
 	char rowLine[] = "+---+---+---+---+---+---+---+---+";
 	char lastLine[] = "+---+---+---+---+---+---+---+---+";
 	char vBorder = '|';
 
-	printf("   %s\n", top);	
+	printf("   %s\n", top);
 
 	for (int r = 8 - 1; r >= 0; r--)
 	{
@@ -424,7 +472,7 @@ void PrintGame(Game* game) {
 			printf(" ");
 			PieceType piece = game->Squares[r * 8 + f];
 			Side side = piece & 24;
-			char c[] = { PieceChar(piece), 0 };
+			char c[] = {PieceChar(piece), 0};
 			if (side == BLACK)
 				ColorPrint(c, lightblue, black);
 			else
@@ -446,37 +494,54 @@ void PrintGame(Game* game) {
 	printf("FEN: %s\n", fen);
 }
 
-PieceType parsePieceType(char c) {
+PieceType parsePieceType(char c)
+{
 	switch (c)
 	{
-	case 'p': return PAWN   | BLACK;
-	case 'r': return ROOK   | BLACK;
-	case 'b': return BISHOP | BLACK;
-	case 'n': return KNIGHT | BLACK;
-	case 'q': return QUEEN  | BLACK;
-	case 'k': return KING   | BLACK;
-	case 'P': return PAWN   | WHITE;
-	case 'R': return ROOK   | WHITE;
-	case 'B': return BISHOP | WHITE;
-	case 'N': return KNIGHT | WHITE;
-	case 'Q': return QUEEN  | WHITE;
-	case 'K': return KING   | WHITE;
+	case 'p':
+		return PAWN | BLACK;
+	case 'r':
+		return ROOK | BLACK;
+	case 'b':
+		return BISHOP | BLACK;
+	case 'n':
+		return KNIGHT | BLACK;
+	case 'q':
+		return QUEEN | BLACK;
+	case 'k':
+		return KING | BLACK;
+	case 'P':
+		return PAWN | WHITE;
+	case 'R':
+		return ROOK | WHITE;
+	case 'B':
+		return BISHOP | WHITE;
+	case 'N':
+		return KNIGHT | WHITE;
+	case 'Q':
+		return QUEEN | WHITE;
+	case 'K':
+		return KING | WHITE;
 	default:
 		return NOPIECE;
 	}
 }
 
-Side parseSide(char c) {
+Side parseSide(char c)
+{
 	switch (c)
 	{
-	case 'w': return WHITE;
-	case 'b': return BLACK;
+	case 'w':
+		return WHITE;
+	case 'b':
+		return BLACK;
 	default:
 		return WHITE;
 	}
 }
 
-void InitScores() {
+void InitScores()
+{
 	g_mainGame.Material[0] = 0;
 	g_mainGame.Material[1] = 0;
 
@@ -494,7 +559,8 @@ void InitScores() {
 	}
 }
 
-void InitHash() {
+void InitHash()
+{
 	g_mainGame.Hash = StartHash;
 	for (int s = 0; s < 2; s++)
 	{
@@ -520,10 +586,11 @@ void InitHash() {
 	g_mainGame.Hash ^= ZobritsEnpassantFile[g_mainGame.State & 15];
 }
 
-void ReadFen(const char* fen) {
+void ReadFen(const char *fen)
+{
 	InitPieceList();
 
-	//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+	// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (int i = 0; i < 64; i++)
 		g_mainGame.Squares[i] = NOPIECE;
 	int index = 0;
@@ -533,15 +600,18 @@ void ReadFen(const char* fen) {
 	{
 		char c = fen[index];
 		index++;
-		if (isdigit(c)) {
+		if (isdigit(c))
+		{
 			int dig = ParseChar(c);
 			file += dig;
 		}
-		else if (c == '/') {
+		else if (c == '/')
+		{
 			rank--;
 			file = 0;
 		}
-		else {
+		else
+		{
 			PieceType pt = parsePieceType(c);
 			InitPiece(file, rank, pt & 7, pt & 24);
 			file++;
@@ -558,13 +628,17 @@ void ReadFen(const char* fen) {
 	{
 		switch (fen[index])
 		{
-		case 'K': g_mainGame.State |= WhiteCanCastleShort;
+		case 'K':
+			g_mainGame.State |= WhiteCanCastleShort;
 			break;
-		case 'Q': g_mainGame.State |= WhiteCanCastleLong;
+		case 'Q':
+			g_mainGame.State |= WhiteCanCastleLong;
 			break;
-		case 'k': g_mainGame.State |= BlackCanCastleShort;
+		case 'k':
+			g_mainGame.State |= BlackCanCastleShort;
 			break;
-		case 'q': g_mainGame.State |= BlackCanCastleLong;
+		case 'q':
+			g_mainGame.State |= BlackCanCastleLong;
 			break;
 		default:
 			break;
@@ -583,12 +657,12 @@ void ReadFen(const char* fen) {
 	char fenCopy[100];
 	memcpy(fenCopy, fen, len + 1);
 	int tokNo = 0;
-	char* token = NULL;
+	char *token = NULL;
 #ifdef _WIN32
-	char* context;
+	char *context;
 	token = strtok_s(fenCopy, " ", &context);
 #else
-	char* context = NULL;
+	char *context = NULL;
 	token = strtok_r(fenCopy, " ", &context);
 #endif
 	while (token != NULL)
@@ -605,7 +679,8 @@ void ReadFen(const char* fen) {
 
 	for (int i = 0; i < 64; i++)
 	{
-		if ((g_mainGame.Squares[i] & 7) == KING) {
+		if ((g_mainGame.Squares[i] & 7) == KING)
+		{
 			int color = (g_mainGame.Squares[i] >> 4);
 			g_mainGame.KingSquares[color] = i;
 		}
@@ -615,7 +690,8 @@ void ReadFen(const char* fen) {
 	InitHash();
 }
 
-void WriteFen(char* fenBuffer) {
+void WriteFen(char *fenBuffer)
+{
 	int index = 0;
 	for (int rank = 8 - 1; rank >= 0; rank--)
 	{
@@ -628,11 +704,13 @@ void WriteFen(char* fenBuffer) {
 				file++;
 			}
 
-			if (emptyCount > 0) {
+			if (emptyCount > 0)
+			{
 				fenBuffer[index++] = '0' + emptyCount;
 				file--;
 			}
-			else {
+			else
+			{
 				fenBuffer[index++] = PieceChar(g_mainGame.Squares[rank * 8 + file]);
 			}
 		}
@@ -642,10 +720,14 @@ void WriteFen(char* fenBuffer) {
 	fenBuffer[index++] = ' ';
 	fenBuffer[index++] = g_mainGame.Side == WHITE ? 'w' : 'b';
 	fenBuffer[index++] = ' ';
-	if (g_mainGame.State & WhiteCanCastleShort) fenBuffer[index++] = 'K';
-	if (g_mainGame.State & WhiteCanCastleLong) fenBuffer[index++] = 'Q';
-	if (g_mainGame.State & BlackCanCastleShort) fenBuffer[index++] = 'k';
-	if (g_mainGame.State & BlackCanCastleLong) fenBuffer[index++] = 'q';
+	if (g_mainGame.State & WhiteCanCastleShort)
+		fenBuffer[index++] = 'K';
+	if (g_mainGame.State & WhiteCanCastleLong)
+		fenBuffer[index++] = 'Q';
+	if (g_mainGame.State & BlackCanCastleShort)
+		fenBuffer[index++] = 'k';
+	if (g_mainGame.State & BlackCanCastleLong)
+		fenBuffer[index++] = 'q';
 	fenBuffer[index++] = ' ';
 
 	char noFile = 'a' - 1;
@@ -662,7 +744,8 @@ void WriteFen(char* fenBuffer) {
 	fenBuffer[index] = '\0';
 }
 
-void AdjustPositionImportance() {
+void AdjustPositionImportance()
+{
 	for (int i = 1; i < 7; i++)
 	{
 		for (int s = 0; s < 64; s++)
@@ -682,7 +765,8 @@ void AdjustPositionImportance() {
 	}
 }
 
-void SwitchSignOfWhitePositionValue() {
+void SwitchSignOfWhitePositionValue()
+{
 	for (int i = 1; i < 7; i++)
 	{
 		for (int s = 0; s < 64; s++)
@@ -697,4 +781,3 @@ void SwitchSignOfWhitePositionValue() {
 		KingPositionValueMatrix[1][0][i] = -KingPositionValueMatrix[1][0][i];
 	}
 }
-
