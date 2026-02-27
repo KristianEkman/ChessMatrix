@@ -6,6 +6,8 @@
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
 #define MAX_DEPTH 31 // hash only uses 5 bits for depth
+#define MAX_MOVES 256
+#define MAX_POSITION_HISTORY 4096
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -123,6 +125,7 @@ typedef struct {
 	GameState PrevGameState;
 	U64 PrevHash;
 	uchar FiftyMoveRuleCount;
+	bool PositionHistoryPushed;
 } Undos;
 
 typedef struct {
@@ -136,13 +139,13 @@ typedef struct {
 	Side Side;
 	int Side01;
 	int MovesBufferLength;
-	Move MovesBuffer[100];
+	Move MovesBuffer[MAX_MOVES];
 	int KingSquares[2];
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
 	U64 Hash;
-	U64 PositionHistory[1800];
+	U64 PositionHistory[MAX_POSITION_HISTORY];
 	int PositionHistoryLength;
 	Piece Pieces[2][16];
 	//MoveCoordinates KillerMoves[500][2];
@@ -156,7 +159,7 @@ typedef struct {
 } ThreadParams;
 
 typedef struct {
-	Move Moves[100];
+	Move Moves[MAX_MOVES];
 	int Length;
 } GlobalRootMoves;
 

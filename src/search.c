@@ -19,6 +19,44 @@ static bool g_hasTimeLimitThread = false;
 static PlatformThread g_searchThread;
 static bool g_hasSearchThread = false;
 
+static Move InvalidMove()
+{
+	Move move;
+	move.From = 255;
+	move.To = 255;
+	move.MoveInfo = NotAMove;
+	move.PieceIdx = 255;
+	move.Score = 0;
+	return move;
+}
+
+static bool IsMoveValid(Move move)
+{
+	return move.From < 64 && move.To < 64 && move.MoveInfo != NotAMove;
+}
+
+static void JoinActiveSearchThreads()
+{
+	if (g_hasSearchThread)
+	{
+		g_Stopped = true;
+		PlatformJoinThread(g_searchThread);
+		g_hasSearchThread = false;
+	}
+	if (g_hasTimeLimitThread)
+	{
+		g_Stopped = true;
+		PlatformJoinThread(g_timeLimitThread);
+		g_hasTimeLimitThread = false;
+	}
+}
+
+void StopSearch()
+{
+	g_Stopped = true;
+	JoinActiveSearchThreads();
+}
+
 #define MAX_R 4
 #define MIN_R 3
 #define DR 4 // depth reduction value for normal search
@@ -67,6 +105,7 @@ void SetSearchDefaults()
 	g_topSearchParams.WhiteIncrement = 0;
 	g_topSearchParams.BlackIncrement = 0;
 	g_topSearchParams.MovesTogo = 0;
+	g_topSearchParams.BestMove = InvalidMove();
 }
 
 void MoveToTop(Move move, Move *list, int length, Side side)
@@ -149,10 +188,14 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 	}
 }
 
-short QuiteSearch(short best_black, short best_white, Game *game, uchar deep_in)
+#define MAX_QSEARCH_DEPTH 64
+
+short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 {
 
 	g_SearchedNodes++;
+	if (deep_in >= MAX_QSEARCH_DEPTH)
+		return GetEval(game);
 
 	if (IsDraw(game))
 		return 0;
@@ -252,7 +295,7 @@ bool IsReductionOk(Move move, Undos undos)
 		   move.MoveInfo != SoonPromoting;
 }
 
-short RecursiveSearch(short best_black, short best_white, uchar depth, Game *game, bool doNull, Move prevMove, uchar deep_in, bool incheck)
+short RecursiveSearch(short best_black, short best_white, uchar depth, Game *game, bool doNull, Move prevMove, int deep_in, bool incheck)
 {
 	if (g_Stopped)
 		return 0; // should not be used;
@@ -283,11 +326,11 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 		GameState prevState = game->State;
 		uchar r = depth > 6 ? MAX_R : MIN_R;
 		U64 prevHash = game->Hash;
-		DoNullMove(game);
+		bool nullMovePushedHistory = DoNullMove(game);
 		if (game->Side == BLACK)
 		{
 			short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
-			UndoNullMove(prevState, game, prevHash);
+			UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
 			if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000)
 			{ // todo, review if this is correct.
 				depth -= DR;
@@ -300,7 +343,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 		else //(game->Side == WHITE)
 		{
 			short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
-			UndoNullMove(prevState, game, prevHash);
+			UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
 			if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000)
 			{
 				depth -= DR;
@@ -651,15 +694,9 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 	Game *pGame = &game;
 	CopyMainGame(pGame);
 	long long start = NowMs();
-	Move bestMove;
-	bestMove.From = 0;
-	bestMove.To = 0;
-	bestMove.MoveInfo = NotAMove;
+	Move bestMove = InvalidMove();
 
-	Move noMove;
-	noMove.From = 0;
-	noMove.To = 0;
-	noMove.MoveInfo = NotAMove;
+	Move noMove = InvalidMove();
 
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
@@ -698,10 +735,26 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 		}
 	}
 
-	char sMove[6];
-	MoveToString(bestMove, sMove);
-	printf("bestmove %s\n", sMove);
+	if (!IsMoveValid(bestMove))
+	{
+		Move fallbackMoves[MAX_MOVES];
+		int fallbackCount = ValidMovesOnThread(pGame, fallbackMoves);
+		if (fallbackCount > 0)
+			bestMove = fallbackMoves[0];
+	}
+
+	if (IsMoveValid(bestMove))
+	{
+		char sMove[6];
+		MoveToString(bestMove, sMove);
+		printf("bestmove %s\n", sMove);
+	}
+	else
+	{
+		printf("bestmove 0000\n");
+	}
 	fflush(stdout);
+	g_topSearchParams.BestMove = bestMove;
 	g_Stopped = true;
 	return PLATFORM_THREAD_RETURN_VALUE;
 }
@@ -711,9 +764,11 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 // When async is set the result is printed to stdout. Not returned.
 MoveCoordinates Search(bool async)
 {
+	JoinActiveSearchThreads();
+	g_topSearchParams.BestMove = InvalidMove();
 
 	// Sometimes there is only one valid move. Why spend time searching?
-	Move moves[100];
+	Move moves[MAX_MOVES];
 	int count = ValidMoves(moves);
 	if (count == 1)
 	{
@@ -744,20 +799,6 @@ MoveCoordinates Search(bool async)
 
 	// ClearCounterMoves();
 
-	// Ensure any previous timer/search threads are fully stopped before reuse.
-	if (g_hasSearchThread)
-	{
-		g_Stopped = true;
-		PlatformJoinThread(g_searchThread);
-		g_hasSearchThread = false;
-	}
-	if (g_hasTimeLimitThread)
-	{
-		g_Stopped = true;
-		PlatformJoinThread(g_timeLimitThread);
-		g_hasTimeLimitThread = false;
-	}
-
 	g_Stopped = false;
 	g_SearchedNodes = 0;
 
@@ -786,9 +827,25 @@ MoveCoordinates Search(bool async)
 			PlatformJoinThread(g_timeLimitThread);
 			g_hasTimeLimitThread = false;
 		}
+		if (!IsMoveValid(g_topSearchParams.BestMove))
+		{
+			Move fallbackMoves[MAX_MOVES];
+			int fallbackCount = ValidMoves(fallbackMoves);
+			if (fallbackCount > 0)
+				g_topSearchParams.BestMove = fallbackMoves[0];
+		}
+
 		MoveCoordinates coords;
-		coords.From = g_topSearchParams.BestMove.From;
-		coords.To = g_topSearchParams.BestMove.To;
+		if (IsMoveValid(g_topSearchParams.BestMove))
+		{
+			coords.From = g_topSearchParams.BestMove.From;
+			coords.To = g_topSearchParams.BestMove.To;
+		}
+		else
+		{
+			coords.From = 255;
+			coords.To = 255;
+		}
 		return coords;
 	}
 

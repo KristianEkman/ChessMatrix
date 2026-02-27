@@ -4,6 +4,13 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#include <execinfo.h>
+#endif
 
 #include "commons.h"
 #include "patterns.h"
@@ -20,6 +27,97 @@
 #include "version.h"
 
 Game g_mainGame = {0};
+static volatile sig_atomic_t g_QuitRequested = 0;
+
+static void EmitUciError(const char *message)
+{
+	printf("info string error %s\n", message);
+	fflush(stdout);
+}
+
+static void WriteUnhandledErrorLine(const char *line, unsigned int len)
+{
+#ifdef _WIN32
+	_write(1, line, len);
+	_write(2, line, len);
+#else
+	write(STDOUT_FILENO, line, len);
+	write(STDERR_FILENO, line, len);
+#endif
+}
+
+#ifndef _WIN32
+static void WriteSignalStackTrace()
+{
+	void *frames[64];
+	int frameCount = backtrace(frames, 64);
+	if (frameCount > 0)
+	{
+		WriteUnhandledErrorLine("info string error stacktrace begin\n", (unsigned int)(sizeof("info string error stacktrace begin\n") - 1));
+		backtrace_symbols_fd(frames, frameCount, STDOUT_FILENO);
+		backtrace_symbols_fd(frames, frameCount, STDERR_FILENO);
+		WriteUnhandledErrorLine("info string error stacktrace end\n", (unsigned int)(sizeof("info string error stacktrace end\n") - 1));
+	}
+}
+#endif
+
+static void HandleUnhandledErrorSignal(int signalNumber)
+{
+	switch (signalNumber)
+	{
+	case SIGABRT:
+		WriteUnhandledErrorLine("info string error unhandled signal SIGABRT\n", (unsigned int)(sizeof("info string error unhandled signal SIGABRT\n") - 1));
+		break;
+	case SIGFPE:
+		WriteUnhandledErrorLine("info string error unhandled signal SIGFPE\n", (unsigned int)(sizeof("info string error unhandled signal SIGFPE\n") - 1));
+		break;
+	case SIGILL:
+		WriteUnhandledErrorLine("info string error unhandled signal SIGILL\n", (unsigned int)(sizeof("info string error unhandled signal SIGILL\n") - 1));
+		break;
+	case SIGSEGV:
+		WriteUnhandledErrorLine("info string error unhandled signal SIGSEGV\n", (unsigned int)(sizeof("info string error unhandled signal SIGSEGV\n") - 1));
+		break;
+#ifdef SIGBUS
+	case SIGBUS:
+		WriteUnhandledErrorLine("info string error unhandled signal SIGBUS\n", (unsigned int)(sizeof("info string error unhandled signal SIGBUS\n") - 1));
+		break;
+#endif
+	default:
+		WriteUnhandledErrorLine("info string error unhandled signal UNKNOWN\n", (unsigned int)(sizeof("info string error unhandled signal UNKNOWN\n") - 1));
+		break;
+	}
+#ifndef _WIN32
+	WriteSignalStackTrace();
+#endif
+	_Exit(EXIT_FAILURE);
+}
+
+static void OnProcessExit()
+{
+	if (!g_QuitRequested)
+		EmitUciError("process exited without quit command");
+}
+
+static void InstallUnhandledErrorHandlers()
+{
+	atexit(OnProcessExit);
+	signal(SIGABRT, HandleUnhandledErrorSignal);
+	signal(SIGFPE, HandleUnhandledErrorSignal);
+	signal(SIGILL, HandleUnhandledErrorSignal);
+	signal(SIGSEGV, HandleUnhandledErrorSignal);
+#ifdef SIGTERM
+	signal(SIGTERM, HandleUnhandledErrorSignal);
+#endif
+#ifdef SIGINT
+	signal(SIGINT, HandleUnhandledErrorSignal);
+#endif
+#ifdef SIGPIPE
+	signal(SIGPIPE, HandleUnhandledErrorSignal);
+#endif
+#ifdef SIGBUS
+	signal(SIGBUS, HandleUnhandledErrorSignal);
+#endif
+}
 
 void ComputerMove()
 {
@@ -85,6 +183,11 @@ int main(int argc, char *argv[])
 {
 	(void)argc;
 	(void)argv;
+	const char *disableSignalHandlers = getenv("CM_DISABLE_SIGNAL_HANDLERS");
+	if (disableSignalHandlers == NULL || disableSignalHandlers[0] == '\0' || disableSignalHandlers[0] == '0')
+	{
+		InstallUnhandledErrorHandlers();
+	}
 	SwitchSignOfWhitePositionValue();
 	SetSearchDefaults();
 	ResetDepthTimes();
@@ -112,11 +215,15 @@ void EnterUciMode()
 #define UCI_BUF_SIZE 5000
 	char buf[UCI_BUF_SIZE];
 	if (fgets(buf, UCI_BUF_SIZE, stdin) == NULL)
+	{
+		EmitUciError("stdin closed before first command");
 		return;
+	}
 	while (!Streq(buf, "quit\n"))
 	{
 		if (Streq(buf, "ucinewgame\n"))
 		{
+			StopSearch();
 			ClearHashTable();
 			ResetDepthTimes();
 			Stdout_wl("new game");
@@ -183,6 +290,7 @@ void EnterUciMode()
 		}
 		else if (StartsWith(buf, "position "))
 		{
+			StopSearch();
 			// postion fen | moves
 			int movesPos = IndexOf(buf, " moves");
 			if (Contains(buf, " fen "))
@@ -213,7 +321,8 @@ void EnterUciMode()
 				char *token = strtok(pMoves, " ");
 				while (token != NULL)
 				{
-					MakePlayerMove(token);
+					if (!Streq(token, "moves") && strlen(token) >= 4)
+						MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
 				Stdout_wl("string position parsed");
@@ -287,7 +396,7 @@ void EnterUciMode()
 		}
 		else if (Streq(buf, "stop\n"))
 		{
-			g_Stopped = true;
+			StopSearch();
 		}
 		else if (Streq(buf, "i\n"))
 		{
@@ -302,8 +411,13 @@ void EnterUciMode()
 			Stdout_wl("unknown command");
 		}
 		if (fgets(buf, UCI_BUF_SIZE, stdin) == NULL)
+		{
+			EmitUciError("stdin closed while waiting for command");
 			break;
+		}
 	}
+	if (Streq(buf, "quit\n"))
+		g_QuitRequested = 1;
 }
 
 void PrintOptions()

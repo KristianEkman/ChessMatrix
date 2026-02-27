@@ -106,6 +106,7 @@ Undos DoMove(Move move, Game *game)
 	undos.PrevGameState = game->State;
 	undos.PrevHash = game->Hash;
 	undos.CaptIndex = -1;
+	undos.PositionHistoryPushed = false;
 
 	int f = move.From;
 	int t = move.To;
@@ -284,7 +285,11 @@ Undos DoMove(Move move, Game *game)
 	game->Hash = hash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
-	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+	if (game->PositionHistoryLength < MAX_POSITION_HISTORY)
+	{
+		game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+		undos.PositionHistoryPushed = true;
+	}
 	undos.FiftyMoveRuleCount = game->FiftyMoveRuleCount;
 	if (pt == PAWN || captType)
 		game->FiftyMoveRuleCount = 0;
@@ -439,12 +444,13 @@ void UndoMove(Game *game, Move move, Undos undos)
 	game->Hash = undos.PrevHash;
 	game->Side = otherSide;
 	game->Side01 = otherSide01;
-	game->PositionHistoryLength--;
+	if (undos.PositionHistoryPushed && game->PositionHistoryLength > 0)
+		game->PositionHistoryLength--;
 	game->FiftyMoveRuleCount = undos.FiftyMoveRuleCount;
 	AssertGame(game);
 }
 
-void DoNullMove(Game *game)
+bool DoNullMove(Game *game)
 {
 	int side01 = game->Side01;
 	U64 hash = ZobritsEnpassantFile[game->State & 15];
@@ -455,16 +461,22 @@ void DoNullMove(Game *game)
 	game->Hash ^= hash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
-	game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+	if (game->PositionHistoryLength < MAX_POSITION_HISTORY)
+	{
+		game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
+		return true;
+	}
+	return false;
 }
 
-void UndoNullMove(GameState prevGameState, Game *game, U64 prevHash)
+void UndoNullMove(GameState prevGameState, Game *game, U64 prevHash, bool positionHistoryPushed)
 {
 	game->State = prevGameState;
 	game->Hash = prevHash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
-	game->PositionHistoryLength--;
+	if (positionHistoryPushed && game->PositionHistoryLength > 0)
+		game->PositionHistoryLength--;
 }
 
 bool SquareAttacked(int square, Side attackedBy, Game *game)
@@ -550,6 +562,9 @@ void SortMoves(Move *moves, int moveCount, Side side)
 
 void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, char pieceIdx)
 {
+	if (game->MovesBufferLength >= MAX_MOVES)
+		return;
+
 	Move move;
 	move.From = fromSquare;
 	move.To = toSquare;
@@ -566,6 +581,9 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, cha
 
 void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, char pieceIdx)
 {
+	if (game->MovesBufferLength >= MAX_MOVES)
+		return;
+
 	Move move;
 	move.From = fromSquare;
 	move.To = toSquare;
@@ -872,11 +890,35 @@ void CreateCaptureMoves(Game *game)
 void RemoveInvalidMoves(Game *game)
 {
 	int validMovesCount = 0;
-	Move validMoves[100];
+	Move validMoves[MAX_MOVES];
 
 	for (int m = 0; m < game->MovesBufferLength; m++)
 	{
 		Move move = game->MovesBuffer[m];
+		if (move.From > 63 || move.To > 63)
+			continue;
+
+		PieceType movingPiece = game->Squares[move.From];
+		if (movingPiece == NOPIECE || (movingPiece & 24) != game->Side)
+			continue;
+
+		if (move.PieceIdx > 15 || game->Pieces[game->Side01][move.PieceIdx].Off || game->Pieces[game->Side01][move.PieceIdx].SquareIndex != move.From)
+		{
+			bool found = false;
+			for (int p = 0; p < 16; p++)
+			{
+				Piece *piece = &game->Pieces[game->Side01][p];
+				if (!piece->Off && piece->SquareIndex == move.From && piece->Type == movingPiece)
+				{
+					move.PieceIdx = piece->Index;
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				continue;
+		}
+
 		Undos undos = DoMove(move, game);
 		int kingSquare = game->KingSquares[(game->Side ^ 24) >> 4];
 		bool legal = !SquareAttacked(kingSquare, game->Side, game);
@@ -884,7 +926,7 @@ void RemoveInvalidMoves(Game *game)
 		if (legal)
 			validMoves[validMovesCount++] = move;
 	}
-	memcpy(game->MovesBuffer, &validMoves, validMovesCount * sizeof(Move));
+	memcpy(game->MovesBuffer, validMoves, validMovesCount * sizeof(Move));
 	game->MovesBufferLength = validMovesCount;
 }
 
@@ -914,11 +956,24 @@ int ValidMovesOnThread(Game *game, Move *moves)
 
 Move ParseMove(char *sMove, MoveInfo info)
 {
+	Move move;
+	move.From = 255;
+	move.To = 255;
+	move.MoveInfo = NotAMove;
+	move.PieceIdx = 255;
+	move.Score = 0;
+
+	if (sMove == NULL || strlen(sMove) < 4)
+		return move;
+
+	if (sMove[0] < 'a' || sMove[0] > 'h' || sMove[2] < 'a' || sMove[2] > 'h' ||
+		sMove[1] < '1' || sMove[1] > '8' || sMove[3] < '1' || sMove[3] > '8')
+		return move;
+
 	int fromFile = sMove[0] - 'a';
 	int fromRank = sMove[1] - '1';
 	int toFile = sMove[2] - 'a';
 	int toRank = sMove[3] - '1';
-	Move move;
 	move.From = fromRank * 8 + fromFile;
 	move.To = toRank * 8 + toFile;
 	move.MoveInfo = info;
@@ -948,9 +1003,15 @@ Move ParseMove(char *sMove, MoveInfo info)
 PlayerMove MakePlayerMoveOnThread(Game *game, char *sMove)
 {
 	Move move = ParseMove(sMove, 0);
-	Move validMoves[256];
-	int length = ValidMovesOnThread(game, validMoves);
 	PlayerMove playerMove;
+	if (move.MoveInfo == NotAMove)
+	{
+		playerMove.Invalid = true;
+		return playerMove;
+	}
+
+	Move validMoves[MAX_MOVES];
+	int length = ValidMovesOnThread(game, validMoves);
 	for (int i = 0; i < length; i++)
 	{
 		if (validMoves[i].From == move.From && validMoves[i].To == move.To)

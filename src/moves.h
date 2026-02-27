@@ -6,10 +6,11 @@ void CreateMoves(Game* game);
 void CreateCaptureMoves(Game* game);
 void RemoveInvalidMoves(Game* game);
 int ValidMoves(Move* moves);
+int ValidMovesOnThread(Game* game, Move* moves);
 Undos DoMove(Move move, Game* mainGame);
 void UndoMove(Game* game, Move move, Undos undos);
-void DoNullMove(Game* game);
-void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash);
+bool DoNullMove(Game* game);
+void UndoNullMove(GameState prevGameState, Game* game, U64 prevHash, bool positionHistoryPushed);
 
 void AssertGame(Game* game);
 
