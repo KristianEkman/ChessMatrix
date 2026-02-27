@@ -198,7 +198,7 @@ void EnterUciMode()
 				int fenLength = movesPos - fenPos; // position fen xxx...yyy moves
 				char fen[256];
 				memcpy(fen, pFen + 5, fenLength);
-				fen[fenLength + 1] = '\0';
+				fen[fenLength] = '\0';
 				ReadFen(fen);
 			}
 
