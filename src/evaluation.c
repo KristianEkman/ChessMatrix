@@ -440,6 +440,7 @@ short ProtectedByPawn(int square, Game* game) {
 
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
 static const int MaxGamePhase = 24;
+static const short TempoBonus = 8;
 
 static int GetGamePhase(Game* game) {
 	int phase = 0;
@@ -556,6 +557,11 @@ short GetEval(Game* game) {
 
 	if (blackNoPawns && blackInsufficient)
 		return min(0, eval);
+
+	if (game->Side == BLACK)
+		eval += TempoBonus;
+	else
+		eval -= TempoBonus;
 
 	return eval;
 }
