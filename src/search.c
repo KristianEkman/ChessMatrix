@@ -18,6 +18,7 @@ static PlatformThread g_timeLimitThread;
 static bool g_hasTimeLimitThread = false;
 static PlatformThread g_searchThread;
 static bool g_hasSearchThread = false;
+static bool g_emitBestMove = false;
 
 static Move InvalidMove()
 {
@@ -33,6 +34,21 @@ static Move InvalidMove()
 static bool IsMoveValid(Move move)
 {
 	return move.From < 64 && move.To < 64 && move.MoveInfo != NotAMove;
+}
+
+static void EmitBestMove(Move move)
+{
+	if (IsMoveValid(move))
+	{
+		char sMove[6];
+		MoveToString(move, sMove);
+		printf("bestmove %s\n", sMove);
+	}
+	else
+	{
+		printf("bestmove 0000\n");
+	}
+	fflush(stdout);
 }
 
 static void JoinActiveSearchThreads()
@@ -223,6 +239,8 @@ short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 		return score;
 
 	Move *localMoves = malloc(moveCount * sizeof(Move));
+	if (localMoves == NULL)
+		return score;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	// MoveKillersToTop(game, localMoves, moveCount);
 
@@ -358,8 +376,18 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 	// Move generation
 	CreateMoves(game);
 	uchar moveCount = game->MovesBufferLength;
+	if (moveCount == 0)
+	{
+		if (incheck)
+			return game->Side == BLACK ? (short)(-8000 + deep_in) : (short)(8000 - deep_in);
+		return 0;
+	}
 
 	Move *localMoves = malloc(moveCount * sizeof(Move));
+	if (localMoves == NULL)
+	{
+		return game->Side == BLACK ? best_black : best_white;
+	}
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	// MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
@@ -634,7 +662,8 @@ void PrintBestLine(Move move, int depth, float ellapsed)
 	for (int i = movesCount - 1; i >= 0; i--)
 		UnMakePlayerMoveOnThread(game, moves[i]);
 	UnMakePlayerMoveOnThread(game, bestPlayerMove);
-	int nps = (float)g_SearchedNodes / ellapsed;
+	float safeElapsed = ellapsed > 0.0001f ? ellapsed : 0.0001f;
+	int nps = (int)((float)g_SearchedNodes / safeElapsed);
 	int time = ellapsed * 1000;
 	short score = move.Score;
 
@@ -669,7 +698,6 @@ PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void *args)
 	int ms = g_topSearchParams.MoveTime;
 	long long start = NowMs();
 	long long now = start;
-	printf("TimeLimitWatch %d\n", ms);
 	while (!g_Stopped)
 	{
 		PlatformSleepMs(100);
@@ -677,8 +705,6 @@ PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void *args)
 
 		if (now - start > ms)
 		{
-			printf("Search stopped by timeout after %lldms.\n", now - start); // This is not preferable since it is more economic to stop before going to next depth.
-			fflush(stdout);
 			break;
 		}
 	}
@@ -743,17 +769,8 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 			bestMove = fallbackMoves[0];
 	}
 
-	if (IsMoveValid(bestMove))
-	{
-		char sMove[6];
-		MoveToString(bestMove, sMove);
-		printf("bestmove %s\n", sMove);
-	}
-	else
-	{
-		printf("bestmove 0000\n");
-	}
-	fflush(stdout);
+	if (g_emitBestMove)
+		EmitBestMove(bestMove);
 	g_topSearchParams.BestMove = bestMove;
 	g_Stopped = true;
 	return PLATFORM_THREAD_RETURN_VALUE;
@@ -765,6 +782,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 MoveCoordinates Search(bool async)
 {
 	JoinActiveSearchThreads();
+	g_emitBestMove = async;
 	g_topSearchParams.BestMove = InvalidMove();
 
 	// Sometimes there is only one valid move. Why spend time searching?
@@ -772,11 +790,9 @@ MoveCoordinates Search(bool async)
 	int count = ValidMoves(moves);
 	if (count == 1)
 	{
-		char sMove[6];
-		MoveToString(moves[0], sMove);
-		printf("bestmove %s\n", sMove);
-		fflush(stdout);
 		g_topSearchParams.BestMove = moves[0];
+		if (g_emitBestMove)
+			EmitBestMove(moves[0]);
 		MoveCoordinates singleMove;
 		singleMove.From = moves[0].From;
 		singleMove.To = moves[0].To;
@@ -789,10 +805,13 @@ MoveCoordinates Search(bool async)
 		MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
 		if (bookMove.From != 255)
 		{
-			char sMove[6];
-			CoordinatesToString(bookMove, sMove);
-			printf("bestmove %s\n", sMove);
-			fflush(stdout);
+			Move bookAsMove = InvalidMove();
+			bookAsMove.From = bookMove.From;
+			bookAsMove.To = bookMove.To;
+			bookAsMove.MoveInfo = PlainMove;
+			g_topSearchParams.BestMove = bookAsMove;
+			if (g_emitBestMove)
+				EmitBestMove(bookAsMove);
 			return bookMove;
 		}
 	}
@@ -851,7 +870,7 @@ MoveCoordinates Search(bool async)
 
 	// this will not be used.
 	MoveCoordinates nomove;
-	nomove.From = -1;
-	nomove.To = -1;
+	nomove.From = 255;
+	nomove.To = 255;
 	return nomove;
 }

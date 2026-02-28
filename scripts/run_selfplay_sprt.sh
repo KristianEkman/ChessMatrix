@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 NEW_ENGINE="${1:-$ROOT_DIR/chessmatrix}"
-OLD_ENGINE="${2:-$ROOT_DIR/chessmatrix_old}"
+OLD_ENGINE="${2:-$ROOT_DIR/chessmatrix}"
 GAMES="${3:-400}"
 TC="${4:-3+0.03}"
 CONCURRENCY="${5:-1}"
