@@ -205,105 +205,69 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 }
 
 #define MAX_QSEARCH_DEPTH 64
+#define THREAD_MOVE_BUFFER_PLY MAX_QSEARCH_DEPTH
 
-short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
+static _Thread_local Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+
+static short EvalForSide(Game *game)
+{
+	short eval = GetEval(game); // GetEval is black-centric.
+	return game->Side == BLACK ? eval : (short)-eval;
+}
+
+short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 {
 
 	g_SearchedNodes++;
 	if (deep_in >= MAX_QSEARCH_DEPTH)
-		return GetEval(game);
+		return EvalForSide(game);
 
 	if (IsDraw(game))
 		return 0;
 
-	int score = GetEval(game); // There seems to be a small advantage in taking time to fully evaluate even here.
-
-	if (game->Side == BLACK)
-	{
-		if (score >= best_white)
-			return best_white;
-		if (score > best_black)
-			best_black = score;
-	}
-	else
-	{
-		if (score <= best_black)
-			return best_black;
-		if (score < best_white)
-			best_white = score;
-	}
+	short score = EvalForSide(game); // side-to-move perspective.
+	if (score >= beta)
+		return beta;
+	if (score > alpha)
+		alpha = score;
 
 	CreateCaptureMoves(game);
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
-		return score;
+		return alpha;
 
-	Move *localMoves = malloc(moveCount * sizeof(Move));
-	if (localMoves == NULL)
-		return score;
+	Move fallbackMoves[MAX_MOVES];
+	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	// MoveKillersToTop(game, localMoves, moveCount);
 
-	if (game->Side == BLACK)
-	{ // maximizing
-		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
+	for (int i = 0; i < moveCount; i++)
+	{
+		if (game->Side == BLACK)
 			PickBlacksNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
-			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
-			UndoMove(game, childMove, undos);
-			if (score > best_black)
-			{
-				if (score >= best_white)
-				{
-					free(localMoves);
-					return best_white;
-				}
-				best_black = score;
-			}
-		}
-		free(localMoves);
-		return best_black;
-	}
-	else
-	{ // minimizing
-		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
+		else
 			PickWhitesNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
-			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-			score = QuiteSearch(best_black, best_white, game, deep_in + 1);
+
+		Move childMove = localMoves[i];
+		Undos undos = DoMove(childMove, game);
+		int kingSquare = game->KingSquares[!game->Side01];
+		bool legal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!legal)
+		{
 			UndoMove(game, childMove, undos);
-			if (score < best_white)
-			{
-				if (score <= best_black)
-				{
-					free(localMoves);
-					return best_black;
-				}
-				best_white = score;
-			}
+			continue;
 		}
-		free(localMoves);
-		return best_white;
+
+		score = (short)-QuiteSearch((short)-beta, (short)-alpha, game, deep_in + 1);
+		UndoMove(game, childMove, undos);
+
+		if (score >= beta)
+			return beta;
+		if (score > alpha)
+			alpha = score;
 	}
+
+	return alpha;
 }
 
 bool IsReductionOk(Move move, Undos undos)
@@ -313,7 +277,7 @@ bool IsReductionOk(Move move, Undos undos)
 		   move.MoveInfo != SoonPromoting;
 }
 
-short RecursiveSearch(short best_black, short best_white, uchar depth, Game *game, bool doNull, Move prevMove, int deep_in, bool incheck)
+short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doNull, Move prevMove, int deep_in, bool incheck)
 {
 	if (g_Stopped)
 		return 0; // should not be used;
@@ -322,7 +286,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 
 	if (depth <= 0)
 	{
-		return QuiteSearch(best_black, best_white, game, deep_in);
+		return QuiteSearch(alpha, beta, game, deep_in);
 	}
 
 	if (IsDraw(game))
@@ -332,7 +296,7 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 	short score = 0;
 	Move pvMove;
 	pvMove.MoveInfo = NotAMove;
-	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, best_black, best_white))
+	if (GetScoreFromHash(game->Hash, depth, &score, &pvMove, alpha, beta))
 	{
 		return score;
 	}
@@ -345,30 +309,15 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 		uchar r = depth > 6 ? MAX_R : MIN_R;
 		U64 prevHash = game->Hash;
 		bool nullMovePushedHistory = DoNullMove(game);
-		if (game->Side == BLACK)
-		{
-			short nullScore = RecursiveSearch(best_black, best_black + 1, depth - r, game, false, prevMove, deep_in + 1, incheck);
-			UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
-			if (nullScore <= best_black && nullScore > -8000 && nullScore < 8000)
-			{ // todo, review if this is correct.
-				depth -= DR;
-				if (depth <= 0)
-				{
-					return QuiteSearch(best_black, best_white, game, deep_in);
-				}
-			}
-		}
-		else //(game->Side == WHITE)
-		{
-			short nullScore = RecursiveSearch(best_white - 1, best_white, depth - r, game, false, prevMove, deep_in + 1, incheck);
-			UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
-			if (nullScore >= best_white && nullScore > -8000 && nullScore < 8000)
+		bool checkedAfterNull = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+		short nullScore = (short)-RecursiveSearch((short)-beta, (short)(-beta + 1), depth - r, game, false, prevMove, deep_in + 1, checkedAfterNull);
+		UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
+		if (nullScore >= beta && nullScore > -8000 && nullScore < 8000)
+		{ // todo, review if this is correct.
+			depth -= DR;
+			if (depth <= 0)
 			{
-				depth -= DR;
-				if (depth <= 0)
-				{
-					return QuiteSearch(best_black, best_white, game, deep_in);
-				}
+				return QuiteSearch(alpha, beta, game, deep_in);
 			}
 		}
 	}
@@ -383,11 +332,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 		return 0;
 	}
 
-	Move *localMoves = malloc(moveCount * sizeof(Move));
-	if (localMoves == NULL)
-	{
-		return game->Side == BLACK ? best_black : best_white;
-	}
+	Move fallbackMoves[MAX_MOVES];
+	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	// MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
@@ -404,172 +350,91 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 	const uchar reductionLimit = 3;
 
 	// alpha beta pruning
-	short bestScore = 0;
+	short bestScore = MIN_SCORE;
 	uchar legalCount = 0;
-	short oldBestBlack = best_black;
-	short oldBestWhite = best_white;
+	short oldAlpha = alpha;
 	Move bestMove = localMoves[0];
-	if (game->Side == BLACK)
-	{ // maximizing, black
-		bestScore = MIN_SCORE;
-		score = MIN_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
+	for (int i = 0; i < moveCount; i++)
+	{
+		if (game->Side == BLACK)
 			PickBlacksNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
-			Undos undos = DoMove(childMove, game);
-
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-			legalCount++;
-
-			// extensions
-			uchar extension = 0;
-			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
-			if (checked || childMove.MoveInfo == SoonPromoting)
-				extension = 1;
-
-			uchar lmrRed = 2; // lmr_matrix[depth][i];
-			// Late Move Reduction, full depth for the first moves, and interesting moves.
-			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-				score = RecursiveSearch(best_black, best_black + 1, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
-			else
-				score = best_black + 1; // Hack to ensure that full-depth is done.
-
-			if (score > best_black)
-			{ // surprisingly good, re-search att full depth.
-				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
-			}
-
-			UndoMove(game, childMove, undos);
-
-			if (score > bestScore && !g_Stopped)
-			{
-				bestScore = score;
-				bestMove = childMove;
-				if (score > best_black)
-				{
-					if (score >= best_white)
-					{
-						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove);
-						free(localMoves);
-						/*if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);*/
-
-						/*if (undos.CaptIndex == -1) {
-							AddKiller(game, childMove);
-						}*/
-						return best_white;
-					}
-					best_black = score;
-				}
-			}
-		}
-
-		free(localMoves);
-		if (legalCount == 0)
-		{
-			if (incheck)
-				return -8000 + deep_in;
-			else
-				return 0;
-		}
-
-		if (g_Stopped)
-		{
-			return best_black;
-		}
-
-		if (best_black != oldBestBlack)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove);
 		else
-			AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove);
-
-		return best_black;
-	}
-	else
-	{ // minimizing, white
-		bestScore = MAX_SCORE;
-		score = MAX_SCORE;
-		for (int i = 0; i < moveCount; i++)
-		{
 			PickWhitesNextMove(i, localMoves, moveCount);
-			Move childMove = localMoves[i];
-			Undos undos = DoMove(childMove, game);
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-			legalCount++;
 
-			// extensions
-			uchar extension = 0;
-			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
-			if (checked || childMove.MoveInfo == SoonPromoting)
-				extension = 1;
+		Move childMove = localMoves[i];
+		Undos undos = DoMove(childMove, game);
 
-			// late move reduction
-			uchar lmrRed = 2; // lmr_matrix[depth][i];
-			if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-				score = RecursiveSearch(best_white - 1, best_white, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
-			else
-				score = best_white - 1; // Hack to ensure that full-depth  is done.
-
-			if (score < best_white)
-			{
-				score = RecursiveSearch(best_black, best_white, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
-			}
-
-			UndoMove(game, childMove, undos);
-
-			if (score < bestScore && !g_Stopped)
-			{
-				bestScore = score;
-				bestMove = childMove;
-				if (score < best_white)
-				{
-					if (score <= best_black)
-					{
-						AddHashScore(game->Hash, best_black, depth, BEST_BLACK, bestMove);
-						/*if (undos.CaptIndex == -1)
-							AddCounterMove(childMove, prevMove);*/
-						// if (undos.CaptIndex == -1)
-						//    AddKiller(game, childMove);
-						free(localMoves);
-						return best_black;
-					}
-					best_white = score;
-				}
-			}
-		}
-		free(localMoves);
-		if (legalCount == 0)
+		int kingSquare = game->KingSquares[!game->Side01];
+		bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+		if (!isLegal)
 		{
-			if (incheck)
-				return 8000 - deep_in; // mate
-			else
-				return 0; // stale mate
+			UndoMove(game, childMove, undos);
+			continue;
 		}
+		legalCount++;
+
+		// extensions
+		uchar extension = 0;
+		bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+		if (checked || childMove.MoveInfo == SoonPromoting)
+			extension = 1;
+
+		uchar lmrRed = 2; // lmr_matrix[depth][i];
+		// Late Move Reduction, full depth for the first moves, and interesting moves.
+		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
+			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
+		else
+			score = (short)(alpha + 1); // Hack to ensure that full-depth is done.
+
+		if (score > alpha)
+		{
+			// surprisingly good, re-search at full depth.
+			score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+		}
+
+		UndoMove(game, childMove, undos);
 
 		if (g_Stopped)
+			return alpha;
+
+		if (score > bestScore)
 		{
-			return best_white;
+			bestScore = score;
+			bestMove = childMove;
 		}
 
-		if (best_white != oldBestWhite)
-			AddHashScore(game->Hash, bestScore, depth, EXACT, bestMove);
-		else
-			AddHashScore(game->Hash, best_white, depth, BEST_WHITE, bestMove);
-		return best_white;
+		if (score > alpha)
+		{
+			alpha = score;
+			if (alpha >= beta)
+			{
+				AddHashScore(game->Hash, beta, depth, BEST_WHITE, bestMove);
+				/*if (undos.CaptIndex == -1)
+					AddCounterMove(childMove, prevMove);*/
+				// if (undos.CaptIndex == -1)
+				//    AddKiller(game, childMove);
+				return beta;
+			}
+		}
 	}
+
+	if (legalCount == 0)
+	{
+		if (incheck)
+			return -8000 + deep_in; // mate
+		else
+			return 0; // stale mate
+	}
+
+	if (g_Stopped)
+		return alpha;
+
+	if (alpha != oldAlpha)
+		AddHashScore(game->Hash, alpha, depth, EXACT, bestMove);
+	else
+		AddHashScore(game->Hash, alpha, depth, BEST_BLACK, bestMove);
+
+	return alpha;
 }
 
 void FixPieceChain(Game *game)
@@ -670,11 +535,7 @@ void PrintBestLine(Move move, int depth, float ellapsed)
 	printf("info score ");
 	if (abs(score) > 7000)
 	{
-		bool meMated = false;
-		if ((score > 7000 && game->Side == WHITE) || (score < -7000 && game->Side == BLACK))
-		{
-			meMated = true;
-		}
+		bool meMated = score < 0;
 		int mateIn = (8000 - abs(score)) / 2 + 1;
 		if (meMated)
 			mateIn = -mateIn;
@@ -682,8 +543,6 @@ void PrintBestLine(Move move, int depth, float ellapsed)
 	}
 	else
 	{
-		if (game->Side == WHITE)
-			score = -score;
 		printf("cp %d ", score);
 	}
 
@@ -742,7 +601,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 		}
 		g_topSearchParams.BestMove = bestMove;
 
-		if ((pGame->Side == WHITE && score < -7000) || (pGame->Side == BLACK && score > 7000))
+		if (abs(score) > 7000)
 		{
 			g_Stopped = true;
 			break; // A check mate is found, no need to search further.
