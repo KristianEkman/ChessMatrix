@@ -205,6 +205,9 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 }
 
 #define MAX_QSEARCH_DEPTH 64
+#define THREAD_MOVE_BUFFER_PLY MAX_QSEARCH_DEPTH
+
+static _Thread_local Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
 
 short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 {
@@ -238,9 +241,8 @@ short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 	if (moveCount == 0)
 		return score;
 
-	Move *localMoves = malloc(moveCount * sizeof(Move));
-	if (localMoves == NULL)
-		return score;
+	Move fallbackMoves[MAX_MOVES];
+	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 	// MoveKillersToTop(game, localMoves, moveCount);
 
@@ -265,13 +267,11 @@ short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 			{
 				if (score >= best_white)
 				{
-					free(localMoves);
 					return best_white;
 				}
 				best_black = score;
 			}
 		}
-		free(localMoves);
 		return best_black;
 	}
 	else
@@ -295,13 +295,11 @@ short QuiteSearch(short best_black, short best_white, Game *game, int deep_in)
 			{
 				if (score <= best_black)
 				{
-					free(localMoves);
 					return best_black;
 				}
 				best_white = score;
 			}
 		}
-		free(localMoves);
 		return best_white;
 	}
 }
@@ -383,11 +381,8 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 		return 0;
 	}
 
-	Move *localMoves = malloc(moveCount * sizeof(Move));
-	if (localMoves == NULL)
-	{
-		return game->Side == BLACK ? best_black : best_white;
-	}
+	Move fallbackMoves[MAX_MOVES];
+	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
 	// MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
@@ -457,7 +452,6 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 					if (score >= best_white)
 					{
 						AddHashScore(game->Hash, best_white, depth, BEST_WHITE, childMove);
-						free(localMoves);
 						/*if (undos.CaptIndex == -1)
 							AddCounterMove(childMove, prevMove);*/
 
@@ -471,7 +465,6 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 			}
 		}
 
-		free(localMoves);
 		if (legalCount == 0)
 		{
 			if (incheck)
@@ -543,14 +536,12 @@ short RecursiveSearch(short best_black, short best_white, uchar depth, Game *gam
 							AddCounterMove(childMove, prevMove);*/
 						// if (undos.CaptIndex == -1)
 						//    AddKiller(game, childMove);
-						free(localMoves);
 						return best_black;
 					}
 					best_white = score;
 				}
 			}
 		}
-		free(localMoves);
 		if (legalCount == 0)
 		{
 			if (incheck)
