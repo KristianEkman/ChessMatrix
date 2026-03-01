@@ -1,6 +1,12 @@
 CC ?= clang
-CFLAGS ?= -std=c11 -O3 -Wall -Wextra -mavx2 -mfma
 LDFLAGS ?=
+
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), arm64)
+    CFLAGS ?= -std=c11 -O3 -Wall -Wextra
+else
+    CFLAGS ?= -std=c11 -O3 -Wall -Wextra -mavx2 -mfma
+endif
 
 SRC_DIR := src
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
