@@ -51,6 +51,21 @@
     <ClCompile Include="countermoves.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="platform.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="uci.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="position.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interactive.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patterns.h">
@@ -93,6 +108,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="countermoves.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uci.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="position.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interactive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

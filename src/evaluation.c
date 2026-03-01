@@ -450,7 +450,10 @@ static int GetGamePhase(Game* game) {
 		while (piece != NULL)
 		{
 			PieceType pt = piece->Type & 7;
-			phase += PiecePhase[pt];
+			// Fix for C6385: Ensure 'pt' is always in bounds for PiecePhase[pt]
+			if (pt >= 0 && pt < (sizeof(PiecePhase) / sizeof(PiecePhase[0]))) {
+				phase += PiecePhase[pt];
+			}			
 			piece = piece->Next;
 		}
 	}
@@ -491,7 +494,11 @@ short GetEval(Game* game) {
 			PieceType pieceType = piece->Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
-			posScore += PositionValueMatrix[pt][s][i];
+			
+			if (pt >= 0 && pt < 7) {
+                posScore += PositionValueMatrix[pt][s][i];
+            }
+			
 			switch (pt)
 			{
 			case ROOK:

@@ -156,31 +156,39 @@
     <ClCompile Include="book.c" />
     <ClCompile Include="countermoves.c" />
     <ClCompile Include="evaluation.c" />
+    <ClCompile Include="fen.c" />
     <ClCompile Include="hashTable.c" />
+    <ClCompile Include="interactive.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="moves.c" />
     <ClCompile Include="patterns.c" />
     <ClCompile Include="platform.c" />
+    <ClCompile Include="position.c" />
     <ClCompile Include="search.c" />
     <ClCompile Include="sort.c" />
     <ClCompile Include="tests.c" />
     <ClCompile Include="timeControl.c" />
+    <ClCompile Include="uci.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="book.h" />
     <ClInclude Include="countermoves.h" />
     <ClInclude Include="evaluation.h" />
+    <ClInclude Include="fen.h" />
     <ClInclude Include="hashTable.h" />
+    <ClInclude Include="interactive.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="moves.h" />
     <ClInclude Include="patterns.h" />
     <ClInclude Include="commons.h" />
     <ClInclude Include="platform.h" />
+    <ClInclude Include="position.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="sort.h" />
     <ClInclude Include="tests.h" />
     <ClInclude Include="timeControl.h" />
+    <ClInclude Include="uci.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>

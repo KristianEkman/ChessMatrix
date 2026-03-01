@@ -150,7 +150,7 @@ void ReadFen(const char *fen)
 	int tokNo = 0;
 	char *token = NULL;
 #ifdef _WIN32
-	char *context;
+	char *context = NULL;
 	token = strtok_s(fenCopy, " ", &context);
 #else
 	char *context = NULL;
