@@ -37,5 +37,7 @@ short PassedPawn(int square, Game* game);
 
 short TotalMaterial(Game* game);
 void CalculatePatterns();
+void AdjustPositionImportance();
+void SwitchSignOfWhitePositionValue();
 
 

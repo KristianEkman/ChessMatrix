@@ -27,3 +27,8 @@ void PlatformDetachThread(PlatformThread thread);
 void PlatformSleepMs(int ms);
 int PlatformGetChar();
 void PlatformClearScreen();
+
+#include <signal.h>
+
+extern volatile sig_atomic_t g_QuitRequested;
+void InstallUnhandledErrorHandlers(void);

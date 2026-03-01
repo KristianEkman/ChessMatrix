@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "main.h"
+#include "fen.h"
 #include "commons.h"
 #include "utils.h"
 #include "hashTable.h"
