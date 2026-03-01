@@ -574,7 +574,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
 		{
 			bestMove.Score = score;
-			if (depth > 3)
+			if (depth > 7)
 				PrintBestLine(bestMove, depth, ellapsed);
 		}
 		g_topSearchParams.BestMove = bestMove;
