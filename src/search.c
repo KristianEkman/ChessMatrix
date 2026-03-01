@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "search.h"
+#include "position.h"
 #include "evaluation.h"
 #include "moves.h"
 #include "hashTable.h"
@@ -435,35 +436,6 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		AddHashScore(game->Hash, alpha, depth, BEST_BLACK, bestMove);
 
 	return alpha;
-}
-
-void FixPieceChain(Game *game)
-{
-	for (int s = 0; s < 2; s++)
-	{
-		Piece *lastOn = NULL;
-		for (int p = 15; p >= 0; p--)
-		{
-			Piece *piece = &game->Pieces[s][p];
-			// It is not possible to include a piece in the piece chain if it is Off at this stage.
-			// But this is before the search starts
-
-			// The real linking
-			if (!piece->Off)
-			{
-				piece->Next = lastOn;
-				if (lastOn)
-					lastOn->Prev = piece;
-				lastOn = piece;
-			}
-		}
-
-		if (game->Pieces[s][0].Off)
-		{
-			printf("King piece is not on the table. This is not allowed\n");
-			fflush(stdout);
-		}
-	}
 }
 
 void CopyMainGame(Game *copy)

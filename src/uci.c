@@ -12,6 +12,7 @@
 #include "fen.h"
 #include "moves.h"
 #include "book.h"
+#include "interactive.h"
 #include "uci.h"
 
 extern char Version[];

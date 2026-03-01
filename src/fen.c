@@ -6,7 +6,6 @@
 #include <ctype.h>
 
 #include "position.h"
-#include "search.h"
 #include "utils.h"
 
 char PieceChar(PieceType pieceType)
