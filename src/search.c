@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "search.h"
+#include "position.h"
 #include "evaluation.h"
 #include "moves.h"
 #include "hashTable.h"
@@ -208,12 +209,12 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 #define THREAD_MOVE_BUFFER_PLY MAX_QSEARCH_DEPTH
 
 #if defined(_MSC_VER)
-#define THREAD_LOCAL __declspec(thread)
+#define CM_THREAD_LOCAL __declspec(thread)
 #else
-#define THREAD_LOCAL _Thread_local
+#define CM_THREAD_LOCAL _Thread_local
 #endif
 
-static THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
 
 static short EvalForSide(Game *game)
 {
@@ -443,35 +444,6 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	return alpha;
 }
 
-void FixPieceChain(Game *game)
-{
-	for (int s = 0; s < 2; s++)
-	{
-		Piece *lastOn = NULL;
-		for (int p = 15; p >= 0; p--)
-		{
-			Piece *piece = &game->Pieces[s][p];
-			// It is not possible to include a piece in the piece chain if it is Off at this stage.
-			// But this is before the search starts
-
-			// The real linking
-			if (!piece->Off)
-			{
-				piece->Next = lastOn;
-				if (lastOn)
-					lastOn->Prev = piece;
-				lastOn = piece;
-			}
-		}
-
-		if (game->Pieces[s][0].Off)
-		{
-			printf("King piece is not on the table. This is not allowed\n");
-			fflush(stdout);
-		}
-	}
-}
-
 void CopyMainGame(Game *copy)
 {
 
@@ -602,7 +574,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
 		{
 			bestMove.Score = score;
-			if (depth > 3)
+			if (depth > 7)
 				PrintBestLine(bestMove, depth, ellapsed);
 		}
 		g_topSearchParams.BestMove = bestMove;

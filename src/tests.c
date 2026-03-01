@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "main.h"
+#include "fen.h"
 #include "commons.h"
 #include "utils.h"
 #include "hashTable.h"
@@ -632,8 +633,13 @@ void AssertBestMove(int depth, const char *testName, const char *fen, const char
 	MoveCoordinates bestMove = Search(false);
 	clock_t stop = clock();
 	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
-	printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
+	if (g_SearchedNodes == 0)
+		printf("(forced move, no search needed)\n");
+	else
+	{
+		printf("%.2fk leafs in %.2fs\n", (float)g_SearchedNodes / 1000, secs);
+		printf("%.2fk leafs/s\n", g_SearchedNodes / (1000 * secs));
+	}
 	char sMove[6];
 	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");

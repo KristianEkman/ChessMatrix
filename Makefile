@@ -1,5 +1,5 @@
 CC ?= clang
-CFLAGS ?= -std=c11 -O3 -Wall -Wextra
+CFLAGS ?= -std=c11 -O3 -Wall -Wextra -mavx2 -mfma
 LDFLAGS ?=
 
 SRC_DIR := src
@@ -7,6 +7,9 @@ SOURCES := $(wildcard $(SRC_DIR)/*.c)
 TARGET := chessmatrix
 
 all: $(TARGET)
+
+strict: clean
+	$(MAKE) CFLAGS='$(STRICT_CFLAGS)'
 
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) -pthread
@@ -29,4 +32,4 @@ test: $(TARGET)
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all run test clean
+.PHONY: all strict run test clean

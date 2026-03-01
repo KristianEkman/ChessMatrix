@@ -440,6 +440,7 @@ short ProtectedByPawn(int square, Game* game) {
 
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
 static const int MaxGamePhase = 24;
+static const short TempoBonus = 8;
 
 static int GetGamePhase(Game* game) {
 	int phase = 0;
@@ -450,7 +451,10 @@ static int GetGamePhase(Game* game) {
 		while (piece != NULL)
 		{
 			PieceType pt = piece->Type & 7;
-			phase += PiecePhase[pt];
+			// Fix for C6385: Ensure 'pt' is always in bounds for PiecePhase[pt]
+			if (pt >= 0 && pt < (sizeof(PiecePhase) / sizeof(PiecePhase[0]))) {
+				phase += PiecePhase[pt];
+			}			
 			piece = piece->Next;
 		}
 	}
@@ -491,7 +495,11 @@ short GetEval(Game* game) {
 			PieceType pieceType = piece->Type;
 			PieceType color = pieceType & (BLACK | WHITE);
 			PieceType pt = pieceType & 7;
-			posScore += PositionValueMatrix[pt][s][i];
+			
+			if (pt >= 0 && pt < 7) {
+                posScore += PositionValueMatrix[pt][s][i];
+            }
+			
 			switch (pt)
 			{
 			case ROOK:
@@ -557,9 +565,52 @@ short GetEval(Game* game) {
 	if (blackNoPawns && blackInsufficient)
 		return min(0, eval);
 
+	if (game->Side == BLACK)
+		eval += TempoBonus;
+	else
+		eval -= TempoBonus;
+
 	return eval;
 }
 
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
+}
+
+void AdjustPositionImportance()
+{
+	for (int i = 1; i < 7; i++)
+	{
+		for (int s = 0; s < 64; s++)
+		{
+			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
+			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
+		}
+	}
+
+	for (int i = 0; i < 64; i++)
+	{
+		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
+		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
+
+		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
+		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
+	}
+}
+
+void SwitchSignOfWhitePositionValue()
+{
+	for (int i = 1; i < 7; i++)
+	{
+		for (int s = 0; s < 64; s++)
+		{
+			PositionValueMatrix[i][0][s] = -PositionValueMatrix[i][0][s];
+		}
+	}
+
+	for (int i = 0; i < 64; i++)
+	{
+		KingPositionValueMatrix[0][0][i] = -KingPositionValueMatrix[0][0][i];
+		KingPositionValueMatrix[1][0][i] = -KingPositionValueMatrix[1][0][i];
+	}
 }

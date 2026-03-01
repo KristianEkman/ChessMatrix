@@ -10,4 +10,3 @@ void SetSearchDefaults();
 MoveCoordinates Search(bool async);
 void StopSearch();
 void InitLmr();
-void FixPieceChain(Game* game);
