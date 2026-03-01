@@ -107,11 +107,15 @@ volatile sig_atomic_t g_QuitRequested = 0;
 static void WriteUnhandledErrorLine(const char *line, unsigned int len)
 {
 #ifdef _WIN32
-	_write(1, line, len);
-	_write(2, line, len);
+	int outWritten = _write(1, line, len);
+	int errWritten = _write(2, line, len);
+	(void)outWritten;
+	(void)errWritten;
 #else
-	write(STDOUT_FILENO, line, len);
-	write(STDERR_FILENO, line, len);
+	ssize_t outWritten = write(STDOUT_FILENO, line, len);
+	ssize_t errWritten = write(STDERR_FILENO, line, len);
+	(void)outWritten;
+	(void)errWritten;
 #endif
 }
 
