@@ -1,10 +1,13 @@
 #include "platform.h"
 
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <conio.h>
+#include <io.h>
 
 bool PlatformCreateThread(PlatformThread *thread, PlatformThreadFunc func, void *arg)
 {
@@ -44,6 +47,7 @@ void PlatformClearScreen()
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <execinfo.h>
 
 bool PlatformCreateThread(PlatformThread *thread, PlatformThreadFunc func, void *arg)
 {
@@ -97,3 +101,5 @@ void PlatformClearScreen()
 }
 
 #endif
+
+

@@ -8,6 +8,9 @@ TARGET := chessmatrix
 
 all: $(TARGET)
 
+strict: clean
+	$(MAKE) CFLAGS='$(STRICT_CFLAGS)'
+
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) -pthread
 
@@ -29,4 +32,4 @@ test: $(TARGET)
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all run test clean
+.PHONY: all strict run test clean
