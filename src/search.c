@@ -208,7 +208,13 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 #define MAX_QSEARCH_DEPTH 64
 #define THREAD_MOVE_BUFFER_PLY MAX_QSEARCH_DEPTH
 
-static __declspec(thread) Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+#if defined(_MSC_VER)
+#define CM_THREAD_LOCAL __declspec(thread)
+#else
+#define CM_THREAD_LOCAL _Thread_local
+#endif
+
+static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
 
 static short EvalForSide(Game *game)
 {
