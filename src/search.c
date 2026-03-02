@@ -320,12 +320,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		short nullScore = (short)-RecursiveSearch((short)-beta, (short)(-beta + 1), depth - r, game, false, prevMove, deep_in + 1, checkedAfterNull);
 		UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
 		if (nullScore >= beta && nullScore > -8000 && nullScore < 8000)
-		{ // todo, review if this is correct.
-			depth -= DR;
-			if (depth <= 0)
-			{
-				return QuiteSearch(alpha, beta, game, deep_in);
-			}
+		{
+			return beta;
 		}
 	}
 
@@ -351,11 +347,6 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		MoveToTop(pvMove, localMoves, moveCount, game->Side);
 	}
 
-	// Not reducing for the first number of moves of each depth.
-	const uchar fullDepthMoves = 10;
-	// Not reducing when depth is or lower
-	const uchar reductionLimit = 3;
-
 	// alpha beta pruning
 	short bestScore = MIN_SCORE;
 	uchar legalCount = 0;
@@ -379,6 +370,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			continue;
 		}
 		legalCount++;
+		if (legalCount == 1)
+			bestMove = childMove;
 
 		// extensions
 		uchar extension = 0;
@@ -386,17 +379,32 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		if (checked || childMove.MoveInfo == SoonPromoting)
 			extension = 1;
 
-		uchar lmrRed = 2; // lmr_matrix[depth][i];
-		// Late Move Reduction, full depth for the first moves, and interesting moves.
-		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
-		else
-			score = (short)(alpha + 1); // Hack to ensure that full-depth is done.
-
-		if (score > alpha)
+		if (legalCount == 1)
 		{
-			// surprisingly good, re-search at full depth.
 			score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+		}
+		else
+		{
+			uchar R = 1; // Default depth reduction by 1
+			if (legalCount >= 3 && depth >= 3 && extension == 0 && IsReductionOk(childMove, undos))
+			{
+				R = lmr_matrix[depth < MAX_DEPTH ? depth : MAX_DEPTH - 1][legalCount < 100 ? legalCount : 99];
+			}
+
+			// PVS zero window
+			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - R + extension, game, true, childMove, deep_in + 1, checked);
+
+			// Re-search at full depth if LMR failed high
+			if (score > alpha && R > 1)
+			{
+				score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+			}
+
+			// PVS full-window re-search if zero-window failed high but didn't cause a beta cutoff
+			if (score > alpha && score < beta)
+			{
+				score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+			}
 		}
 
 		UndoMove(game, childMove, undos);
@@ -571,11 +579,25 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 			break;
 
 		float ellapsed = (float)(NowMs() - start) / 1000.0f;
-		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
+		Move hashMove;
+		if (GetBestMoveFromHash(pGame->Hash, &hashMove))
 		{
-			bestMove.Score = score;
-			if (depth > 7)
-				PrintBestLine(bestMove, depth, ellapsed);
+			Move buffer[MAX_MOVES];
+			int count = ValidMovesOnThread(pGame, buffer);
+			bool isValid = false;
+			for (int i = 0; i < count; i++) {
+				if (buffer[i].From == hashMove.From && buffer[i].To == hashMove.To) {
+					isValid = true;
+					hashMove.MoveInfo = buffer[i].MoveInfo;
+					break;
+				}
+			}
+			if (isValid) {
+				bestMove = hashMove;
+				bestMove.Score = score;
+				if (depth > 7)
+					PrintBestLine(bestMove, depth, ellapsed);
+			}
 		}
 		g_topSearchParams.BestMove = bestMove;
 
