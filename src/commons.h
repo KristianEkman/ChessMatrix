@@ -5,7 +5,7 @@
 
 #define MAX_SCORE 8190 //14 bits
 #define MIN_SCORE -8190
-#define MAX_DEPTH 31 // hash only uses 5 bits for depth
+#define MAX_DEPTH 63 // hash only uses 5 bits for depth
 #define MAX_MOVES 256
 #define MAX_POSITION_HISTORY 4096
 

@@ -728,6 +728,12 @@ void BestMoveByBlack5()
 	AssertBestMove(6, __func__, fen, "b7e4");
 }
 
+void BestMoveByBlack6()
+{
+	char *fen = "8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1";
+	AssertBestMove(15, __func__, fen, "b3b2");
+}
+
 void BestMoveByWhite3()
 {
 	char *fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
@@ -944,6 +950,7 @@ void runAllTests()
 	BestMoveByBlack1();
 	BestMoveByBlack4();
 	BestMoveByBlack5();
+	BestMoveByBlack6();
 	RookSacrificeByWhite();
 	BlackMatesIn5a();
 	WhiteMatesIn5b();

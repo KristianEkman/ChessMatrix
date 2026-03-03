@@ -293,7 +293,10 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 
 	if (depth <= 0)
 	{
-		return QuiteSearch(alpha, beta, game, deep_in);
+		if (incheck)
+			depth = 1;
+		else
+			return QuiteSearch(alpha, beta, game, deep_in);
 	}
 
 	if (IsDraw(game))
@@ -320,13 +323,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		short nullScore = (short)-RecursiveSearch((short)-beta, (short)(-beta + 1), depth - r, game, false, prevMove, deep_in + 1, checkedAfterNull);
 		UndoNullMove(prevState, game, prevHash, nullMovePushedHistory);
 		if (nullScore >= beta && nullScore > -8000 && nullScore < 8000)
-		{ // todo, review if this is correct.
-			depth -= DR;
-			if (depth <= 0)
-			{
-				return QuiteSearch(alpha, beta, game, deep_in);
-			}
-		}
+			return beta;
 	}
 
 	// Move generation
@@ -335,7 +332,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	if (moveCount == 0)
 	{
 		if (incheck)
-			return game->Side == BLACK ? (short)(-8000 + deep_in) : (short)(8000 - deep_in);
+			return (short)(-8000 + deep_in);
 		return 0;
 	}
 
@@ -386,7 +383,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		if (checked || childMove.MoveInfo == SoonPromoting)
 			extension = 1;
 
-		uchar lmrRed = 2; // lmr_matrix[depth][i];
+		int lmrMoveIdx = i < 100 ? i : 99;
+		uchar lmrRed = lmr_matrix[depth][lmrMoveIdx];
 		// Late Move Reduction, full depth for the first moves, and interesting moves.
 		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
@@ -560,15 +558,65 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 	Move bestMove = InvalidMove();
 
 	Move noMove = InvalidMove();
+	short lastScore = 0;
+	bool hasLastScore = false;
 
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
 		long long depStart = NowMs();
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
 
-		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+		short score;
+		if (hasLastScore && depth >= 4)
+		{
+			short delta = 40;
+			short aspAlpha = (short)(lastScore - delta);
+			short aspBeta = (short)(lastScore + delta);
+			if (aspAlpha < MIN_SCORE)
+				aspAlpha = MIN_SCORE;
+			if (aspBeta > MAX_SCORE)
+				aspBeta = MAX_SCORE;
+
+			while (true)
+			{
+				score = RecursiveSearch(aspAlpha, aspBeta, depth, pGame, true, noMove, 0, incheck);
+				if (g_Stopped)
+					break;
+
+				if (score <= aspAlpha)
+				{
+					delta = (short)(delta * 2);
+					aspAlpha = (short)(lastScore - delta);
+					if (aspAlpha < MIN_SCORE)
+						aspAlpha = MIN_SCORE;
+				}
+				else if (score >= aspBeta)
+				{
+					delta = (short)(delta * 2);
+					aspBeta = (short)(lastScore + delta);
+					if (aspBeta > MAX_SCORE)
+						aspBeta = MAX_SCORE;
+				}
+				else
+				{
+					break;
+				}
+
+				if (aspAlpha == MIN_SCORE && aspBeta == MAX_SCORE)
+				{
+					score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+					break;
+				}
+			}
+		}
+		else
+		{
+			score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+		}
 		if (g_Stopped)
 			break;
+		lastScore = score;
+		hasLastScore = true;
 
 		float ellapsed = (float)(NowMs() - start) / 1000.0f;
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
