@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include "search.h"
 #include "position.h"
 #include "evaluation.h"
@@ -89,25 +90,21 @@ static long long NowMs()
 
 void InitLmr()
 {
-	/*
-	i > 3 & depth > 3 -- > 2
-	i > 6 & depth > 6 -- > 3
-	i > 9 & depth > 9 -- > 4
-	*/
+	// Log-based LMR formula: r = 0.5 + ln(depth) * ln(moveNo+1) / 2.25
 	for (int depth = 0; depth < MAX_DEPTH; depth++)
 	{
 		for (int moveNo = 0; moveNo < 100; moveNo++)
 		{
-			if (depth > 12 && moveNo > 15)
-				lmr_matrix[depth][moveNo] = 3;
-			else if (depth > 7 && moveNo > 10)
-				lmr_matrix[depth][moveNo] = 3;
-			else if (depth > 3 && moveNo > 7)
-				lmr_matrix[depth][moveNo] = 2;
-			else
-				lmr_matrix[depth][moveNo] = 1;
-
-			// printf("depth: %d   moveNo: %d   lmr: %d\n", depth, moveNo, lmr_matrix[depth][moveNo]);
+			if (depth == 0 || moveNo == 0)
+			{
+				lmr_matrix[depth][moveNo] = 0;
+				continue;
+			}
+			double r = 0.5 + log((double)depth) * log((double)(moveNo + 1)) / 2.25;
+			int red = (int)r;
+			if (red < 1) red = 1;
+			if (red >= depth) red = depth - 1;
+			lmr_matrix[depth][moveNo] = (uchar)red;
 		}
 	}
 }
@@ -216,6 +213,37 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 
 static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
 
+// Killer move table: 2 killer slots per ply
+static CM_THREAD_LOCAL Move g_killers[MAX_DEPTH][2];
+
+static void AddKiller(int ply, Move move)
+{
+	if (ply < 0 || ply >= MAX_DEPTH) return;
+	// Avoid duplicate in slot 0
+	if (g_killers[ply][0].From == move.From && g_killers[ply][0].To == move.To) return;
+	g_killers[ply][1] = g_killers[ply][0];
+	g_killers[ply][0] = move;
+}
+
+static void MoveKillersToTop(int ply, Move *moves, int moveCount, Side side)
+{
+	if (ply < 0 || ply >= MAX_DEPTH) return;
+	short bonus = (side == BLACK) ? 8000 : -8000;
+	for (int k = 0; k < 2; k++)
+	{
+		Move killer = g_killers[ply][k];
+		if (killer.From >= 64 || killer.To >= 64) continue;
+		for (int i = 0; i < moveCount; i++)
+		{
+			if (moves[i].From == killer.From && moves[i].To == killer.To)
+			{
+				moves[i].Score += bonus;
+				break;
+			}
+		}
+	}
+}
+
 static short EvalForSide(Game *game)
 {
 	short eval = GetEval(game); // GetEval is black-centric.
@@ -308,6 +336,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		return score;
 	}
 
+	// Reverse futility pruning: requires reliable static eval; left for future work
+
 	// NULL move check
 
 	if (doNull && !incheck && depth > 3)
@@ -350,6 +380,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	{
 		MoveToTop(pvMove, localMoves, moveCount, game->Side);
 	}
+	MoveKillersToTop(deep_in, localMoves, moveCount, game->Side);
+	MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
 
 	// Not reducing for the first number of moves of each depth.
 	const uchar fullDepthMoves = 10;
@@ -386,7 +418,10 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		if (checked || childMove.MoveInfo == SoonPromoting)
 			extension = 1;
 
-		uchar lmrRed = 2; // lmr_matrix[depth][i];
+		uchar lmrRed = lmr_matrix[depth][i < 100 ? i : 99];
+		if (lmrRed < 1) lmrRed = 1;
+		if (lmrRed > 2) lmrRed = 2;    // cap: never reduce more than old constant
+		if (lmrRed >= depth) lmrRed = depth - 1;
 		// Late Move Reduction, full depth for the first moves, and interesting moves.
 		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
@@ -416,10 +451,11 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			if (alpha >= beta)
 			{
 				AddHashScore(game->Hash, beta, depth, BEST_WHITE, bestMove);
-				/*if (undos.CaptIndex == -1)
-					AddCounterMove(childMove, prevMove);*/
-				// if (undos.CaptIndex == -1)
-				//    AddKiller(game, childMove);
+				if (undos.CaptIndex == -1)
+				{
+					AddKiller(deep_in, childMove);
+					AddCounterMove(childMove, prevMove);
+				}
 				return beta;
 			}
 		}
@@ -561,12 +597,46 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 
 	Move noMove = InvalidMove();
 
+	// Reset per-search ordering heuristics
+	memset(g_killers, 0, sizeof(g_killers));
+	ClearCounterMoves();
+
 	for (int depth = 1; depth <= g_topSearchParams.MaxDepth; depth++)
 	{
 		long long depStart = NowMs();
 		bool incheck = SquareAttacked(pGame->KingSquares[pGame->Side01], pGame->Side ^ 24, pGame);
 
-		short score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+		short score;
+		if (depth >= 5 && IsMoveValid(bestMove) && abs(bestMove.Score) < 7000)
+		{
+			// Aspiration windows: only widen the failing side each retry
+			short aspDelta = 50;
+			short aspAlpha = (short)max(MIN_SCORE, (int)bestMove.Score - aspDelta);
+			short aspBeta  = (short)min(MAX_SCORE, (int)bestMove.Score + aspDelta);
+			while (!g_Stopped)
+			{
+				score = RecursiveSearch(aspAlpha, aspBeta, depth, pGame, true, noMove, 0, incheck);
+				if (g_Stopped) break;
+				if (score <= aspAlpha)
+				{
+					aspAlpha = (short)max(MIN_SCORE, (int)aspAlpha - aspDelta);
+					aspDelta *= 2;
+				}
+				else if (score >= aspBeta)
+				{
+					aspBeta  = (short)min(MAX_SCORE, (int)aspBeta + aspDelta);
+					aspDelta *= 2;
+				}
+				else
+					break;
+				// Fall back to full window if delta gets too large
+				if (aspDelta >= 2000) { aspAlpha = MIN_SCORE; aspBeta = MAX_SCORE; }
+			}
+		}
+		else
+		{
+			score = RecursiveSearch(MIN_SCORE, MAX_SCORE, depth, pGame, true, noMove, 0, incheck);
+		}
 		if (g_Stopped)
 			break;
 
@@ -652,8 +722,6 @@ MoveCoordinates Search(bool async)
 			return bookMove;
 		}
 	}
-
-	// ClearCounterMoves();
 
 	g_Stopped = false;
 	g_SearchedNodes = 0;
