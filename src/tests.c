@@ -11,6 +11,7 @@
 #include "search.h"
 #include "moves.h"
 #include "platform.h"
+#include "bitboards.h"
 
 #ifdef _MSC_VER
 #pragma region TestsHelpers
@@ -884,6 +885,140 @@ void containsNotTest()
 	AssertNot(Contains(s2, "annika"), "containsNotTest failed");
 }
 
+void PawnBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	PawnBitboards bb = GetPawnBitboards(&g_mainGame);
+	AssertAreEqualLongs(0x000000000000FF00ULL, bb.WhitePawns, "white pawn bitboard mismatch in start position");
+	AssertAreEqualLongs(0x00FF000000000000ULL, bb.BlackPawns, "black pawn bitboard mismatch in start position");
+	AssertAreEqualLongs(0x00FF00000000FF00ULL, bb.AllPawns, "all pawn bitboard mismatch in start position");
+
+	ReadFen("8/2p5/8/3P4/8/8/P7/8 w - - 0 1");
+	bb = GetPawnBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << a2) | (1ULL << d5), bb.WhitePawns, "white pawn bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << c7, bb.BlackPawns, "black pawn bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << a2) | (1ULL << d5) | (1ULL << c7), bb.AllPawns, "all pawn bitboard mismatch in sparse position");
+}
+
+void KnightBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	KnightBitboards bb = GetKnightBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << b1) | (1ULL << g1), bb.WhiteKnights, "white knight bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << b8) | (1ULL << g8), bb.BlackKnights, "black knight bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << b1) | (1ULL << g1) | (1ULL << b8) | (1ULL << g8), bb.AllKnights, "all knight bitboard mismatch in start position");
+
+	ReadFen("8/8/3n4/8/8/2N5/8/7N w - - 0 1");
+	bb = GetKnightBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << c3) | (1ULL << h1), bb.WhiteKnights, "white knight bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << d6, bb.BlackKnights, "black knight bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << c3) | (1ULL << h1) | (1ULL << d6), bb.AllKnights, "all knight bitboard mismatch in sparse position");
+}
+
+void BishopBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	BishopBitboards bb = GetBishopBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << c1) | (1ULL << f1), bb.WhiteBishops, "white bishop bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << c8) | (1ULL << f8), bb.BlackBishops, "black bishop bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << c1) | (1ULL << f1) | (1ULL << c8) | (1ULL << f8), bb.AllBishops, "all bishop bitboard mismatch in start position");
+
+	ReadFen("8/8/8/2b5/8/6B1/8/1B6 w - - 0 1");
+	bb = GetBishopBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << g3) | (1ULL << b1), bb.WhiteBishops, "white bishop bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << c5, bb.BlackBishops, "black bishop bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << g3) | (1ULL << b1) | (1ULL << c5), bb.AllBishops, "all bishop bitboard mismatch in sparse position");
+}
+
+void RookBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	RookBitboards bb = GetRookBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << a1) | (1ULL << h1), bb.WhiteRooks, "white rook bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << a8) | (1ULL << h8), bb.BlackRooks, "black rook bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << a1) | (1ULL << h1) | (1ULL << a8) | (1ULL << h8), bb.AllRooks, "all rook bitboard mismatch in start position");
+
+	ReadFen("8/8/6r1/8/8/8/8/R3R3 w - - 0 1");
+	bb = GetRookBitboards(&g_mainGame);
+	AssertAreEqualLongs((1ULL << a1) | (1ULL << e1), bb.WhiteRooks, "white rook bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << g6, bb.BlackRooks, "black rook bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << a1) | (1ULL << e1) | (1ULL << g6), bb.AllRooks, "all rook bitboard mismatch in sparse position");
+}
+
+void QueenBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	QueenBitboards bb = GetQueenBitboards(&g_mainGame);
+	AssertAreEqualLongs(1ULL << d1, bb.WhiteQueens, "white queen bitboard mismatch in start position");
+	AssertAreEqualLongs(1ULL << d8, bb.BlackQueens, "black queen bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << d1) | (1ULL << d8), bb.AllQueens, "all queen bitboard mismatch in start position");
+
+	ReadFen("8/8/8/4q3/8/8/8/3Q4 w - - 0 1");
+	bb = GetQueenBitboards(&g_mainGame);
+	AssertAreEqualLongs(1ULL << d1, bb.WhiteQueens, "white queen bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << e5, bb.BlackQueens, "black queen bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << d1) | (1ULL << e5), bb.AllQueens, "all queen bitboard mismatch in sparse position");
+}
+
+void KingBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	KingBitboards bb = GetKingBitboards(&g_mainGame);
+	AssertAreEqualLongs(1ULL << e1, bb.WhiteKing, "white king bitboard mismatch in start position");
+	AssertAreEqualLongs(1ULL << e8, bb.BlackKing, "black king bitboard mismatch in start position");
+	AssertAreEqualLongs((1ULL << e1) | (1ULL << e8), bb.AllKings, "all king bitboard mismatch in start position");
+
+	ReadFen("8/8/8/8/3k4/8/8/6K1 w - - 0 1");
+	bb = GetKingBitboards(&g_mainGame);
+	AssertAreEqualLongs(1ULL << g1, bb.WhiteKing, "white king bitboard mismatch in sparse position");
+	AssertAreEqualLongs(1ULL << d4, bb.BlackKing, "black king bitboard mismatch in sparse position");
+	AssertAreEqualLongs((1ULL << g1) | (1ULL << d4), bb.AllKings, "all king bitboard mismatch in sparse position");
+}
+
+void AllPieceBitboardsTest()
+{
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	AllPieceBitboards bb = GetAllPieceBitboards(&g_mainGame);
+	AssertAreEqualLongs(0x000000000000FFFFULL, bb.WhitePieces, "white occupancy mismatch in start position");
+	AssertAreEqualLongs(0xFFFF000000000000ULL, bb.BlackPieces, "black occupancy mismatch in start position");
+	AssertAreEqualLongs(0xFFFF00000000FFFFULL, bb.Occupied, "occupied mismatch in start position");
+
+	ReadFen("8/2p5/3n4/2b1q3/3k4/2N3B1/P2QR3/6K1 w - - 0 1");
+	bb = GetAllPieceBitboards(&g_mainGame);
+
+	U64 expectedWhitePawns = (1ULL << a2);
+	U64 expectedBlackPawns = (1ULL << c7);
+	U64 expectedWhiteKnights = (1ULL << c3);
+	U64 expectedBlackKnights = (1ULL << d6);
+	U64 expectedWhiteBishops = (1ULL << g3);
+	U64 expectedBlackBishops = (1ULL << c5);
+	U64 expectedWhiteRooks = (1ULL << e2);
+	U64 expectedBlackRooks = 0ULL;
+	U64 expectedWhiteQueens = (1ULL << d2);
+	U64 expectedBlackQueens = (1ULL << e5);
+	U64 expectedWhiteKings = (1ULL << g1);
+	U64 expectedBlackKings = (1ULL << d4);
+
+	AssertAreEqualLongs(expectedWhitePawns, bb.Pawns.WhitePawns, "white pawns mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackPawns, bb.Pawns.BlackPawns, "black pawns mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhiteKnights, bb.Knights.WhiteKnights, "white knights mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackKnights, bb.Knights.BlackKnights, "black knights mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhiteBishops, bb.Bishops.WhiteBishops, "white bishops mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackBishops, bb.Bishops.BlackBishops, "black bishops mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhiteRooks, bb.Rooks.WhiteRooks, "white rooks mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackRooks, bb.Rooks.BlackRooks, "black rooks mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhiteQueens, bb.Queens.WhiteQueens, "white queens mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackQueens, bb.Queens.BlackQueens, "black queens mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhiteKings, bb.Kings.WhiteKing, "white king mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackKings, bb.Kings.BlackKing, "black king mismatch in aggregate bitboard");
+
+	U64 expectedWhitePieces = expectedWhitePawns | expectedWhiteKnights | expectedWhiteBishops | expectedWhiteRooks | expectedWhiteQueens | expectedWhiteKings;
+	U64 expectedBlackPieces = expectedBlackPawns | expectedBlackKnights | expectedBlackBishops | expectedBlackRooks | expectedBlackQueens | expectedBlackKings;
+	AssertAreEqualLongs(expectedWhitePieces, bb.WhitePieces, "white occupancy mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedBlackPieces, bb.BlackPieces, "black occupancy mismatch in aggregate bitboard");
+	AssertAreEqualLongs(expectedWhitePieces | expectedBlackPieces, bb.Occupied, "occupied mismatch in aggregate bitboard");
+}
+
 void _runTests()
 {
 	// BestMoveTest();
@@ -934,6 +1069,13 @@ void runAllTests()
 	MaterialDrawWhite();
 	// MobilityRookTest();
 	DoublePawnsTest();
+	PawnBitboardsTest();
+	KnightBitboardsTest();
+	BishopBitboardsTest();
+	RookBitboardsTest();
+	QueenBitboardsTest();
+	KingBitboardsTest();
+	AllPieceBitboardsTest();
 	KingExposureTest();
 	// PassedPawnTest();
 	/*PositionScorePawns();
