@@ -1,5 +1,5 @@
-char Version[] = "1.1.1";
+char Version[] = "1.2.0";
 char GitBranch[] = "master";
-char GitCommit[] = "d40f495";
-char BuildDate[] = "Sunday, March 8, 2026 5:25:45 PM";
+char GitCommit[] = "000f3e0";
+char BuildDate[] = "Tuesday, March 10, 2026 9:07:13 PM";
 

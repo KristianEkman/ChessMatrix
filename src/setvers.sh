@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION="1.1.1"
+VERSION="1.2.0"
 
 if git -C "$SCRIPT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 	BRANCH="$(git -C "$SCRIPT_DIR" branch --show-current | tr -d '\r\n')"
