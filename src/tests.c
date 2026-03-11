@@ -553,6 +553,45 @@ void WhiteCastlingRightsAfterKingMove()
 	AssertNot(MovesContains(moves, count, expectedMove), "Invalid move was found");
 }
 
+void MoveHashMatchesRebuiltFen()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
+	PlayerMove pm = MakePlayerMove("e2e4");
+	AssertNot(pm.Invalid, "Move was not valid");
+
+	U64 hashAfterMove = g_mainGame.Hash;
+	char fen[100];
+	WriteFen(fen);
+	ReadFen(fen);
+
+	AssertAreEqualLongs(hashAfterMove, g_mainGame.Hash, "Move hash should match the hash rebuilt from FEN");
+}
+
+void PromotionHashMatchesRebuiltFen()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+	PlayerMove pm = MakePlayerMove("b7b8q");
+	AssertNot(pm.Invalid, "Move was not valid");
+
+	U64 hashAfterMove = g_mainGame.Hash;
+	char fen[100];
+	WriteFen(fen);
+	ReadFen(fen);
+
+	AssertAreEqualLongs(hashAfterMove, g_mainGame.Hash, "Promotion hash should match the hash rebuilt from FEN");
+}
+
+void CastlingRightsClearedWhenRookIsCaptured()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/8/8/8/q7/R3K3 b Q - 0 1");
+	PlayerMove pm = MakePlayerMove("a2a1");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertNot(g_mainGame.State & WhiteCanCastleLong, "White long castling rights should be cleared after the rook on a1 is captured");
+}
+
 void MaterialBlackPawnCapture()
 {
 	printf("%s\n", __func__);
@@ -924,6 +963,9 @@ void runAllTests()
 	EnPassantFromFenTest();
 	BlackCastlingRightsAfterKingMove();
 	WhiteCastlingRightsAfterKingMove();
+	MoveHashMatchesRebuiltFen();
+	PromotionHashMatchesRebuiltFen();
+	CastlingRightsClearedWhenRookIsCaptured();
 	EnPassantAfterMove();
 	MaterialBlackPawnCapture();
 	MaterialWhiteQueenCapture();
