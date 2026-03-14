@@ -7,6 +7,154 @@
 #include "countermoves.h"
 #include <string.h>
 
+static U64 SquareBit(int square)
+{
+	return 1ULL << square;
+}
+
+static void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
+{
+	if (pieceType == NOPIECE)
+		return;
+
+	int side01 = pieceType >> 4;
+	int pt = pieceType & 7;
+	U64 bit = SquareBit(square);
+
+	if (side01 == 0)
+		bitboards->WhitePieces |= bit;
+	else
+		bitboards->BlackPieces |= bit;
+	bitboards->Occupied |= bit;
+	bitboards->Matrix[pt][side01] |= bit;
+
+	switch (pt)
+	{
+	case PAWN:
+		if (side01 == 0)
+			bitboards->Pawns.WhitePawns |= bit;
+		else
+			bitboards->Pawns.BlackPawns |= bit;
+		bitboards->Pawns.AllPawns |= bit;
+		break;
+	case KNIGHT:
+		if (side01 == 0)
+			bitboards->Knights.WhiteKnights |= bit;
+		else
+			bitboards->Knights.BlackKnights |= bit;
+		bitboards->Knights.AllKnights |= bit;
+		break;
+	case BISHOP:
+		if (side01 == 0)
+			bitboards->Bishops.WhiteBishops |= bit;
+		else
+			bitboards->Bishops.BlackBishops |= bit;
+		bitboards->Bishops.AllBishops |= bit;
+		break;
+	case ROOK:
+		if (side01 == 0)
+			bitboards->Rooks.WhiteRooks |= bit;
+		else
+			bitboards->Rooks.BlackRooks |= bit;
+		bitboards->Rooks.AllRooks |= bit;
+		break;
+	case QUEEN:
+		if (side01 == 0)
+			bitboards->Queens.WhiteQueens |= bit;
+		else
+			bitboards->Queens.BlackQueens |= bit;
+		bitboards->Queens.AllQueens |= bit;
+		break;
+	case KING:
+		if (side01 == 0)
+			bitboards->Kings.WhiteKing |= bit;
+		else
+			bitboards->Kings.BlackKing |= bit;
+		bitboards->Kings.AllKings |= bit;
+		break;
+	default:
+		break;
+	}
+}
+
+static void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
+{
+	if (pieceType == NOPIECE)
+		return;
+
+	int side01 = pieceType >> 4;
+	int pt = pieceType & 7;
+	U64 bit = SquareBit(square);
+	U64 clearMask = ~bit;
+
+	if (side01 == 0)
+		bitboards->WhitePieces &= clearMask;
+	else
+		bitboards->BlackPieces &= clearMask;
+	bitboards->Occupied &= clearMask;
+	bitboards->Matrix[pt][side01] &= clearMask;
+
+	switch (pt)
+	{
+	case PAWN:
+		if (side01 == 0)
+			bitboards->Pawns.WhitePawns &= clearMask;
+		else
+			bitboards->Pawns.BlackPawns &= clearMask;
+		bitboards->Pawns.AllPawns &= clearMask;
+		break;
+	case KNIGHT:
+		if (side01 == 0)
+			bitboards->Knights.WhiteKnights &= clearMask;
+		else
+			bitboards->Knights.BlackKnights &= clearMask;
+		bitboards->Knights.AllKnights &= clearMask;
+		break;
+	case BISHOP:
+		if (side01 == 0)
+			bitboards->Bishops.WhiteBishops &= clearMask;
+		else
+			bitboards->Bishops.BlackBishops &= clearMask;
+		bitboards->Bishops.AllBishops &= clearMask;
+		break;
+	case ROOK:
+		if (side01 == 0)
+			bitboards->Rooks.WhiteRooks &= clearMask;
+		else
+			bitboards->Rooks.BlackRooks &= clearMask;
+		bitboards->Rooks.AllRooks &= clearMask;
+		break;
+	case QUEEN:
+		if (side01 == 0)
+			bitboards->Queens.WhiteQueens &= clearMask;
+		else
+			bitboards->Queens.BlackQueens &= clearMask;
+		bitboards->Queens.AllQueens &= clearMask;
+		break;
+	case KING:
+		if (side01 == 0)
+			bitboards->Kings.WhiteKing &= clearMask;
+		else
+			bitboards->Kings.BlackKing &= clearMask;
+		bitboards->Kings.AllKings &= clearMask;
+		break;
+	default:
+		break;
+	}
+}
+
+static void MovePieceOnBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int from, int to)
+{
+	RemovePieceFromBitboards(bitboards, pieceType, from);
+	AddPieceToBitboards(bitboards, pieceType, to);
+}
+
+static void ReplacePieceOnBitboards(AllPieceBitboards *bitboards, PieceType fromPiece, PieceType toPiece, int square)
+{
+	RemovePieceFromBitboards(bitboards, fromPiece, square);
+	AddPieceToBitboards(bitboards, toPiece, square);
+}
+
 static void ClearCastlingRightsForCapturedRook(Game *game, int square, U64 *hash)
 {
 	switch (square)
@@ -157,7 +305,12 @@ Undos DoMove(Move move, Game *game)
 	PieceType pieceType = game->Squares[f];
 	PieceType pt = pieceType & 7;
 	U64 hash = game->Hash;
+	AllPieceBitboards *bitboards = &game->Bitboards;
+	PieceType promotedPiece = NOPIECE;
 
+	if (captType && move.MoveInfo != EnPassantCapture)
+		RemovePieceFromBitboards(bitboards, captType, t);
+	MovePieceOnBitboards(bitboards, pieceType, f, t);
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
 
@@ -182,35 +335,43 @@ Undos DoMove(Move move, Game *game)
 	switch (move.MoveInfo)
 	{
 	case PromotionQueen:
+		promotedPiece = QUEEN | game->Side;
 		game->Squares[t] = QUEEN | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
 		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[QUEEN | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (QUEEN | game->Side);
+		ReplacePieceOnBitboards(bitboards, pieceType, promotedPiece, t);
 
 		break;
 	case PromotionRook:
+		promotedPiece = ROOK | game->Side;
 		game->Squares[t] = ROOK | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
 		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[ROOK | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (ROOK | game->Side);
+		ReplacePieceOnBitboards(bitboards, pieceType, promotedPiece, t);
 
 		break;
 	case PromotionBishop:
+		promotedPiece = BISHOP | game->Side;
 		game->Squares[t] = BISHOP | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
 		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[BISHOP | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (BISHOP | game->Side);
+		ReplacePieceOnBitboards(bitboards, pieceType, promotedPiece, t);
 
 		break;
 	case PromotionKnight:
+		promotedPiece = KNIGHT | game->Side;
 		game->Squares[move.To] = KNIGHT | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
 		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[KNIGHT | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (KNIGHT | game->Side);
+		ReplacePieceOnBitboards(bitboards, pieceType, promotedPiece, t);
 
 		break;
 	case KingMove:
@@ -275,6 +436,7 @@ Undos DoMove(Move move, Game *game)
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = rook;
 		MovePiece(game, side01, rookFr, rookTo);
+		MovePieceOnBitboards(bitboards, rook, rookFr, rookTo);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
 
@@ -295,6 +457,7 @@ Undos DoMove(Move move, Game *game)
 		game->Squares[rookFr] = NOPIECE;
 		game->Squares[rookTo] = ROOK | game->Side;
 		MovePiece(game, side01, rookFr, rookTo);
+		MovePieceOnBitboards(bitboards, rook, rookFr, rookTo);
 		KingPositionScore(move, game);
 		hash ^= ZobritsPieceTypesSquares[rook][rookFr];
 		hash ^= ZobritsPieceTypesSquares[rook][rookTo];
@@ -317,6 +480,7 @@ Undos DoMove(Move move, Game *game)
 		SetCaptureOff(game, !side01, behind, &undos);
 		game->Material[!side01] -= MaterialMatrix[!side01][PAWN];
 		hash ^= ZobritsPieceTypesSquares[PAWN | (game->Side ^ 24)][behind];
+		RemovePieceFromBitboards(bitboards, PAWN | (game->Side ^ 24), behind);
 	}
 	break;
 	default:
@@ -409,6 +573,9 @@ void UndoMove(Game *game, Move move, Undos undos)
 
 	Side otherSide = game->Side ^ 24;
 	int otherSide01 = otherSide >> 4;
+	AllPieceBitboards *bitboards = &game->Bitboards;
+	PieceType movingPiece = game->Squares[move.To];
+	PieceType pawnPiece = PAWN | otherSide;
 
 	PieceType capture = NOPIECE;
 	if (undos.CaptIndex != -1)
@@ -416,6 +583,42 @@ void UndoMove(Game *game, Move move, Undos undos)
 		capture = game->Pieces[!otherSide01][undos.CaptIndex].Type;
 	}
 	game->Material[capture >> 4] += MaterialMatrix[capture >> 4][capture & 7];
+
+	switch (move.MoveInfo)
+	{
+	case PromotionQueen:
+	case PromotionRook:
+	case PromotionBishop:
+	case PromotionKnight:
+		RemovePieceFromBitboards(bitboards, movingPiece, move.To);
+		AddPieceToBitboards(bitboards, pawnPiece, move.From);
+		if (capture)
+			AddPieceToBitboards(bitboards, capture, move.To);
+		break;
+	case CastleShort:
+	{
+		PieceType rook = ROOK | otherSide;
+		MovePieceOnBitboards(bitboards, movingPiece, move.To, move.From);
+		MovePieceOnBitboards(bitboards, rook, 5 + CastlesOffset[otherSide01], 7 + CastlesOffset[otherSide01]);
+		break;
+	}
+	case CastleLong:
+	{
+		PieceType rook = ROOK | otherSide;
+		MovePieceOnBitboards(bitboards, movingPiece, move.To, move.From);
+		MovePieceOnBitboards(bitboards, rook, 3 + CastlesOffset[otherSide01], 0 + CastlesOffset[otherSide01]);
+		break;
+	}
+	case EnPassantCapture:
+		MovePieceOnBitboards(bitboards, movingPiece, move.To, move.From);
+		AddPieceToBitboards(bitboards, PAWN | game->Side, move.To + Behind[otherSide01]);
+		break;
+	default:
+		MovePieceOnBitboards(bitboards, movingPiece, move.To, move.From);
+		if (capture)
+			AddPieceToBitboards(bitboards, capture, move.To);
+		break;
+	}
 
 	game->Squares[move.From] = game->Squares[move.To];
 	if (move.MoveInfo != EnPassantCapture)

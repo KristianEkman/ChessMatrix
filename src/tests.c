@@ -466,6 +466,44 @@ bool MovesContains(Move *moves, int count, Move move)
 	return false;
 }
 
+void AssertBitboardsEqual(AllPieceBitboards expected, AllPieceBitboards actual, const char *msg)
+{
+	AssertAreEqualLongs(expected.WhitePieces, actual.WhitePieces, msg);
+	AssertAreEqualLongs(expected.BlackPieces, actual.BlackPieces, msg);
+	AssertAreEqualLongs(expected.Occupied, actual.Occupied, msg);
+	AssertAreEqualLongs(expected.Pawns.WhitePawns, actual.Pawns.WhitePawns, msg);
+	AssertAreEqualLongs(expected.Pawns.BlackPawns, actual.Pawns.BlackPawns, msg);
+	AssertAreEqualLongs(expected.Pawns.AllPawns, actual.Pawns.AllPawns, msg);
+	AssertAreEqualLongs(expected.Knights.WhiteKnights, actual.Knights.WhiteKnights, msg);
+	AssertAreEqualLongs(expected.Knights.BlackKnights, actual.Knights.BlackKnights, msg);
+	AssertAreEqualLongs(expected.Knights.AllKnights, actual.Knights.AllKnights, msg);
+	AssertAreEqualLongs(expected.Bishops.WhiteBishops, actual.Bishops.WhiteBishops, msg);
+	AssertAreEqualLongs(expected.Bishops.BlackBishops, actual.Bishops.BlackBishops, msg);
+	AssertAreEqualLongs(expected.Bishops.AllBishops, actual.Bishops.AllBishops, msg);
+	AssertAreEqualLongs(expected.Rooks.WhiteRooks, actual.Rooks.WhiteRooks, msg);
+	AssertAreEqualLongs(expected.Rooks.BlackRooks, actual.Rooks.BlackRooks, msg);
+	AssertAreEqualLongs(expected.Rooks.AllRooks, actual.Rooks.AllRooks, msg);
+	AssertAreEqualLongs(expected.Queens.WhiteQueens, actual.Queens.WhiteQueens, msg);
+	AssertAreEqualLongs(expected.Queens.BlackQueens, actual.Queens.BlackQueens, msg);
+	AssertAreEqualLongs(expected.Queens.AllQueens, actual.Queens.AllQueens, msg);
+	AssertAreEqualLongs(expected.Kings.WhiteKing, actual.Kings.WhiteKing, msg);
+	AssertAreEqualLongs(expected.Kings.BlackKing, actual.Kings.BlackKing, msg);
+	AssertAreEqualLongs(expected.Kings.AllKings, actual.Kings.AllKings, msg);
+
+	for (int pieceType = PAWN; pieceType <= KING; pieceType++)
+	{
+		for (int side = 0; side < 2; side++)
+		{
+			AssertAreEqualLongs(expected.Matrix[pieceType][side], actual.Matrix[pieceType][side], msg);
+		}
+	}
+}
+
+void AssertCachedBitboardsMatchGame(const char *msg)
+{
+	AssertBitboardsEqual(GetAllPieceBitboards(&g_mainGame), g_mainGame.Bitboards, msg);
+}
+
 void ValidMovesPromotionCaptureAndCastling()
 {
 	printf("%s\n", __func__);
@@ -932,7 +970,7 @@ void PawnBitboardsTest()
 	AssertAreEqualLongs(0x00FF000000000000ULL, bb.BlackPawns, "black pawn bitboard mismatch in start position");
 	AssertAreEqualLongs(0x00FF00000000FF00ULL, bb.AllPawns, "all pawn bitboard mismatch in start position");
 
-	ReadFen("8/2p5/8/3P4/8/8/P7/8 w - - 0 1");
+	ReadFen("4k3/2p5/8/3P4/8/8/P7/4K3 w - - 0 1");
 	bb = GetPawnBitboards(&g_mainGame);
 	AssertAreEqualLongs((1ULL << a2) | (1ULL << d5), bb.WhitePawns, "white pawn bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << c7, bb.BlackPawns, "black pawn bitboard mismatch in sparse position");
@@ -947,7 +985,7 @@ void KnightBitboardsTest()
 	AssertAreEqualLongs((1ULL << b8) | (1ULL << g8), bb.BlackKnights, "black knight bitboard mismatch in start position");
 	AssertAreEqualLongs((1ULL << b1) | (1ULL << g1) | (1ULL << b8) | (1ULL << g8), bb.AllKnights, "all knight bitboard mismatch in start position");
 
-	ReadFen("8/8/3n4/8/8/2N5/8/7N w - - 0 1");
+	ReadFen("4k3/8/3n4/8/8/2N5/8/4K2N w - - 0 1");
 	bb = GetKnightBitboards(&g_mainGame);
 	AssertAreEqualLongs((1ULL << c3) | (1ULL << h1), bb.WhiteKnights, "white knight bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << d6, bb.BlackKnights, "black knight bitboard mismatch in sparse position");
@@ -962,7 +1000,7 @@ void BishopBitboardsTest()
 	AssertAreEqualLongs((1ULL << c8) | (1ULL << f8), bb.BlackBishops, "black bishop bitboard mismatch in start position");
 	AssertAreEqualLongs((1ULL << c1) | (1ULL << f1) | (1ULL << c8) | (1ULL << f8), bb.AllBishops, "all bishop bitboard mismatch in start position");
 
-	ReadFen("8/8/8/2b5/8/6B1/8/1B6 w - - 0 1");
+	ReadFen("4k3/8/8/2b5/8/6B1/8/1B2K3 w - - 0 1");
 	bb = GetBishopBitboards(&g_mainGame);
 	AssertAreEqualLongs((1ULL << g3) | (1ULL << b1), bb.WhiteBishops, "white bishop bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << c5, bb.BlackBishops, "black bishop bitboard mismatch in sparse position");
@@ -977,7 +1015,7 @@ void RookBitboardsTest()
 	AssertAreEqualLongs((1ULL << a8) | (1ULL << h8), bb.BlackRooks, "black rook bitboard mismatch in start position");
 	AssertAreEqualLongs((1ULL << a1) | (1ULL << h1) | (1ULL << a8) | (1ULL << h8), bb.AllRooks, "all rook bitboard mismatch in start position");
 
-	ReadFen("8/8/6r1/8/8/8/8/R3R3 w - - 0 1");
+	ReadFen("4k3/8/6r1/8/8/8/8/R3R1K1 w - - 0 1");
 	bb = GetRookBitboards(&g_mainGame);
 	AssertAreEqualLongs((1ULL << a1) | (1ULL << e1), bb.WhiteRooks, "white rook bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << g6, bb.BlackRooks, "black rook bitboard mismatch in sparse position");
@@ -992,7 +1030,7 @@ void QueenBitboardsTest()
 	AssertAreEqualLongs(1ULL << d8, bb.BlackQueens, "black queen bitboard mismatch in start position");
 	AssertAreEqualLongs((1ULL << d1) | (1ULL << d8), bb.AllQueens, "all queen bitboard mismatch in start position");
 
-	ReadFen("8/8/8/4q3/8/8/8/3Q4 w - - 0 1");
+	ReadFen("4k3/8/8/4q3/8/8/8/3QK3 w - - 0 1");
 	bb = GetQueenBitboards(&g_mainGame);
 	AssertAreEqualLongs(1ULL << d1, bb.WhiteQueens, "white queen bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << e5, bb.BlackQueens, "black queen bitboard mismatch in sparse position");
@@ -1058,6 +1096,102 @@ void AllPieceBitboardsTest()
 	AssertAreEqualLongs(expectedWhitePieces | expectedBlackPieces, bb.Occupied, "occupied mismatch in aggregate bitboard");
 }
 
+void CachedBitboardsAfterQuietMoveTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before quiet move");
+
+	PlayerMove pm = MakePlayerMove("e2e4");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after quiet move");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after quiet move undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after quiet move undo");
+}
+
+void CachedBitboardsAfterCaptureTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before capture");
+
+	PlayerMove pm = MakePlayerMove("d4e5");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after capture undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture undo");
+}
+
+void CachedBitboardsAfterCastlingTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before castling");
+
+	PlayerMove pm = MakePlayerMove("e1g1");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after castling");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after castling undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after castling undo");
+}
+
+void CachedBitboardsAfterEnPassantTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before en passant");
+
+	PlayerMove pm = MakePlayerMove("d5e6");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after en passant");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after en passant undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after en passant undo");
+}
+
+void CachedBitboardsAfterPromotionTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before promotion");
+
+	PlayerMove pm = MakePlayerMove("b7b8q");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after promotion");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after promotion undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after promotion undo");
+}
+
+void CachedBitboardsAfterCapturePromotionTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+	AllPieceBitboards start = g_mainGame.Bitboards;
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards before capture promotion");
+
+	PlayerMove pm = MakePlayerMove("b7c8q");
+	AssertNot(pm.Invalid, "Move was not valid");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture promotion");
+
+	UnMakePlayerMove(pm);
+	AssertBitboardsEqual(start, g_mainGame.Bitboards, "cached bitboards should restore after capture promotion undo");
+	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture promotion undo");
+}
+
 void _runTests()
 {
 	// BestMoveTest();
@@ -1118,6 +1252,12 @@ void runAllTests()
 	QueenBitboardsTest();
 	KingBitboardsTest();
 	AllPieceBitboardsTest();
+	CachedBitboardsAfterQuietMoveTest();
+	CachedBitboardsAfterCaptureTest();
+	CachedBitboardsAfterCastlingTest();
+	CachedBitboardsAfterEnPassantTest();
+	CachedBitboardsAfterPromotionTest();
+	CachedBitboardsAfterCapturePromotionTest();
 	KingExposureTest();
 	// PassedPawnTest();
 	/*PositionScorePawns();
