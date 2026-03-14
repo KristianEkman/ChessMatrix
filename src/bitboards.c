@@ -1,9 +1,9 @@
 #include "bitboards.h"
 
-AllPieceBitboards GetAllPieceBitboards(const Game *game)
+static AllPieceBitboards BuildAllPieceBitboards(const Game *game)
 {
 	U64 bb[7][2] = {0};
-	AllPieceBitboards bitboards;
+	AllPieceBitboards bitboards = {0};
 	bitboards.WhitePieces = 0ULL;
 	bitboards.BlackPieces = 0ULL;
 	bitboards.Occupied = 0ULL;
@@ -55,10 +55,12 @@ AllPieceBitboards GetAllPieceBitboards(const Game *game)
 	bitboards.Kings.AllKings = bb[KING][0] | bb[KING][1];
 
 	bitboards.Occupied = bitboards.WhitePieces | bitboards.BlackPieces;
+	for (int pieceType = PAWN; pieceType <= KING; pieceType++)
+	{
+		bitboards.Matrix[pieceType][0] = bb[pieceType][0];
+		bitboards.Matrix[pieceType][1] = bb[pieceType][1];
+	}
 
-    // copy to matrix for easier access in move generation
-    // bitboards.Matrix = bb;
-    
 	return bitboards;
 }
 
@@ -67,6 +69,16 @@ U64 SquareToBit(int square)
 	if (square < 0 || square > 63)
 		return 0ULL;
 	return 1ULL << square;
+}
+
+void SyncGameBitboards(Game *game)
+{
+	game->Bitboards = BuildAllPieceBitboards(game);
+}
+
+AllPieceBitboards GetAllPieceBitboards(const Game *game)
+{
+	return BuildAllPieceBitboards(game);
 }
 
 PawnBitboards GetPawnBitboards(const Game *game)

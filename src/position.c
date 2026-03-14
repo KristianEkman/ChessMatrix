@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "bitboards.h"
 #include "patterns.h"
 #include "hashTable.h"
 
@@ -77,6 +78,7 @@ void StartPosition()
 	InitHash();
 	InitScores();
 	g_mainGame.FiftyMoveRuleCount = 0;
+	SyncGameBitboards(&g_mainGame);
 }
 
 void InitPieceList()

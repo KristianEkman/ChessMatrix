@@ -105,6 +105,62 @@ typedef struct {
 	int CheckMates;
 } PerftResult;
 
+typedef struct
+{
+	U64 WhitePawns;
+	U64 BlackPawns;
+	U64 AllPawns;
+} PawnBitboards;
+
+typedef struct
+{
+	U64 WhiteKnights;
+	U64 BlackKnights;
+	U64 AllKnights;
+} KnightBitboards;
+
+typedef struct
+{
+	U64 WhiteBishops;
+	U64 BlackBishops;
+	U64 AllBishops;
+} BishopBitboards;
+
+typedef struct
+{
+	U64 WhiteRooks;
+	U64 BlackRooks;
+	U64 AllRooks;
+} RookBitboards;
+
+typedef struct
+{
+	U64 WhiteQueens;
+	U64 BlackQueens;
+	U64 AllQueens;
+} QueenBitboards;
+
+typedef struct
+{
+	U64 WhiteKing;
+	U64 BlackKing;
+	U64 AllKings;
+} KingBitboards;
+
+typedef struct
+{
+	PawnBitboards Pawns;
+	KnightBitboards Knights;
+	BishopBitboards Bishops;
+	RookBitboards Rooks;
+	QueenBitboards Queens;
+	KingBitboards Kings;
+	U64 WhitePieces;
+	U64 BlackPieces;
+	U64 Occupied;
+	U64 Matrix[7][2];
+} AllPieceBitboards;
+
 
 typedef struct Piece {
 	PieceType Type;
@@ -144,6 +200,7 @@ typedef struct {
 	GameState State;
 	short Material[2];
 	PieceType Squares[64];
+	AllPieceBitboards Bitboards;
 	U64 Hash;
 	U64 PositionHistory[MAX_POSITION_HISTORY];
 	int PositionHistoryLength;

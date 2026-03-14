@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "search.h"
+#include "bitboards.h"
 #include "position.h"
 #include "evaluation.h"
 #include "moves.h"
@@ -459,6 +460,7 @@ void CopyMainGame(Game *copy)
 
 	memcpy(copy->MovesBuffer, g_mainGame.MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
 	memcpy(copy->Squares, g_mainGame.Squares, 64 * sizeof(PieceType));
+	copy->Bitboards = g_mainGame.Bitboards;
 	memcpy(copy->PositionHistory, g_mainGame.PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
 	memcpy(copy->Pieces, g_mainGame.Pieces, 32 * sizeof(Piece));
 	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
@@ -667,6 +669,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 MoveCoordinates Search(bool async)
 {
 	JoinActiveSearchThreads();
+	SyncGameBitboards(&g_mainGame);
 	g_emitBestMove = async;
 	g_topSearchParams.BestMove = InvalidMove();
 

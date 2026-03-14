@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "bitboards.h"
 #include "position.h"
 #include "utils.h"
 
@@ -179,6 +180,7 @@ void ReadFen(const char *fen)
 	FixPieceChain(&g_mainGame);
 	InitScores();
 	InitHash();
+	SyncGameBitboards(&g_mainGame);
 }
 
 void WriteFen(char *fenBuffer)
