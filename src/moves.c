@@ -7,6 +7,43 @@
 #include "countermoves.h"
 #include <string.h>
 
+static void ClearCastlingRightsForCapturedRook(Game *game, int square, U64 *hash)
+{
+	switch (square)
+	{
+	case 0:
+		if (game->State & WhiteCanCastleLong)
+		{
+			game->State &= ~WhiteCanCastleLong;
+			*hash ^= ZobritsCastlingRights[0];
+		}
+		break;
+	case 7:
+		if (game->State & WhiteCanCastleShort)
+		{
+			game->State &= ~WhiteCanCastleShort;
+			*hash ^= ZobritsCastlingRights[1];
+		}
+		break;
+	case 56:
+		if (game->State & BlackCanCastleLong)
+		{
+			game->State &= ~BlackCanCastleLong;
+			*hash ^= ZobritsCastlingRights[2];
+		}
+		break;
+	case 63:
+		if (game->State & BlackCanCastleShort)
+		{
+			game->State &= ~BlackCanCastleShort;
+			*hash ^= ZobritsCastlingRights[3];
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 void SetCaptureOff(Game *game, int side, int squareIndex, Undos *undos)
 {
 	Piece *capture = &game->Pieces[side][0];
@@ -119,6 +156,7 @@ Undos DoMove(Move move, Game *game)
 
 	PieceType pieceType = game->Squares[f];
 	PieceType pt = pieceType & 7;
+	U64 hash = game->Hash;
 
 	game->Squares[t] = game->Squares[f];
 	game->Squares[f] = NOPIECE;
@@ -128,11 +166,11 @@ Undos DoMove(Move move, Game *game)
 	{
 		SetCaptureOff(game, !side01, t, &undos);
 		game->Material[captColor] -= MaterialMatrix[captColor][captType & 7];
+		if ((captType & 7) == ROOK)
+			ClearCastlingRightsForCapturedRook(game, t, &hash);
 	}
 	game->Pieces[side01][move.PieceIdx].SquareIndex = t;
 	game->Pieces[side01][move.PieceIdx].MoveCount++;
-
-	U64 hash = game->Hash;
 	hash ^= ZobritsPieceTypesSquares[pieceType][f];
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
@@ -146,6 +184,7 @@ Undos DoMove(Move move, Game *game)
 	case PromotionQueen:
 		game->Squares[t] = QUEEN | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][QUEEN + 6];
+		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[QUEEN | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (QUEEN | game->Side);
 
@@ -153,6 +192,7 @@ Undos DoMove(Move move, Game *game)
 	case PromotionRook:
 		game->Squares[t] = ROOK | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][ROOK + 6];
+		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[ROOK | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (ROOK | game->Side);
 
@@ -160,6 +200,7 @@ Undos DoMove(Move move, Game *game)
 	case PromotionBishop:
 		game->Squares[t] = BISHOP | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][BISHOP + 6];
+		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[BISHOP | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (BISHOP | game->Side);
 
@@ -167,6 +208,7 @@ Undos DoMove(Move move, Game *game)
 	case PromotionKnight:
 		game->Squares[move.To] = KNIGHT | game->Side;
 		game->Material[side01] += MaterialMatrix[side01][KNIGHT + 6];
+		hash ^= ZobritsPieceTypesSquares[pieceType][t];
 		hash ^= ZobritsPieceTypesSquares[KNIGHT | game->Side][t];
 		game->Pieces[side01][move.PieceIdx].Type = (KNIGHT | game->Side);
 
@@ -282,6 +324,7 @@ Undos DoMove(Move move, Game *game)
 	}
 
 	hash ^= ZobritsSides[side01];
+	hash ^= ZobritsSides[!side01];
 	game->Hash = hash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
@@ -458,6 +501,7 @@ bool DoNullMove(Game *game)
 	game->State &= ~15;
 
 	hash ^= ZobritsSides[side01];
+	hash ^= ZobritsSides[!side01];
 	game->Hash ^= hash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
