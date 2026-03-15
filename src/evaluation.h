@@ -23,6 +23,12 @@ extern short CastlingPoints[2];
 //[middle or end][side][square]
 extern short KingPositionValueMatrix[2][2][64];
 
+extern U64 FileMask[8];
+extern U64 AdjacentFileMask[8];
+extern U64 PassedPawnMask[2][64];
+extern U64 PawnProtectorsMask[2][64];
+extern U64 KingShieldMask[2][64];
+
 short OpenRookFile(int square, Game* game, PieceType rook);
 
 short DoublePawns(int square, Game* game, PieceType pawn);
@@ -34,6 +40,8 @@ bool IsDraw(Game* game);
 short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
+
+short ProtectedByPawn(int square, Game* game);
 
 short TotalMaterial(Game* game);
 void CalculatePatterns();

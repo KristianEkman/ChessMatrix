@@ -1,10 +1,28 @@
 #include "commons.h"
 #include "evaluation.h"
+#include "bitboards.h"
 #include "patterns.h"
 #include <stdlib.h>
 
 
 //#define MOBILITY 3 // for every square a rook or bishop can go to
+
+#if defined(_MSC_VER)
+#define CM_THREAD_LOCAL __declspec(thread)
+#else
+#define CM_THREAD_LOCAL _Thread_local
+#endif
+
+#define PAWN_HASH_SIZE 16384
+
+typedef struct
+{
+	U64 Key;
+	short Score[2];
+	uchar PawnCount[2];
+} PawnHashEntry;
+
+static const int PawnPassedPoints[2][8];
 
 //white, black, (flipped, starts at A1)
 //[type][side][square]
@@ -184,33 +202,275 @@ short KingPositionValueMatrix[2][2][64] = {
 
 short CastlingPoints[2] = { -CASTLED, CASTLED };
 
+U64 FileMask[8] = { 0 };
+U64 AdjacentFileMask[8] = { 0 };
+U64 PassedPawnMask[2][64] = { 0 };
+U64 PawnProtectorsMask[2][64] = { 0 };
+U64 KingShieldMask[2][64] = { 0 };
 
-// Array of coordinates for squares infront of the king.
-// Depending on side and square of king.
-int InfrontOfKingSquares[2][64][4] = { 0 };
+static CM_THREAD_LOCAL PawnHashEntry g_pawnHashTable[PAWN_HASH_SIZE] = { 0 };
 
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
 
-short OpenRookFile(int square, Game* game, PieceType rook) {
-	int file = square % 8;
-	Side rookColor = rook & (BLACK | WHITE);
-	PieceType ownPawn = PAWN | rookColor;
-	PieceType oppPawn = PAWN | (rookColor ^ 24);
-	bool hasOwnPawn = false;
-	bool hasOppPawn = false;
-	for (int rank = 0; rank < 8; rank++)
-	{
-		int fileSquare = (rank * 8) + file;
-		PieceType piece = game->Squares[fileSquare];
-		if (piece == ownPawn)
-			hasOwnPawn = true;
-		else if (piece == oppPawn)
-			hasOppPawn = true;
+static U64 EvalSquareBit(int square)
+{
+	if (square < 0 || square > 63)
+		return 0ULL;
+	return 1ULL << square;
+}
 
-		if (hasOwnPawn && hasOppPawn)
-			break;
+static U64 MixPawnHashComponent(U64 value)
+{
+	value ^= value >> 30;
+	value *= 0xbf58476d1ce4e5b9ULL;
+	value ^= value >> 27;
+	value *= 0x94d049bb133111ebULL;
+	value ^= value >> 31;
+	return value;
+}
+
+static U64 GetPawnHashKey(const AllPieceBitboards *bb)
+{
+	U64 key = MixPawnHashComponent(bb->Pawns.WhitePawns) ^ (MixPawnHashComponent(bb->Pawns.BlackPawns) << 1);
+	return key != 0ULL ? key : 1ULL;
+}
+
+static U64 GetSidePawns(const AllPieceBitboards *bb, int side01)
+{
+	return side01 == 0 ? bb->Pawns.WhitePawns : bb->Pawns.BlackPawns;
+}
+
+static U64 GetOpponentPieces(const AllPieceBitboards *bb, int side01)
+{
+	return side01 == 0 ? bb->BlackPieces : bb->WhitePieces;
+}
+
+static short GetPassedPawnBaseScore(int square, int side01, U64 opponentPawns)
+{
+	if (opponentPawns & PassedPawnMask[side01][square])
+		return 0;
+	return PawnPassedPoints[side01][square >> 3];
+}
+
+static short GetPassedPawnFreePathBonus(int square, int side01, const AllPieceBitboards *bb, U64 opponentPawns)
+{
+	int file = square & 7;
+	int rank = square >> 3;
+	U64 fileAheadMask = 0ULL;
+	U64 opponentNonPawns = GetOpponentPieces(bb, side01) & ~opponentPawns;
+
+	if (side01 == 0)
+	{
+		int shift = (rank + 1) * 8;
+		if (shift < 64)
+			fileAheadMask = FileMask[file] & (~0ULL << shift);
 	}
+	else
+	{
+		int shift = rank * 8;
+		if (shift > 0)
+			fileAheadMask = FileMask[file] & ((1ULL << shift) - 1ULL);
+	}
+
+	return (opponentNonPawns & fileAheadMask) == 0ULL ? PASSED_PAWN_FREE_PATH : 0;
+}
+
+static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawnCount[2])
+{
+	U64 key = GetPawnHashKey(bb);
+	PawnHashEntry *entry = &g_pawnHashTable[key & (PAWN_HASH_SIZE - 1)];
+
+	if (entry->Key == key)
+	{
+		scores[0] = entry->Score[0];
+		scores[1] = entry->Score[1];
+		pawnCount[0] = entry->PawnCount[0];
+		pawnCount[1] = entry->PawnCount[1];
+	}
+	else
+	{
+		for (int side01 = 0; side01 < 2; side01++)
+		{
+			U64 ownPawns = GetSidePawns(bb, side01);
+			U64 opponentPawns = GetSidePawns(bb, !side01);
+			U64 pawns = ownPawns;
+			short score = 0;
+
+			pawnCount[side01] = (uchar)popcount(ownPawns);
+			while (pawns)
+			{
+				int square = pop_lsb(&pawns);
+				if (ownPawns & SquareToBit(square + Behind[side01]))
+					score -= DOUBLE_PAWN;
+				score += (short)(popcount(ownPawns & PawnProtectorsMask[side01][square]) * PAWN_PROTECT);
+				score += GetPassedPawnBaseScore(square, side01, opponentPawns);
+			}
+
+			scores[side01] = score;
+		}
+
+		entry->Key = key;
+		entry->Score[0] = scores[0];
+		entry->Score[1] = scores[1];
+		entry->PawnCount[0] = pawnCount[0];
+		entry->PawnCount[1] = pawnCount[1];
+	}
+
+	for (int side01 = 0; side01 < 2; side01++)
+	{
+		U64 ownPawns = GetSidePawns(bb, side01);
+		U64 opponentPawns = GetSidePawns(bb, !side01);
+		U64 pawns = ownPawns;
+
+		while (pawns)
+		{
+			int square = pop_lsb(&pawns);
+			if (GetPassedPawnBaseScore(square, side01, opponentPawns) == 0)
+				continue;
+			scores[side01] += GetPassedPawnFreePathBonus(square, side01, bb, opponentPawns);
+		}
+	}
+}
+
+static void CalculateFileMasks(void)
+{
+	for (int file = 0; file < 8; file++)
+	{
+		U64 fileMask = 0ULL;
+		U64 adjacentMask = 0ULL;
+
+		for (int rank = 0; rank < 8; rank++)
+		{
+			fileMask |= EvalSquareBit(rank * 8 + file);
+			if (file > 0)
+				adjacentMask |= EvalSquareBit(rank * 8 + file - 1);
+			if (file < 7)
+				adjacentMask |= EvalSquareBit(rank * 8 + file + 1);
+		}
+
+		FileMask[file] = fileMask;
+		AdjacentFileMask[file] = adjacentMask;
+	}
+}
+
+static void CalculatePassedPawnMasks(void)
+{
+	for (int side = 0; side < 2; side++)
+	{
+		for (int square = 0; square < 64; square++)
+		{
+			int file = square & 7;
+			int rank = square >> 3;
+			U64 mask = 0ULL;
+
+			if (side == 0)
+			{
+				for (int r = rank + 1; r < 8; r++)
+				{
+					for (int f = file - 1; f <= file + 1; f++)
+					{
+						if (f >= 0 && f < 8)
+							mask |= EvalSquareBit(r * 8 + f);
+					}
+				}
+			}
+			else
+			{
+				for (int r = rank - 1; r >= 0; r--)
+				{
+					for (int f = file - 1; f <= file + 1; f++)
+					{
+						if (f >= 0 && f < 8)
+							mask |= EvalSquareBit(r * 8 + f);
+					}
+				}
+			}
+
+			PassedPawnMask[side][square] = mask;
+		}
+	}
+}
+
+static void CalculatePawnProtectorsMasks(void)
+{
+	for (int side = 0; side < 2; side++)
+	{
+		for (int square = 0; square < 64; square++)
+		{
+			int file = square & 7;
+			int rank = square >> 3;
+			U64 mask = 0ULL;
+
+			if (side == 0)
+			{
+				if (rank > 0)
+				{
+					if (file > 0)
+						mask |= EvalSquareBit(square - 9);
+					if (file < 7)
+						mask |= EvalSquareBit(square - 7);
+				}
+			}
+			else
+			{
+				if (rank < 7)
+				{
+					if (file > 0)
+						mask |= EvalSquareBit(square + 7);
+					if (file < 7)
+						mask |= EvalSquareBit(square + 9);
+				}
+			}
+
+			PawnProtectorsMask[side][square] = mask;
+		}
+	}
+}
+
+static void CalculateKingShieldMasks(void)
+{
+	for (int side = 0; side < 2; side++)
+	{
+		for (int square = 0; square < 64; square++)
+		{
+			U64 mask = 0ULL;
+
+			if (side == 1)
+			{
+				if (square >= 56 && square != 59 && square != 60)
+				{
+					if (square != 63)
+						mask |= EvalSquareBit(square - 7);
+					mask |= EvalSquareBit(square - 8);
+					if (square != 56)
+						mask |= EvalSquareBit(square - 9);
+				}
+			}
+			else
+			{
+				if (square <= 7 && square != 3 && square != 4)
+				{
+					if (square != 7)
+						mask |= EvalSquareBit(square + 9);
+					mask |= EvalSquareBit(square + 8);
+					if (square != 0)
+						mask |= EvalSquareBit(square + 7);
+				}
+			}
+
+			KingShieldMask[side][square] = mask;
+		}
+	}
+}
+
+short OpenRookFile(int square, Game* game, PieceType rook) {
+	const AllPieceBitboards *bb = &game->Bitboards;
+	int file = square & 7;
+	int color01 = (rook & (BLACK | WHITE)) >> 4;
+	U64 fileMask = FileMask[file];
+	bool hasOwnPawn = (GetSidePawns(bb, color01) & fileMask) != 0ULL;
+	bool hasOppPawn = (GetSidePawns(bb, !color01) & fileMask) != 0ULL;
 
 	if (!hasOwnPawn && !hasOppPawn)
 		return OPEN_ROOK_FILE;
@@ -222,9 +482,9 @@ short OpenRookFile(int square, Game* game, PieceType rook) {
 }
 
 short DoublePawns(int square, Game* game, PieceType pawn) {
+	const AllPieceBitboards *bb = &game->Bitboards;
 	int color01 = (pawn & 24) >> 4;
-	int sqBehind = square + Behind[color01];
-	return (game->Squares[sqBehind] == pawn) * DOUBLE_PAWN;
+	return (GetSidePawns(bb, color01) & SquareToBit(square + Behind[color01])) != 0ULL ? DOUBLE_PAWN : 0;
 }
 
 bool IsDraw(Game* game) {
@@ -249,124 +509,26 @@ bool IsDraw(Game* game) {
 
 //When king is castled at back rank, penalty for missing pawns.
 short KingExposed(int square, Game* game) {
-	Side kingColor = game->Squares[square] & 24;
-	int color01 = kingColor >> 4;
-	PieceType pawn = PAWN | kingColor;
-
-	short score = 0;
-	for (int i = 1; i <= InfrontOfKingSquares[color01][square][0]; i++)
-	{
-		int protectSquare = InfrontOfKingSquares[color01][square][i];
-		score += game->Squares[protectSquare] != pawn;
-	}
-	return score * KING_EXPOSED;
+	const AllPieceBitboards *bb = &game->Bitboards;
+	int color01 = (game->Squares[square] & 24) >> 4;
+	U64 shieldMask = KingShieldMask[color01][square];
+	U64 ownPawns = GetSidePawns(bb, color01);
+	return (short)(popcount(shieldMask & ~ownPawns) * KING_EXPOSED);
 }
 
-void CalculateInfrontOfKing() {
-	for (int side = 0; side < 2; side++)
-	{
-		for (int square = 0; square < 64; square++)
-		{
-			InfrontOfKingSquares[side][square][0] = 0;
-			InfrontOfKingSquares[side][square][1] = 0;
-			InfrontOfKingSquares[side][square][2] = 0;
-			InfrontOfKingSquares[side][square][3] = 0;
-			int count = 0;
-			if (side == 1) { //BLACK
-				if (square < 56 || square == 59 || square == 60) //back rank not center
-					InfrontOfKingSquares[side][square][0] = 0;
-				else
-				{
-					if (square != 63)
-					{
-						InfrontOfKingSquares[side][square][++count] = square - 7;
-						InfrontOfKingSquares[side][square][0]++;
-					}
-					InfrontOfKingSquares[side][square][++count] = square - 8;
-					InfrontOfKingSquares[side][square][0]++;
-					if (square != 56)
-					{
-						InfrontOfKingSquares[side][square][++count] = square - 9;
-						InfrontOfKingSquares[side][square][0]++;
-					}
-				}
-			}
-			else { // WHITE
-				if (square > 7 || square == 3 || square == 4) //back rank not center
-					InfrontOfKingSquares[side][square][0] = 0;
-				else {
-					if (square != 7)
-					{
-						InfrontOfKingSquares[side][square][++count] = square + 9;
-						InfrontOfKingSquares[side][square][0]++;
-					}
-					InfrontOfKingSquares[side][square][++count] = square + 8;
-					InfrontOfKingSquares[side][square][0]++;
-					if (square != 0)
-					{
-						InfrontOfKingSquares[side][square][++count] = square + 7;
-						InfrontOfKingSquares[side][square][0]++;
-					}
-				}
-			}
-		}
-	}
-}
-
-const int PawnPassedPoints[2][8] = { 
+static const int PawnPassedPoints[2][8] = {
 	{ 0, 5, 10, 20, 35, 60, 100, 200 },
 	{ 200, 100, 60, 35, 20, 10, 5, 0 },
 };
 //No opponent pawn on files left right and infront
 short PassedPawn(int square, Game* game) {
-	int file = square % 8;
-	int rank = square / 8;
-	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
-	PieceType opponentPawn = PAWN | (pieceColor ^ 24);
-	int freePath = 1;
-	if (pieceColor == WHITE) {
-		for (int i = 7 - 1; i > rank; i--) // starts at rank 7
-		{
-			int nextSq = (i * 8) + file;
-			// to left
-			if (file > 0 && game->Squares[nextSq - 1] == opponentPawn) {
-				return 0;
-			}
-			// infront
-			if (game->Squares[nextSq] == opponentPawn) {
-				return 0;
-			}
-			else if ((game->Squares[nextSq] & 24) == BLACK) {
-				freePath = 0;
-			}
-			//to right
-			if (file < 7 && game->Squares[nextSq + 1] == opponentPawn) {
-				return 0;
-			}
-		}
-	}
-	else { //black
-		for (int i = 0; i < rank; i++)
-		{
-			int nextSq = (i * 8) + file;
-			// to left
-			if (file > 0 && game->Squares[nextSq - 1] == opponentPawn) {
-				return 0;
-			}
-			// infront
-			if (game->Squares[nextSq] == opponentPawn) {
-				return 0;
-			}
-			else if ((game->Squares[nextSq] & 24) == WHITE) {
-				freePath = 0;
-			}
-			//to right
-			if (file < 7 && game->Squares[nextSq + 1] == opponentPawn) {
-				return 0;
-			}
-		}
-	}
-	return PawnPassedPoints[pieceColor >> 4][rank] + (PASSED_PAWN_FREE_PATH * freePath);
+	const AllPieceBitboards *bb = &game->Bitboards;
+	int color01 = (game->Squares[square] & 24) >> 4;
+	U64 opponentPawns = GetSidePawns(bb, !color01);
+	short score = GetPassedPawnBaseScore(square, color01, opponentPawns);
+	if (score == 0)
+		return 0;
+	return score + GetPassedPawnFreePathBonus(square, color01, bb, opponentPawns);
 }
 
 void CalculatePawnProtection() {
@@ -420,22 +582,17 @@ void CalculatePawnProtection() {
 }
 
 void CalculatePatterns() {
+	CalculateFileMasks();
+	CalculatePassedPawnMasks();
+	CalculatePawnProtectorsMasks();
+	CalculateKingShieldMasks();
 	CalculatePawnProtection();
-	CalculateInfrontOfKing();
 }
 
 short ProtectedByPawn(int square, Game* game) {
-	Side pieceColor = game->Squares[square] & 24; // (BLACK | WHITE);
-	int color01 = pieceColor >> 4;
-	PieceType pawn = PAWN | pieceColor;
-	int score = 0;
-
-	for (int i = 1; i <= PawnProtectionSquares[color01][square][0]; i++)
-	{
-		short pps = PawnProtectionSquares[color01][square][i];
-		score += (game->Squares[pps] == pawn);
-	}
-	return score * PAWN_PROTECT;
+	const AllPieceBitboards *bb = &game->Bitboards;
+	int color01 = (game->Squares[square] & 24) >> 4;
+	return (short)(popcount(GetSidePawns(bb, color01) & PawnProtectorsMask[color01][square]) * PAWN_PROTECT);
 }
 
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
@@ -443,26 +600,19 @@ static const int MaxGamePhase = 24;
 static const short TempoBonus = 8;
 
 static int GetGamePhase(Game* game) {
+	const AllPieceBitboards *bb = &game->Bitboards;
 	int phase = 0;
 
-	for (int s = 0; s < 2; s++)
-	{
-		Piece* piece = &game->Pieces[s][0];
-		while (piece != NULL)
-		{
-			PieceType pt = piece->Type & 7;
-			// Fix for C6385: Ensure 'pt' is always in bounds for PiecePhase[pt]
-			if (pt >= 0 && pt < (sizeof(PiecePhase) / sizeof(PiecePhase[0]))) {
-				phase += PiecePhase[pt];
-			}			
-			piece = piece->Next;
-		}
-	}
+	phase += popcount(bb->Knights.AllKnights) * PiecePhase[KNIGHT];
+	phase += popcount(bb->Bishops.AllBishops) * PiecePhase[BISHOP];
+	phase += popcount(bb->Rooks.AllRooks) * PiecePhase[ROOK];
+	phase += popcount(bb->Queens.AllQueens) * PiecePhase[QUEEN];
 
 	return min(MaxGamePhase, phase);
 }
 
 short GetEval(Game* game) {
+	const AllPieceBitboards *bb = &game->Bitboards;
 
 	int score = game->Material[0] + game->Material[1];
 	short posScore = 0;
@@ -473,11 +623,13 @@ short GetEval(Game* game) {
 		opening = 1;
 	}
 	int gamePhase = GetGamePhase(game);
+	short pawnScore[2] = { 0, 0 };
 	uchar pwnCount[2] = { 0, 0 };
+	GetPawnEval(bb, pawnScore, pwnCount);
 
 	for (int s = 0; s < 2; s++)
 	{
-		short scr = 0;
+		short scr = pawnScore[s];
 		uchar bishopCount = 0;
 		Piece * piece = &game->Pieces[s][0];
 		while (piece != NULL)
@@ -515,10 +667,6 @@ short GetEval(Game* game) {
 			}
 					   break;
 			case PAWN: {
-				scr -= DoublePawns(i, game, pieceType);
-				scr += PassedPawn(i, game);
-				scr += ProtectedByPawn(i, game);
-				pwnCount[s]++;
 			}
 					 break;
 			case KING: {

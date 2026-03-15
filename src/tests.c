@@ -876,6 +876,20 @@ void DoublePawnsTest()
 	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
 }
 
+void OpenRookFileTest()
+{
+	printf("%s\n", __func__);
+
+	ReadFen("4k3/8/8/8/8/8/8/R3K3 w - - 0 1");
+	AssertAreEqualInts(OPEN_ROOK_FILE, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Open rook file score mismatch");
+
+	ReadFen("4k3/p7/8/8/8/8/8/R3K3 w - - 0 1");
+	AssertAreEqualInts(OPEN_ROOK_FILE - SEMI_OPEN_FILE, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Semi-open rook file score mismatch");
+
+	ReadFen("4k3/p7/8/8/8/8/P7/R3K3 w - - 0 1");
+	AssertAreEqualInts(0, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Closed rook file score mismatch");
+}
+
 void KingExposureTest()
 {
 	printf("%s\n", __func__);
@@ -948,6 +962,14 @@ void PassedPawnTest()
 
 	score = PassedPawn(37, &g_mainGame);
 	AssertAreEqualInts(0, score, "Passed pawns score missmatch square 37");
+}
+
+void ProtectedByPawnTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/2p1p3/3b4/3N4/2P1P3/8/4K3 w - - 0 1");
+	AssertAreEqualInts(16, ProtectedByPawn(d4, &g_mainGame), "White piece pawn protection mismatch");
+	AssertAreEqualInts(16, ProtectedByPawn(d5, &g_mainGame), "Black piece pawn protection mismatch");
 }
 
 void indexOfTest()
@@ -1096,6 +1118,21 @@ void AllPieceBitboardsTest()
 	AssertAreEqualLongs(expectedWhitePieces | expectedBlackPieces, bb.Occupied, "occupied mismatch in aggregate bitboard");
 }
 
+void BitboardHelpersTest()
+{
+	printf("%s\n", __func__);
+
+	AssertAreEqualInts(0, popcount(0ULL), "popcount should return zero for empty bitboard");
+	AssertAreEqualInts(3, popcount((1ULL << a1) | (1ULL << d4) | (1ULL << h8)), "popcount should return number of set bits");
+
+	U64 bits = (1ULL << c3) | (1ULL << a1) | (1ULL << h8);
+	AssertAreEqualInts(a1, pop_lsb(&bits), "pop_lsb should return the least significant bit index first");
+	AssertAreEqualLongs((1ULL << c3) | (1ULL << h8), bits, "pop_lsb should clear the least significant bit");
+	AssertAreEqualInts(c3, pop_lsb(&bits), "pop_lsb should keep iterating in ascending square order");
+	AssertAreEqualInts(h8, pop_lsb(&bits), "pop_lsb should return the last remaining bit");
+	AssertAreEqualInts(-1, pop_lsb(&bits), "pop_lsb should return -1 for empty bitboards");
+}
+
 void SquareAttackedBitboardTest()
 {
 	printf("%s\n", __func__);
@@ -1118,6 +1155,33 @@ void SquareAttackedBitboardTest()
 	ReadFen("4k3/8/8/8/8/2b5/3P4/4K3 w - - 0 1");
 	Assert(SquareAttacked(d2, BLACK, &g_mainGame), "bishop attack onto the occupied target square should be detected");
 	AssertNot(SquareAttacked(e1, BLACK, &g_mainGame), "bishop attack should be blocked by the pawn on d2");
+}
+
+void EvaluationMaskTablesTest()
+{
+	printf("%s\n", __func__);
+
+	AssertAreEqualLongs(0x0101010101010101ULL, FileMask[0], "file A mask mismatch");
+	AssertAreEqualLongs(0x8080808080808080ULL, FileMask[7], "file H mask mismatch");
+	AssertAreEqualLongs(0x0202020202020202ULL, AdjacentFileMask[0], "adjacent file mask for file A mismatch");
+	AssertAreEqualLongs(0x4040404040404040ULL, AdjacentFileMask[7], "adjacent file mask for file H mismatch");
+
+	AssertAreEqualLongs((1ULL << a2) | (1ULL << b2), KingShieldMask[0][a1], "white king shield mask on a1 mismatch");
+	AssertAreEqualLongs((1ULL << f7) | (1ULL << g7) | (1ULL << h7), KingShieldMask[1][g8], "black king shield mask on g8 mismatch");
+
+	AssertAreEqualLongs((1ULL << c3) | (1ULL << e3), PawnProtectorsMask[0][d4], "white pawn protectors on d4 mismatch");
+	AssertAreEqualLongs((1ULL << c5) | (1ULL << e5), PawnProtectorsMask[1][d4], "black pawn protectors on d4 mismatch");
+
+	AssertAreEqualLongs((1ULL << c5) | (1ULL << d5) | (1ULL << e5) |
+		(1ULL << c6) | (1ULL << d6) | (1ULL << e6) |
+		(1ULL << c7) | (1ULL << d7) | (1ULL << e7) |
+		(1ULL << c8) | (1ULL << d8) | (1ULL << e8),
+		PassedPawnMask[0][d4], "white passed pawn mask on d4 mismatch");
+
+	AssertAreEqualLongs((1ULL << c1) | (1ULL << d1) | (1ULL << e1) |
+		(1ULL << c2) | (1ULL << d2) | (1ULL << e2) |
+		(1ULL << c3) | (1ULL << d3) | (1ULL << e3),
+		PassedPawnMask[1][d4], "black passed pawn mask on d4 mismatch");
 }
 
 void CachedBitboardsAfterQuietMoveTest()
@@ -1269,6 +1333,8 @@ void runAllTests()
 	MaterialDrawWhite();
 	// MobilityRookTest();
 	DoublePawnsTest();
+	OpenRookFileTest();
+	ProtectedByPawnTest();
 	PawnBitboardsTest();
 	KnightBitboardsTest();
 	BishopBitboardsTest();
@@ -1276,7 +1342,9 @@ void runAllTests()
 	QueenBitboardsTest();
 	KingBitboardsTest();
 	AllPieceBitboardsTest();
+	BitboardHelpersTest();
 	SquareAttackedBitboardTest();
+	EvaluationMaskTablesTest();
 	CachedBitboardsAfterQuietMoveTest();
 	CachedBitboardsAfterCaptureTest();
 	CachedBitboardsAfterCastlingTest();
