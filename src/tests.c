@@ -1096,6 +1096,30 @@ void AllPieceBitboardsTest()
 	AssertAreEqualLongs(expectedWhitePieces | expectedBlackPieces, bb.Occupied, "occupied mismatch in aggregate bitboard");
 }
 
+void SquareAttackedBitboardTest()
+{
+	printf("%s\n", __func__);
+
+	ReadFen("4k3/8/8/4p3/3P4/8/4K3/8 w - - 0 1");
+	Assert(SquareAttacked(e5, WHITE, &g_mainGame), "white pawn attack should be detected");
+	Assert(SquareAttacked(d4, BLACK, &g_mainGame), "black pawn attack should be detected");
+	Assert(SquareAttacked(d3, WHITE, &g_mainGame), "white king attack should be detected");
+	AssertNot(SquareAttacked(e2, BLACK, &g_mainGame), "black should not attack e2 in the pawn test position");
+
+	ReadFen("4k3/8/8/8/3n4/8/4K3/8 w - - 0 1");
+	Assert(SquareAttacked(e2, BLACK, &g_mainGame), "black knight attack should be detected");
+	AssertNot(SquareAttacked(e1, BLACK, &g_mainGame), "black knight should not attack e1 in the knight test position");
+
+	ReadFen("4k3/8/8/8/4q3/8/4P3/4K3 w - - 0 1");
+	Assert(SquareAttacked(e2, BLACK, &g_mainGame), "queen rook-like attack should be detected");
+	Assert(SquareAttacked(h1, BLACK, &g_mainGame), "queen diagonal attack should be detected");
+	AssertNot(SquareAttacked(e1, BLACK, &g_mainGame), "queen attack should be blocked by the pawn on e2");
+
+	ReadFen("4k3/8/8/8/8/2b5/3P4/4K3 w - - 0 1");
+	Assert(SquareAttacked(d2, BLACK, &g_mainGame), "bishop attack onto the occupied target square should be detected");
+	AssertNot(SquareAttacked(e1, BLACK, &g_mainGame), "bishop attack should be blocked by the pawn on d2");
+}
+
 void CachedBitboardsAfterQuietMoveTest()
 {
 	printf("%s\n", __func__);
@@ -1252,6 +1276,7 @@ void runAllTests()
 	QueenBitboardsTest();
 	KingBitboardsTest();
 	AllPieceBitboardsTest();
+	SquareAttackedBitboardTest();
 	CachedBitboardsAfterQuietMoveTest();
 	CachedBitboardsAfterCaptureTest();
 	CachedBitboardsAfterCastlingTest();

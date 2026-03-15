@@ -1,159 +1,12 @@
 #include <stdio.h>
 #include "moves.h"
+#include "bitboards.h"
 #include "patterns.h"
 #include "evaluation.h"
 #include "hashTable.h"
 #include "sort.h"
 #include "countermoves.h"
 #include <string.h>
-
-static U64 SquareBit(int square)
-{
-	return 1ULL << square;
-}
-
-static void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
-{
-	if (pieceType == NOPIECE)
-		return;
-
-	int side01 = pieceType >> 4;
-	int pt = pieceType & 7;
-	U64 bit = SquareBit(square);
-
-	if (side01 == 0)
-		bitboards->WhitePieces |= bit;
-	else
-		bitboards->BlackPieces |= bit;
-	bitboards->Occupied |= bit;
-	bitboards->Matrix[pt][side01] |= bit;
-
-	switch (pt)
-	{
-	case PAWN:
-		if (side01 == 0)
-			bitboards->Pawns.WhitePawns |= bit;
-		else
-			bitboards->Pawns.BlackPawns |= bit;
-		bitboards->Pawns.AllPawns |= bit;
-		break;
-	case KNIGHT:
-		if (side01 == 0)
-			bitboards->Knights.WhiteKnights |= bit;
-		else
-			bitboards->Knights.BlackKnights |= bit;
-		bitboards->Knights.AllKnights |= bit;
-		break;
-	case BISHOP:
-		if (side01 == 0)
-			bitboards->Bishops.WhiteBishops |= bit;
-		else
-			bitboards->Bishops.BlackBishops |= bit;
-		bitboards->Bishops.AllBishops |= bit;
-		break;
-	case ROOK:
-		if (side01 == 0)
-			bitboards->Rooks.WhiteRooks |= bit;
-		else
-			bitboards->Rooks.BlackRooks |= bit;
-		bitboards->Rooks.AllRooks |= bit;
-		break;
-	case QUEEN:
-		if (side01 == 0)
-			bitboards->Queens.WhiteQueens |= bit;
-		else
-			bitboards->Queens.BlackQueens |= bit;
-		bitboards->Queens.AllQueens |= bit;
-		break;
-	case KING:
-		if (side01 == 0)
-			bitboards->Kings.WhiteKing |= bit;
-		else
-			bitboards->Kings.BlackKing |= bit;
-		bitboards->Kings.AllKings |= bit;
-		break;
-	default:
-		break;
-	}
-}
-
-static void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
-{
-	if (pieceType == NOPIECE)
-		return;
-
-	int side01 = pieceType >> 4;
-	int pt = pieceType & 7;
-	U64 bit = SquareBit(square);
-	U64 clearMask = ~bit;
-
-	if (side01 == 0)
-		bitboards->WhitePieces &= clearMask;
-	else
-		bitboards->BlackPieces &= clearMask;
-	bitboards->Occupied &= clearMask;
-	bitboards->Matrix[pt][side01] &= clearMask;
-
-	switch (pt)
-	{
-	case PAWN:
-		if (side01 == 0)
-			bitboards->Pawns.WhitePawns &= clearMask;
-		else
-			bitboards->Pawns.BlackPawns &= clearMask;
-		bitboards->Pawns.AllPawns &= clearMask;
-		break;
-	case KNIGHT:
-		if (side01 == 0)
-			bitboards->Knights.WhiteKnights &= clearMask;
-		else
-			bitboards->Knights.BlackKnights &= clearMask;
-		bitboards->Knights.AllKnights &= clearMask;
-		break;
-	case BISHOP:
-		if (side01 == 0)
-			bitboards->Bishops.WhiteBishops &= clearMask;
-		else
-			bitboards->Bishops.BlackBishops &= clearMask;
-		bitboards->Bishops.AllBishops &= clearMask;
-		break;
-	case ROOK:
-		if (side01 == 0)
-			bitboards->Rooks.WhiteRooks &= clearMask;
-		else
-			bitboards->Rooks.BlackRooks &= clearMask;
-		bitboards->Rooks.AllRooks &= clearMask;
-		break;
-	case QUEEN:
-		if (side01 == 0)
-			bitboards->Queens.WhiteQueens &= clearMask;
-		else
-			bitboards->Queens.BlackQueens &= clearMask;
-		bitboards->Queens.AllQueens &= clearMask;
-		break;
-	case KING:
-		if (side01 == 0)
-			bitboards->Kings.WhiteKing &= clearMask;
-		else
-			bitboards->Kings.BlackKing &= clearMask;
-		bitboards->Kings.AllKings &= clearMask;
-		break;
-	default:
-		break;
-	}
-}
-
-static void MovePieceOnBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int from, int to)
-{
-	RemovePieceFromBitboards(bitboards, pieceType, from);
-	AddPieceToBitboards(bitboards, pieceType, to);
-}
-
-static void ReplacePieceOnBitboards(AllPieceBitboards *bitboards, PieceType fromPiece, PieceType toPiece, int square)
-{
-	RemovePieceFromBitboards(bitboards, fromPiece, square);
-	AddPieceToBitboards(bitboards, toPiece, square);
-}
 
 static void ClearCastlingRightsForCapturedRook(Game *game, int square, U64 *hash)
 {
@@ -726,75 +579,67 @@ void UndoNullMove(GameState prevGameState, Game *game, U64 prevHash, bool positi
 		game->PositionHistoryLength--;
 }
 
+static bool PatternAttackerFound(U64 attackers, int patternIndex, int square)
+{
+	int length = PieceTypeSquarePatterns[patternIndex][square][0];
+	for (int p = 1; p <= length; p++)
+	{
+		int fromSquare = PieceTypeSquarePatterns[patternIndex][square][p];
+		if (attackers & SquareToBit(fromSquare))
+			return true;
+	}
+	return false;
+}
+
+static bool RayAttackerFound(const AllPieceBitboards *bitboards, U64 attackers, int patternIndex, int square)
+{
+	int raysCount = PieceTypeSquareRaysPatterns[patternIndex][square][0][0];
+	for (int r = 1; r <= raysCount; r++)
+	{
+		int rayLength = PieceTypeSquareRaysPatterns[patternIndex][square][r][0];
+		for (int rr = 1; rr <= rayLength; rr++)
+		{
+			int fromSquare = PieceTypeSquareRaysPatterns[patternIndex][square][r][rr];
+			U64 squareBit = SquareToBit(fromSquare);
+			if ((bitboards->Occupied & squareBit) == 0)
+				continue;
+
+			if (attackers & squareBit)
+				return true;
+			break;
+		}
+	}
+	return false;
+}
+
 bool SquareAttacked(int square, Side attackedBy, Game *game)
 {
+	if (square < 0 || square > 63)
+		return false;
+
 	int side01 = attackedBy >> 4;
-	Piece *piece = &game->Pieces[side01][0];
-	while (piece != NULL)
-	{
-		// piece->Mobility = 0;
-		int i = piece->SquareIndex;
-		PieceType pieceType = game->Squares[i];
-		PieceType pt = pieceType & 7;
-		switch (pt)
-		{
-		case PAWN:
-		{
-			int captPat = PawnCapturePattern[side01];
-			int pawnCapPatLength = PieceTypeSquarePatterns[captPat][i][0];
-			for (int pc = 1; pc <= pawnCapPatLength; pc++)
-			{
-				int toSquare = PieceTypeSquarePatterns[captPat][i][pc];
-				if (toSquare == square)
-					return true;
-			}
-			break;
-		}
-		case KNIGHT:
-		{
-			int length = PieceTypeSquarePatterns[0][i][0];
-			for (int p = 1; p <= length; p++)
-			{
-				int toSquare = PieceTypeSquarePatterns[0][i][p];
-				// piece->Mobility++;
-				if (toSquare == square)
-					return true;
-			}
-			break;
-		}
-		case KING:
-		{
-			int length = PieceTypeSquarePatterns[1][i][0];
-			for (int p = 1; p <= length; p++)
-			{
-				int toSquare = PieceTypeSquarePatterns[1][i][p];
-				if (toSquare == square)
-					return true;
-			}
-			break;
-		}
-		default:
-		{
-			int pat = pt - 1;
-			char raysCount = PieceTypeSquareRaysPatterns[pat][i][0][0];
-			for (int r = 1; r <= raysCount; r++)
-			{
-				int rayLength = PieceTypeSquareRaysPatterns[pat][i][r][0];
-				for (int rr = 1; rr <= rayLength; rr++)
-				{
-					int toSquare = PieceTypeSquareRaysPatterns[pat][i][r][rr];
-					// piece->Mobility++;
-					if (toSquare == square)
-						return true;
-					if (game->Squares[toSquare] > NOPIECE)
-						break;
-				}
-			}
-			break;
-		}
-		}
-		piece = piece->Next;
-	}
+	const AllPieceBitboards *bitboards = &game->Bitboards;
+	U64 pawns = side01 == 0 ? bitboards->Pawns.WhitePawns : bitboards->Pawns.BlackPawns;
+	U64 knights = side01 == 0 ? bitboards->Knights.WhiteKnights : bitboards->Knights.BlackKnights;
+	U64 bishopsAndQueens = side01 == 0
+							  ? bitboards->Bishops.WhiteBishops | bitboards->Queens.WhiteQueens
+							  : bitboards->Bishops.BlackBishops | bitboards->Queens.BlackQueens;
+	U64 rooksAndQueens = side01 == 0
+							 ? bitboards->Rooks.WhiteRooks | bitboards->Queens.WhiteQueens
+							 : bitboards->Rooks.BlackRooks | bitboards->Queens.BlackQueens;
+	U64 king = side01 == 0 ? bitboards->Kings.WhiteKing : bitboards->Kings.BlackKing;
+
+	if (PatternAttackerFound(pawns, PawnCapturePattern[!side01], square))
+		return true;
+	if (PatternAttackerFound(knights, 0, square))
+		return true;
+	if (PatternAttackerFound(king, 1, square))
+		return true;
+	if (RayAttackerFound(bitboards, bishopsAndQueens, 0, square))
+		return true;
+	if (RayAttackerFound(bitboards, rooksAndQueens, 1, square))
+		return true;
+
 	return false;
 }
 

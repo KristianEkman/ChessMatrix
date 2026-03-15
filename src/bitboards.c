@@ -1,5 +1,153 @@
 #include "bitboards.h"
 
+static U64 SquareBit(int square)
+{
+	return 1ULL << square;
+}
+
+void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
+{
+	if (pieceType == NOPIECE)
+		return;
+
+	int side01 = pieceType >> 4;
+	int pt = pieceType & 7;
+	U64 bit = SquareBit(square);
+
+	if (side01 == 0)
+		bitboards->WhitePieces |= bit;
+	else
+		bitboards->BlackPieces |= bit;
+	bitboards->Occupied |= bit;
+	bitboards->Matrix[pt][side01] |= bit;
+
+	switch (pt)
+	{
+	case PAWN:
+		if (side01 == 0)
+			bitboards->Pawns.WhitePawns |= bit;
+		else
+			bitboards->Pawns.BlackPawns |= bit;
+		bitboards->Pawns.AllPawns |= bit;
+		break;
+	case KNIGHT:
+		if (side01 == 0)
+			bitboards->Knights.WhiteKnights |= bit;
+		else
+			bitboards->Knights.BlackKnights |= bit;
+		bitboards->Knights.AllKnights |= bit;
+		break;
+	case BISHOP:
+		if (side01 == 0)
+			bitboards->Bishops.WhiteBishops |= bit;
+		else
+			bitboards->Bishops.BlackBishops |= bit;
+		bitboards->Bishops.AllBishops |= bit;
+		break;
+	case ROOK:
+		if (side01 == 0)
+			bitboards->Rooks.WhiteRooks |= bit;
+		else
+			bitboards->Rooks.BlackRooks |= bit;
+		bitboards->Rooks.AllRooks |= bit;
+		break;
+	case QUEEN:
+		if (side01 == 0)
+			bitboards->Queens.WhiteQueens |= bit;
+		else
+			bitboards->Queens.BlackQueens |= bit;
+		bitboards->Queens.AllQueens |= bit;
+		break;
+	case KING:
+		if (side01 == 0)
+			bitboards->Kings.WhiteKing |= bit;
+		else
+			bitboards->Kings.BlackKing |= bit;
+		bitboards->Kings.AllKings |= bit;
+		break;
+	default:
+		break;
+	}
+}
+
+void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
+{
+	if (pieceType == NOPIECE)
+		return;
+
+	int side01 = pieceType >> 4;
+	int pt = pieceType & 7;
+	U64 bit = SquareBit(square);
+	U64 clearMask = ~bit;
+
+	if (side01 == 0)
+		bitboards->WhitePieces &= clearMask;
+	else
+		bitboards->BlackPieces &= clearMask;
+	bitboards->Occupied &= clearMask;
+	bitboards->Matrix[pt][side01] &= clearMask;
+
+	switch (pt)
+	{
+	case PAWN:
+		if (side01 == 0)
+			bitboards->Pawns.WhitePawns &= clearMask;
+		else
+			bitboards->Pawns.BlackPawns &= clearMask;
+		bitboards->Pawns.AllPawns &= clearMask;
+		break;
+	case KNIGHT:
+		if (side01 == 0)
+			bitboards->Knights.WhiteKnights &= clearMask;
+		else
+			bitboards->Knights.BlackKnights &= clearMask;
+		bitboards->Knights.AllKnights &= clearMask;
+		break;
+	case BISHOP:
+		if (side01 == 0)
+			bitboards->Bishops.WhiteBishops &= clearMask;
+		else
+			bitboards->Bishops.BlackBishops &= clearMask;
+		bitboards->Bishops.AllBishops &= clearMask;
+		break;
+	case ROOK:
+		if (side01 == 0)
+			bitboards->Rooks.WhiteRooks &= clearMask;
+		else
+			bitboards->Rooks.BlackRooks &= clearMask;
+		bitboards->Rooks.AllRooks &= clearMask;
+		break;
+	case QUEEN:
+		if (side01 == 0)
+			bitboards->Queens.WhiteQueens &= clearMask;
+		else
+			bitboards->Queens.BlackQueens &= clearMask;
+		bitboards->Queens.AllQueens &= clearMask;
+		break;
+	case KING:
+		if (side01 == 0)
+			bitboards->Kings.WhiteKing &= clearMask;
+		else
+			bitboards->Kings.BlackKing &= clearMask;
+		bitboards->Kings.AllKings &= clearMask;
+		break;
+	default:
+		break;
+	}
+}
+
+void MovePieceOnBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int from, int to)
+{
+	RemovePieceFromBitboards(bitboards, pieceType, from);
+	AddPieceToBitboards(bitboards, pieceType, to);
+}
+
+void ReplacePieceOnBitboards(AllPieceBitboards *bitboards, PieceType fromPiece, PieceType toPiece, int square)
+{
+	RemovePieceFromBitboards(bitboards, fromPiece, square);
+	AddPieceToBitboards(bitboards, toPiece, square);
+}
+
 static AllPieceBitboards BuildAllPieceBitboards(const Game *game)
 {
 	U64 bb[7][2] = {0};
