@@ -61,11 +61,11 @@ void AssertAreEqualInts(int expected, int actual, const char *msg)
 		printf("\n");
 		PrintRed(msg);
 		printf("\n");
-		char str[24];
-		snprintf(str, 24, "Expected %d", expected);
+		char str[64];
+		snprintf(str, sizeof(str), "Expected %d", expected);
 		PrintRed(str);
 		printf("\n");
-		snprintf(str, 24, "Actual   %d", actual);
+		snprintf(str, sizeof(str), "Actual   %d", actual);
 		PrintRed(str);
 		_failedAsserts++;
 	}
@@ -78,11 +78,11 @@ void AssertAreEqualLongs(U64 expected, U64 actual, const char *msg)
 		printf("\n");
 		PrintRed(msg);
 		printf("\n");
-		char str[24];
-		snprintf(str, 24, "Expected %llu", expected);
+		char str[64];
+		snprintf(str, sizeof(str), "Expected %llu", expected);
 		PrintRed(str);
 		printf("\n");
-		snprintf(str, 24, "Actual   %llu", actual);
+		snprintf(str, sizeof(str), "Actual   %llu", actual);
 		PrintRed(str);
 		_failedAsserts++;
 	}
@@ -1173,15 +1173,15 @@ void EvaluationMaskTablesTest()
 	AssertAreEqualLongs((1ULL << c5) | (1ULL << e5), PawnProtectorsMask[1][d4], "black pawn protectors on d4 mismatch");
 
 	AssertAreEqualLongs((1ULL << c5) | (1ULL << d5) | (1ULL << e5) |
-		(1ULL << c6) | (1ULL << d6) | (1ULL << e6) |
-		(1ULL << c7) | (1ULL << d7) | (1ULL << e7) |
-		(1ULL << c8) | (1ULL << d8) | (1ULL << e8),
-		PassedPawnMask[0][d4], "white passed pawn mask on d4 mismatch");
+							(1ULL << c6) | (1ULL << d6) | (1ULL << e6) |
+							(1ULL << c7) | (1ULL << d7) | (1ULL << e7) |
+							(1ULL << c8) | (1ULL << d8) | (1ULL << e8),
+						PassedPawnMask[0][d4], "white passed pawn mask on d4 mismatch");
 
 	AssertAreEqualLongs((1ULL << c1) | (1ULL << d1) | (1ULL << e1) |
-		(1ULL << c2) | (1ULL << d2) | (1ULL << e2) |
-		(1ULL << c3) | (1ULL << d3) | (1ULL << e3),
-		PassedPawnMask[1][d4], "black passed pawn mask on d4 mismatch");
+							(1ULL << c2) | (1ULL << d2) | (1ULL << e2) |
+							(1ULL << c3) | (1ULL << d3) | (1ULL << e3),
+						PassedPawnMask[1][d4], "black passed pawn mask on d4 mismatch");
 }
 
 void CachedBitboardsAfterQuietMoveTest()
