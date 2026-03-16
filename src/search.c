@@ -243,6 +243,8 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
 		return alpha;
+	LegalMoveContext legalCtx;
+	BuildLegalMoveContext(game, &legalCtx);
 
 	Move fallbackMoves[MAX_MOVES];
 	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
@@ -257,13 +259,19 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 			PickWhitesNextMove(i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
-		Undos undos = DoMove(childMove, game);
-		int kingSquare = game->KingSquares[!game->Side01];
-		bool legal = !SquareAttacked(kingSquare, game->Side, game);
-		if (!legal)
-		{
-			UndoMove(game, childMove, undos);
+		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
+		if (legality == FastMoveIllegal)
 			continue;
+		Undos undos = DoMove(childMove, game);
+		if (legality == FastMoveNeedsFullCheck)
+		{
+			int kingSquare = game->KingSquares[!game->Side01];
+			bool legal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!legal)
+			{
+				UndoMove(game, childMove, undos);
+				continue;
+			}
 		}
 
 		score = (short)-QuiteSearch((short)-beta, (short)-alpha, game, deep_in + 1);
@@ -336,6 +344,8 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			return (short)(-8000 + deep_in);
 		return 0;
 	}
+	LegalMoveContext legalCtx;
+	BuildLegalMoveContext(game, &legalCtx);
 
 	Move fallbackMoves[MAX_MOVES];
 	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
@@ -367,14 +377,19 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			PickWhitesNextMove(i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
-		Undos undos = DoMove(childMove, game);
-
-		int kingSquare = game->KingSquares[!game->Side01];
-		bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-		if (!isLegal)
-		{
-			UndoMove(game, childMove, undos);
+		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
+		if (legality == FastMoveIllegal)
 			continue;
+		Undos undos = DoMove(childMove, game);
+		if (legality == FastMoveNeedsFullCheck)
+		{
+			int kingSquare = game->KingSquares[!game->Side01];
+			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+			if (!isLegal)
+			{
+				UndoMove(game, childMove, undos);
+				continue;
+			}
 		}
 		legalCount++;
 

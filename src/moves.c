@@ -612,6 +612,117 @@ static bool RayAttackerFound(const AllPieceBitboards *bitboards, U64 attackers, 
 	return false;
 }
 
+static U64 PatternAttackerSquares(U64 attackers, int patternIndex, int square)
+{
+	U64 found = 0ULL;
+	int length = PieceTypeSquarePatterns[patternIndex][square][0];
+	for (int p = 1; p <= length; p++)
+	{
+		int fromSquare = PieceTypeSquarePatterns[patternIndex][square][p];
+		U64 fromBit = SquareToBit(fromSquare);
+		if (attackers & fromBit)
+			found |= fromBit;
+	}
+	return found;
+}
+
+void BuildLegalMoveContext(Game *game, LegalMoveContext *ctx)
+{
+	memset(ctx, 0, sizeof(*ctx));
+
+	int side01 = game->Side01;
+	int enemySide01 = !side01;
+	int kingSquare = game->KingSquares[side01];
+	const AllPieceBitboards *bitboards = &game->Bitboards;
+	U64 occupied = bitboards->Occupied;
+
+	ctx->KingSquare = kingSquare;
+
+	U64 knightCheckers = PatternAttackerSquares(bitboards->Matrix[KNIGHT][enemySide01], 0, kingSquare);
+	U64 kingCheckers = PatternAttackerSquares(bitboards->Matrix[KING][enemySide01], 1, kingSquare);
+	U64 pawnCheckers = PatternAttackerSquares(bitboards->Matrix[PAWN][enemySide01], PawnCapturePattern[side01], kingSquare);
+
+	ctx->Checkers |= knightCheckers | kingCheckers | pawnCheckers;
+	ctx->CheckCount += (uchar)popcount(knightCheckers | kingCheckers | pawnCheckers);
+	ctx->EvasionMask |= knightCheckers | kingCheckers | pawnCheckers;
+
+	for (int patternIndex = 0; patternIndex < 2; patternIndex++)
+	{
+		int raysCount = PieceTypeSquareRaysPatterns[patternIndex][kingSquare][0][0];
+		for (int r = 1; r <= raysCount; r++)
+		{
+			int firstFriendlySquare = -1;
+			U64 rayMask = 0ULL;
+			int rayLength = PieceTypeSquareRaysPatterns[patternIndex][kingSquare][r][0];
+			for (int rr = 1; rr <= rayLength; rr++)
+			{
+				int square = PieceTypeSquareRaysPatterns[patternIndex][kingSquare][r][rr];
+				U64 squareBit = SquareToBit(square);
+				rayMask |= squareBit;
+				if ((occupied & squareBit) == 0ULL)
+					continue;
+
+				PieceType piece = game->Squares[square];
+				if (piece & game->Side)
+				{
+					if (firstFriendlySquare == -1)
+					{
+						firstFriendlySquare = square;
+						continue;
+					}
+					break;
+				}
+
+				PieceType enemyPiece = piece & 7;
+				bool compatibleSlider = patternIndex == 0
+					? (enemyPiece == BISHOP || enemyPiece == QUEEN)
+					: (enemyPiece == ROOK || enemyPiece == QUEEN);
+				if (!compatibleSlider)
+					break;
+
+				if (firstFriendlySquare == -1)
+				{
+					ctx->Checkers |= squareBit;
+					ctx->CheckCount++;
+					ctx->EvasionMask |= rayMask;
+				}
+				else
+				{
+					U64 pinnedBit = SquareToBit(firstFriendlySquare);
+					ctx->Pinned |= pinnedBit;
+					ctx->PinLineMasks[firstFriendlySquare] = rayMask;
+				}
+				break;
+			}
+		}
+	}
+
+	if (ctx->CheckCount == 0)
+		ctx->EvasionMask = ~0ULL;
+}
+
+FastMoveLegality ClassifyMoveLegality(Move move, Game *game, const LegalMoveContext *ctx)
+{
+	PieceType pieceType = game->Squares[move.From];
+	PieceType pt = pieceType & 7;
+	U64 fromBit = SquareToBit(move.From);
+	U64 toBit = SquareToBit(move.To);
+
+	if (pt == KING || move.MoveInfo == EnPassantCapture || move.MoveInfo == CastleShort || move.MoveInfo == CastleLong)
+		return FastMoveNeedsFullCheck;
+
+	if (ctx->CheckCount > 1)
+		return FastMoveIllegal;
+
+	if (ctx->CheckCount == 1 && (ctx->EvasionMask & toBit) == 0ULL)
+		return FastMoveIllegal;
+
+	if ((ctx->Pinned & fromBit) != 0ULL && (ctx->PinLineMasks[move.From] & toBit) == 0ULL)
+		return FastMoveIllegal;
+
+	return FastMoveLegal;
+}
+
 bool SquareAttacked(int square, Side attackedBy, Game *game)
 {
 	if (square < 0 || square > 63)
@@ -983,6 +1094,8 @@ void RemoveInvalidMoves(Game *game)
 {
 	int validMovesCount = 0;
 	Move validMoves[MAX_MOVES];
+	LegalMoveContext legalCtx;
+	BuildLegalMoveContext(game, &legalCtx);
 
 	for (int m = 0; m < game->MovesBufferLength; m++)
 	{
@@ -1009,6 +1122,15 @@ void RemoveInvalidMoves(Game *game)
 			}
 			if (!found)
 				continue;
+		}
+
+		FastMoveLegality legality = ClassifyMoveLegality(move, game, &legalCtx);
+		if (legality == FastMoveIllegal)
+			continue;
+		if (legality == FastMoveLegal)
+		{
+			validMoves[validMovesCount++] = move;
+			continue;
 		}
 
 		Undos undos = DoMove(move, game);

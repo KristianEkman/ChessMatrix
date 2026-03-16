@@ -1280,6 +1280,36 @@ void CachedBitboardsAfterCapturePromotionTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture promotion undo");
 }
 
+void PinnedMoveLegalityTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1");
+
+	PlayerMove illegal = MakePlayerMove("e2d2");
+	Assert(illegal.Invalid, "pinned rook should not be allowed to move off the pin line");
+
+	PlayerMove legal = MakePlayerMove("e2e8");
+	AssertNot(legal.Invalid, "pinned rook should be allowed to capture the pinning rook");
+	UnMakePlayerMove(legal);
+}
+
+void CheckEvasionLegalityTest()
+{
+	printf("%s\n", __func__);
+	ReadFen("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1");
+
+	Move moves[MAX_MOVES];
+	int count = ValidMoves(moves);
+	Assert(count > 0, "checked side should still have legal evasions in the test position");
+
+	PlayerMove illegal = MakePlayerMove("e2f2");
+	Assert(illegal.Invalid, "moves that do not answer check should be rejected");
+
+	PlayerMove legal = MakePlayerMove("e2e3");
+	AssertNot(legal.Invalid, "blocking the checking rook should stay legal");
+	UnMakePlayerMove(legal);
+}
+
 void _runTests()
 {
 	// BestMoveTest();
@@ -1351,6 +1381,8 @@ void runAllTests()
 	CachedBitboardsAfterEnPassantTest();
 	CachedBitboardsAfterPromotionTest();
 	CachedBitboardsAfterCapturePromotionTest();
+	PinnedMoveLegalityTest();
+	CheckEvasionLegalityTest();
 	KingExposureTest();
 	// PassedPawnTest();
 	/*PositionScorePawns();
