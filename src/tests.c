@@ -12,94 +12,9 @@
 #include "moves.h"
 #include "platform.h"
 #include "bitboards.h"
+#include "testhelpers.h"
 
-#ifdef _MSC_VER
-#pragma region TestsHelpers
-#endif
-
-int _failedAsserts = 0;
-PerftResult perftResult = {0};
-
-void Assert(int goodResult, const char *msg)
-{
-	if (goodResult == 0)
-	{
-		printf("\n");
-		PrintRed(msg);
-		printf("\n");
-		_failedAsserts++;
-	}
-}
-
-void AssertNot(int result, const char *msg)
-{
-	if (result != 0)
-	{
-		printf("\n");
-		PrintRed(msg);
-		printf("\n");
-		_failedAsserts++;
-	}
-}
-
-void AssertAreEqual(const char *s1, const char *s2, const char *msg)
-{
-	if (strcmp(s1, s2))
-	{
-		PrintRed(msg);
-		printf("\n");
-		printf("Expected: %s\n", s1);
-		printf("Actual:   %s\n", s2);
-		_failedAsserts++;
-	}
-}
-
-void AssertAreEqualInts(int expected, int actual, const char *msg)
-{
-	if (expected != actual)
-	{
-		printf("\n");
-		PrintRed(msg);
-		printf("\n");
-		char str[64];
-		snprintf(str, sizeof(str), "Expected %d", expected);
-		PrintRed(str);
-		printf("\n");
-		snprintf(str, sizeof(str), "Actual   %d", actual);
-		PrintRed(str);
-		_failedAsserts++;
-	}
-}
-
-void AssertAreEqualLongs(U64 expected, U64 actual, const char *msg)
-{
-	if (expected != actual)
-	{
-		printf("\n");
-		PrintRed(msg);
-		printf("\n");
-		char str[64];
-		snprintf(str, sizeof(str), "Expected %llu", expected);
-		PrintRed(str);
-		printf("\n");
-		snprintf(str, sizeof(str), "Actual   %llu", actual);
-		PrintRed(str);
-		_failedAsserts++;
-	}
-}
-
-void printPerftResults()
-{
-	printf("\nCaptures: %d\nCastles: %d\nChecks Mates: %d\nChecks: %d\nEn passants: %d\nPromotions %d\n",
-		   perftResult.Captures, perftResult.Castles, perftResult.CheckMates, perftResult.Checks,
-		   perftResult.Enpassants, perftResult.Promotions);
-}
-
-#ifdef _MSC_VER
-#pragma endregion
-#endif
-
-void HashKeyTest()
+TEST_CASE(HashKeyTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 	U64 hash1 = g_mainGame.Hash;
@@ -112,7 +27,7 @@ void HashKeyTest()
 	AssertAreEqualLongs(hash1, hash2, "Hash keys should be equal");
 }
 
-void HashTableRoundTrip()
+TEST_CASE(HashTableRoundTrip)
 {
 	printf("%s\n", __func__);
 	ClearHashTable();
@@ -138,7 +53,7 @@ void HashTableRoundTrip()
 	AssertAreEqualInts(expected, score, "hash table score missmatch");
 }
 
-void HashTableDepthTest()
+TEST_CASE(HashTableDepthTest)
 {
 	printf("%s\n", __func__);
 	ClearHashTable();
@@ -186,6 +101,12 @@ void HashTablePerformance(int iterations)
 		AssertAreEqualInts(expected, score, "hash table score missmatch");
 	}
 }
+
+TEST_CASE(HashTablePerformanceTest)
+{
+	TimedTest(50000000, HashTablePerformance);
+}
+
 int Perft(int depth)
 {
 	if (depth == 0)
@@ -302,7 +223,7 @@ void PerftSaveHash(int depth)
 	free(localMoves);
 }
 
-void PerftSaveHashTest()
+TEST_CASE(PerftSaveHashTest)
 {
 	printf("%s\n", __func__);
 	perftSaveHashCount = 0;
@@ -313,7 +234,7 @@ void PerftSaveHashTest()
 	printf("\nCollisions: %d\n", collisionCount);
 }
 
-void EnpassantCollisionsTest()
+TEST_CASE(EnpassantCollisionsTest)
 {
 	printf("%s\n", __func__);
 	perftSaveHashCount = 0;
@@ -323,9 +244,6 @@ void EnpassantCollisionsTest()
 	printf("\nHash entries: %d\n", perftSaveHashCount);
 	printf("\nCollisions: %d\n", collisionCount);
 }
-
-//
-
 #endif // _DEBUG
 
 int PerftHashDb(int depth)
@@ -355,7 +273,6 @@ int PerftTest(char *fen, int depth)
 {
 
 	ReadFen(fen);
-	// PrintGame(&mainGame);
 	int perftCount = 0;
 	for (int i = 0; i < 2; i++)
 	{
@@ -369,14 +286,9 @@ int PerftTest(char *fen, int depth)
 		short startScore = TotalMaterial(&g_mainGame);
 		perftCount = Perft(depth);
 		AssertAreEqualInts(startScore, TotalMaterial(&g_mainGame), "Game material missmatch");
-		// printPerftResults(perftResult);
 		clock_t stop = clock();
 		float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-		// printf("%.2fs\n", secs);
-		// printf("%d moves\n", perftCount);
 		printf("\n%.2fk moves/s\n", perftCount / (1000 * secs));
-
-		// PrintGame(&mainGame);
 	}
 	char outFen[100];
 	WriteFen(outFen);
@@ -384,7 +296,7 @@ int PerftTest(char *fen, int depth)
 	return perftCount;
 }
 
-void PerftHashDbTest()
+TEST_CASE(PerftHashDbTest)
 {
 	printf("%s\n", __func__);
 	ClearHashTable();
@@ -392,7 +304,7 @@ void PerftHashDbTest()
 	PerftHashDb(4);
 	PrintHashStats();
 }
-void FenTest()
+TEST_CASE(FenTest)
 {
 	char fen1[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1";
 	ReadFen(fen1);
@@ -401,7 +313,7 @@ void FenTest()
 	AssertAreEqual(fen1, outFen, "Start and end fen differ");
 }
 
-void FenTestHalfMoves()
+TEST_CASE(FenTestHalfMoves)
 {
 	char fen1[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 23";
 	ReadFen(fen1);
@@ -410,7 +322,7 @@ void FenTestHalfMoves()
 	AssertAreEqual(fen1, outFen, "Start and end fen differ");
 }
 
-void FenEnppasantTest()
+TEST_CASE(FenEnppasantTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -425,17 +337,7 @@ void FenEnppasantTest()
 	AssertAreEqual(fen, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0", "Fen missmatch");
 }
 
-void TimedTest(int iterations, void (*func)(int))
-{
-	clock_t start = clock();
-	(*func)(iterations);
-	clock_t stop = clock();
-
-	float secs = (float)(stop - start) / CLOCKS_PER_SEC;
-	printf("\n%.2fk iterations/s\n", iterations / (1000 * secs));
-}
-
-void PerfTestPosition2()
+TEST_CASE(PerfTestPosition2)
 {
 	printf("%s\n", __func__);
 	char fen[] = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0";
@@ -446,7 +348,7 @@ void PerfTestPosition2()
 	AssertAreEqualInts(15172, perftResult.Promotions, "Promotion missmatch");
 }
 
-void PerftTestStart()
+TEST_CASE(PerftTestStart)
 {
 	printf("%s\n", __func__);
 	char startFen[] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0";
@@ -504,7 +406,7 @@ void AssertCachedBitboardsMatchGame(const char *msg)
 	AssertBitboardsEqual(GetAllPieceBitboards(&g_mainGame), g_mainGame.Bitboards, msg);
 }
 
-void ValidMovesPromotionCaptureAndCastling()
+TEST_CASE(ValidMovesPromotionCaptureAndCastling)
 {
 	printf("%s\n", __func__);
 	char *fen = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
@@ -519,7 +421,7 @@ void ValidMovesPromotionCaptureAndCastling()
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
-void LongCastling()
+TEST_CASE(LongCastling)
 {
 	printf("%s\n", __func__);
 	char *fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
@@ -534,7 +436,7 @@ void LongCastling()
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
-void EnPassantFromFenTest()
+TEST_CASE(EnPassantFromFenTest)
 {
 	printf("%s\n", __func__);
 	char *fen = "8/5k2/8/3Pp3/8/8/8/4K3 w - e6 0 3";
@@ -548,7 +450,7 @@ void EnPassantFromFenTest()
 	AssertAreEqualInts(startGameScore - 100, TotalMaterial(&g_mainGame), "Material should decrease by 100");
 }
 
-void EnPassantAfterMove()
+TEST_CASE(EnPassantAfterMove)
 {
 	printf("%s\n", __func__);
 	char *fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
@@ -561,7 +463,7 @@ void EnPassantAfterMove()
 	Assert(MovesContains(moves, count, expectedMove), "The move was not found");
 }
 
-void BlackCastlingRightsAfterKingMove()
+TEST_CASE(BlackCastlingRightsAfterKingMove)
 {
 	printf("%s\n", __func__);
 	char *fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
@@ -576,7 +478,7 @@ void BlackCastlingRightsAfterKingMove()
 	AssertNot(MovesContains(moves, count, expectedMove), "Invalid move was found");
 }
 
-void WhiteCastlingRightsAfterKingMove()
+TEST_CASE(WhiteCastlingRightsAfterKingMove)
 {
 	printf("%s\n", __func__);
 	char *fen = "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/P4N2/1PPP1PPP/RNBQK2R w KQkq - 1 5";
@@ -592,7 +494,7 @@ void WhiteCastlingRightsAfterKingMove()
 	AssertNot(MovesContains(moves, count, expectedMove), "Invalid move was found");
 }
 
-void MoveHashMatchesRebuiltFen()
+TEST_CASE(MoveHashMatchesRebuiltFen)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
@@ -607,7 +509,7 @@ void MoveHashMatchesRebuiltFen()
 	AssertAreEqualLongs(hashAfterMove, g_mainGame.Hash, "Move hash should match the hash rebuilt from FEN");
 }
 
-void PromotionHashMatchesRebuiltFen()
+TEST_CASE(PromotionHashMatchesRebuiltFen)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
@@ -622,7 +524,7 @@ void PromotionHashMatchesRebuiltFen()
 	AssertAreEqualLongs(hashAfterMove, g_mainGame.Hash, "Promotion hash should match the hash rebuilt from FEN");
 }
 
-void CastlingRightsClearedWhenRookIsCaptured()
+TEST_CASE(CastlingRightsClearedWhenRookIsCaptured)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/8/8/8/q7/R3K3 b Q - 0 1");
@@ -631,7 +533,7 @@ void CastlingRightsClearedWhenRookIsCaptured()
 	AssertNot(g_mainGame.State & WhiteCanCastleLong, "White long castling rights should be cleared after the rook on a1 is captured");
 }
 
-void MaterialBlackPawnCapture()
+TEST_CASE(MaterialBlackPawnCapture)
 {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
@@ -640,7 +542,7 @@ void MaterialBlackPawnCapture()
 	AssertAreEqualInts(-550, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void MaterialWhiteQueenCapture()
+TEST_CASE(MaterialWhiteQueenCapture)
 {
 	printf("%s\n", __func__);
 	ReadFen("rnbqkbnr/ppp1pppp/8/3p4/4Q3/4P3/PPPP1PPP/RNB1KBNR b KQkq - 0 1");
@@ -649,7 +551,7 @@ void MaterialWhiteQueenCapture()
 	AssertAreEqualInts(1000, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void MaterialCaptureAndPromotion()
+TEST_CASE(MaterialCaptureAndPromotion)
 {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
@@ -661,7 +563,7 @@ void MaterialCaptureAndPromotion()
 	AssertAreEqualInts(450, TotalMaterial(&g_mainGame), "Start Material missmatch");
 }
 
-void MaterialPromotion()
+TEST_CASE(MaterialPromotion)
 {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
@@ -670,7 +572,7 @@ void MaterialPromotion()
 	AssertAreEqualInts(-460, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void EnPassantMaterial()
+TEST_CASE(EnPassantMaterial)
 {
 	printf("%s\n", __func__);
 	ReadFen("r3k3/3p4/8/4P3/8/8/8/4K2R b - - 0 1");
@@ -683,7 +585,7 @@ void EnPassantMaterial()
 	AssertAreEqualInts(0, TotalMaterial(&g_mainGame), "Game Material missmatch");
 }
 
-void MaterialDrawWhite()
+TEST_CASE(MaterialDrawWhite)
 {
 	printf("%s\n", __func__);
 	ReadFen("2k5/3b4/8/8/5N2/4N3/2K5/8 w - - 0 1");
@@ -691,7 +593,7 @@ void MaterialDrawWhite()
 	AssertAreEqualInts(0, score, "Game should be drawn");
 }
 
-void MaterialDrawBlack()
+TEST_CASE(MaterialDrawBlack)
 {
 	printf("%s\n", __func__);
 	ReadFen("2k5/3n4/4n3/8/8/8/4B3/3K4 b - - 0 1");
@@ -721,9 +623,6 @@ void AssertBestMove(int depth, const char *testName, const char *fen, const char
 	char sMove[6];
 	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
-	/*printf("\nEntries:    %d", HashTableEntries);
-	printf("\nMatches:    %d", HashTableMatches);
-	printf("\nFull count: %d", HashTableFullCount);*/
 }
 
 void AssertBestMoveTimed(int ms, const char *testName, const char *fen, const char *expected)
@@ -738,135 +637,115 @@ void AssertBestMoveTimed(int ms, const char *testName, const char *fen, const ch
 	char sMove[6];
 	CoordinatesToString(bestMove, sMove);
 	AssertAreEqual(expected, sMove, "Not the expected move");
-	/*printf("\nEntries:    %d", HashTableEntries);
-	printf("\nMatches:    %d", HashTableMatches);
-	printf("\nFull count: %d", HashTableFullCount);*/
 }
 
-void BestMoveTestBlackCaptureBishop()
+TEST_CASE(BestMoveTestBlackCaptureBishop)
 {
 	AssertBestMove(4, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
-	// AssertBestMoveTimed(10, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
 }
 
-void TestWhiteMateIn2()
+TEST_CASE(TestWhiteMateIn2)
 {
 	char *fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
 	AssertBestMove(5, __func__, fen, "d5d7");
 	AssertBestMoveTimed(1000, __func__, fen, "d5d7");
 }
 
-void BlackMatesIn5Deeping()
+TEST_CASE(BlackMatesIn5Deeping)
 {
 	char *fen = "1k2r3/pP3pp1/8/3P1B1p/5q2/N1P2b2/PP3Pp1/R5K1 b - - 0 1";
 	AssertBestMoveTimed(2000, __func__, fen, "f4h4");
 }
 
-void BestMoveByWhite1()
+TEST_CASE(BestMoveByWhite1)
 {
 	char *fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
 	AssertBestMove(7, __func__, fen, "d2d4"); // to realy find the advantage of this move it takes about 10 - 15 moves deep.
-
-	// AssertBestMoveTimed(10, __func__, fen, "d2d4");
 }
 
-void BestMoveByBlack2()
+TEST_CASE(BestMoveByBlack2)
 {
 	char *fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
 	AssertBestMove(7, __func__, fen, "a4c3");
 }
 
-void BestMoveByBlack3()
+TEST_CASE(BestMoveByBlack3)
 {
 	char *fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
 	AssertBestMove(7, __func__, fen, "d2e2");
 }
 
-// void BestMoveByWhite2() {
-//	char * fen = "rn1r2k1/pp3ppp/8/3q4/3N4/P3P3/4QPPP/3R1RK1 w - - 1 19";
-//	//requires atlest depth 7 to be found
-//	AssertBestMove(7, __func__, fen, "d4f5");
-// }
-
-void BestMoveByBlack1()
+TEST_CASE(BestMoveByBlack1)
 {
 	char *fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
 	AssertBestMove(6, __func__, fen, "g7g5");
 }
 
-void BestMoveByBlack4()
+TEST_CASE(BestMoveByBlack4)
 {
 	char *fen = "r1b2r2/2q2pk1/2pb3p/pp2pNpn/4Pn2/P1NB2BP/1PP1QPP1/R4RK1 b - - 0 1";
 	AssertBestMove(5, __func__, fen, "c8f5");
 }
 
-void BestMoveByBlack5()
+TEST_CASE(BestMoveByBlack5)
 {
 	char *fen = "r2qk2r/1b3pp1/pb2p2p/Rp2P3/2pPB3/2P2N2/2Q2PPP/2B2RK1 b - - 0 1";
 	AssertBestMove(6, __func__, fen, "b7e4");
 }
 
-void BestMoveByBlack6()
+TEST_CASE(BestMoveByBlack6)
 {
 	char *fen = "8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1";
 	AssertBestMove(15, __func__, fen, "b3b2");
 }
 
-void BestMoveByWhite3()
+TEST_CASE(BestMoveByWhite3)
 {
 	char *fen = "r4rk1/p7/1p1N3p/3nPppb/3n4/3B3P/PP1B2K1/R4R2 w - - 0 1";
 	AssertBestMove(5, __func__, fen, "d3c4");
 }
 
-void RookSacrificeByWhite()
+TEST_CASE(RookSacrificeByWhite)
 {
 	char *fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
 	AssertBestMoveTimed(3000, __func__, fen, "e1e8");
 }
 
-void BlackMatesIn5a()
+TEST_CASE(BlackMatesIn5a)
 {
 	char *fen = "6k1/3b3r/1p1p4/p1n2p2/1PPNpP1q/P3Q1p1/1R1RB1P1/5K2 b - -";
 	AssertBestMoveTimed(500, __func__, fen, "h4f4");
 }
 
-void WhiteMatesIn5b()
+TEST_CASE(WhiteMatesIn5b)
 {
 	char *fen = "2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w";
 	AssertBestMove(11, __func__, fen, "e7e8");
 }
 
-void WhiteMatesIn7()
+TEST_CASE(WhiteMatesIn7)
 {
 	char *fen = "rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 7 11";
 	AssertBestMove(15, __func__, fen, "h5h7");
 }
 
-void EngineMated()
+TEST_CASE(EngineMated)
 {
 	char *fen = "rn3rk1/pbppq1pQ/1p2pb2/4N3/3PN3/3B4/PPP2PPP/R3K2R b KQ - 0 11";
 	AssertBestMove(8, __func__, fen, "g8h7");
 }
 
-void DeepTest()
-{
-	printf("%s\n", __func__);
-	char *fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
-	AssertBestMove(7, __func__, fen, "b1d2");
-}
-
-void MobilityRookTest()
+TEST_CASE(MobilityRookTest)
 {
 	printf("%s\n", __func__);
 	char *fen = "r3kbnr/ppp1pppp/2nb4/8/2P5/2N5/PP2PPPP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	g_topSearchParams.MaxDepth = 1;
-	Search(true); // mobility is calculated in movegenearion and alphabeta ... incheck
+	Search(true);
 	GetEval(&g_mainGame);
-	// no asserts, just entrypoint for debugging.
 }
 
-void DoublePawnsTest()
+TEST_CASE(DoublePawnsTest)
 {
 	printf("%s\n", __func__);
 	char *fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
@@ -876,7 +755,7 @@ void DoublePawnsTest()
 	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
 }
 
-void OpenRookFileTest()
+TEST_CASE(OpenRookFileTest)
 {
 	printf("%s\n", __func__);
 
@@ -890,7 +769,7 @@ void OpenRookFileTest()
 	AssertAreEqualInts(0, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Closed rook file score mismatch");
 }
 
-void KingExposureTest()
+TEST_CASE(KingExposureTest)
 {
 	printf("%s\n", __func__);
 	char *protected = "rnbq1rk1/pppppppp/4bn2/8/8/3B1N2/PPPPPPPP/RNBQ1RK1 w - - 0 1";
@@ -911,60 +790,7 @@ void KingExposureTest()
 	AssertAreEqualInts(48, blackScore, "Not the expected exposure score for black");
 }
 
-void PassedPawnTest()
-{
-	printf("%s\n", __func__);
-	char *fen = "rnbqkbnr/3p3p/2p3p1/5p2/P7/1P5P/2PP4/RNBQKBNR w KQkq - 0 1";
-	ReadFen(fen);
-	short score = PassedPawn(24, &g_mainGame);
-	AssertAreEqualInts(23, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(17, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(17, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(10, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(11, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(23, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	// black
-	score = PassedPawn(42, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(51, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(37, &g_mainGame);
-	AssertAreEqualInts(23, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(46, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	score = PassedPawn(55, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch");
-
-	ReadFen("rnbqkbnr/7p/8/5p2/1pP1P3/7P/8/RNBQKBNR w KQkq - 0 1");
-	score = PassedPawn(25, &g_mainGame);
-	AssertAreEqualInts(23, score, "Passed pawns score missmatch  square 25");
-
-	score = PassedPawn(26, &g_mainGame);
-	AssertAreEqualInts(23, score, "Passed pawns score missmatch  square 36");
-
-	score = PassedPawn(28, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch  square 28");
-
-	score = PassedPawn(37, &g_mainGame);
-	AssertAreEqualInts(0, score, "Passed pawns score missmatch square 37");
-}
-
-void ProtectedByPawnTest()
+TEST_CASE(ProtectedByPawnTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/2p1p3/3b4/3N4/2P1P3/8/4K3 w - - 0 1");
@@ -972,19 +798,19 @@ void ProtectedByPawnTest()
 	AssertAreEqualInts(16, ProtectedByPawn(d5, &g_mainGame), "Black piece pawn protection mismatch");
 }
 
-void indexOfTest()
+TEST_CASE(indexOfTest)
 {
 	char *s2 = "Kristian Ekman";
 	Assert(IndexOf(s2, "Ekman") == 9, "index of failed");
 }
 
-void containsNotTest()
+TEST_CASE(containsNotTest)
 {
 	char *s2 = "Kristian Ekman";
 	AssertNot(Contains(s2, "annika"), "containsNotTest failed");
 }
 
-void PawnBitboardsTest()
+TEST_CASE(PawnBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	PawnBitboards bb = GetPawnBitboards(&g_mainGame);
@@ -999,7 +825,7 @@ void PawnBitboardsTest()
 	AssertAreEqualLongs((1ULL << a2) | (1ULL << d5) | (1ULL << c7), bb.AllPawns, "all pawn bitboard mismatch in sparse position");
 }
 
-void KnightBitboardsTest()
+TEST_CASE(KnightBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	KnightBitboards bb = GetKnightBitboards(&g_mainGame);
@@ -1014,7 +840,7 @@ void KnightBitboardsTest()
 	AssertAreEqualLongs((1ULL << c3) | (1ULL << h1) | (1ULL << d6), bb.AllKnights, "all knight bitboard mismatch in sparse position");
 }
 
-void BishopBitboardsTest()
+TEST_CASE(BishopBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	BishopBitboards bb = GetBishopBitboards(&g_mainGame);
@@ -1029,7 +855,7 @@ void BishopBitboardsTest()
 	AssertAreEqualLongs((1ULL << g3) | (1ULL << b1) | (1ULL << c5), bb.AllBishops, "all bishop bitboard mismatch in sparse position");
 }
 
-void RookBitboardsTest()
+TEST_CASE(RookBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	RookBitboards bb = GetRookBitboards(&g_mainGame);
@@ -1044,7 +870,7 @@ void RookBitboardsTest()
 	AssertAreEqualLongs((1ULL << a1) | (1ULL << e1) | (1ULL << g6), bb.AllRooks, "all rook bitboard mismatch in sparse position");
 }
 
-void QueenBitboardsTest()
+TEST_CASE(QueenBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	QueenBitboards bb = GetQueenBitboards(&g_mainGame);
@@ -1059,7 +885,7 @@ void QueenBitboardsTest()
 	AssertAreEqualLongs((1ULL << d1) | (1ULL << e5), bb.AllQueens, "all queen bitboard mismatch in sparse position");
 }
 
-void KingBitboardsTest()
+TEST_CASE(KingBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	KingBitboards bb = GetKingBitboards(&g_mainGame);
@@ -1074,7 +900,7 @@ void KingBitboardsTest()
 	AssertAreEqualLongs((1ULL << g1) | (1ULL << d4), bb.AllKings, "all king bitboard mismatch in sparse position");
 }
 
-void AllPieceBitboardsTest()
+TEST_CASE(AllPieceBitboardsTest)
 {
 	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	AllPieceBitboards bb = GetAllPieceBitboards(&g_mainGame);
@@ -1118,7 +944,7 @@ void AllPieceBitboardsTest()
 	AssertAreEqualLongs(expectedWhitePieces | expectedBlackPieces, bb.Occupied, "occupied mismatch in aggregate bitboard");
 }
 
-void BitboardHelpersTest()
+TEST_CASE(BitboardHelpersTest)
 {
 	printf("%s\n", __func__);
 
@@ -1133,7 +959,7 @@ void BitboardHelpersTest()
 	AssertAreEqualInts(-1, pop_lsb(&bits), "pop_lsb should return -1 for empty bitboards");
 }
 
-void SquareAttackedBitboardTest()
+TEST_CASE(SquareAttackedBitboardTest)
 {
 	printf("%s\n", __func__);
 
@@ -1157,7 +983,7 @@ void SquareAttackedBitboardTest()
 	AssertNot(SquareAttacked(e1, BLACK, &g_mainGame), "bishop attack should be blocked by the pawn on d2");
 }
 
-void EvaluationMaskTablesTest()
+TEST_CASE(EvaluationMaskTablesTest)
 {
 	printf("%s\n", __func__);
 
@@ -1184,7 +1010,7 @@ void EvaluationMaskTablesTest()
 						PassedPawnMask[1][d4], "black passed pawn mask on d4 mismatch");
 }
 
-void CachedBitboardsAfterQuietMoveTest()
+TEST_CASE(CachedBitboardsAfterQuietMoveTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
@@ -1200,7 +1026,7 @@ void CachedBitboardsAfterQuietMoveTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after quiet move undo");
 }
 
-void CachedBitboardsAfterCaptureTest()
+TEST_CASE(CachedBitboardsAfterCaptureTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/8/8/4p3/3P4/8/8/2Q1K3 w - - 0 1");
@@ -1216,7 +1042,7 @@ void CachedBitboardsAfterCaptureTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture undo");
 }
 
-void CachedBitboardsAfterCastlingTest()
+TEST_CASE(CachedBitboardsAfterCastlingTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
@@ -1232,7 +1058,7 @@ void CachedBitboardsAfterCastlingTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after castling undo");
 }
 
-void CachedBitboardsAfterEnPassantTest()
+TEST_CASE(CachedBitboardsAfterEnPassantTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1");
@@ -1248,7 +1074,7 @@ void CachedBitboardsAfterEnPassantTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after en passant undo");
 }
 
-void CachedBitboardsAfterPromotionTest()
+TEST_CASE(CachedBitboardsAfterPromotionTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
@@ -1264,7 +1090,7 @@ void CachedBitboardsAfterPromotionTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after promotion undo");
 }
 
-void CachedBitboardsAfterCapturePromotionTest()
+TEST_CASE(CachedBitboardsAfterCapturePromotionTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("2r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
@@ -1280,7 +1106,7 @@ void CachedBitboardsAfterCapturePromotionTest()
 	AssertCachedBitboardsMatchGame("cached bitboards should match rebuilt bitboards after capture promotion undo");
 }
 
-void PinnedMoveLegalityTest()
+TEST_CASE(PinnedMoveLegalityTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1");
@@ -1293,7 +1119,7 @@ void PinnedMoveLegalityTest()
 	UnMakePlayerMove(legal);
 }
 
-void CheckEvasionLegalityTest()
+TEST_CASE(CheckEvasionLegalityTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4r1k1/8/8/8/8/8/4R3/4K3 w - - 0 1");
@@ -1312,7 +1138,6 @@ void CheckEvasionLegalityTest()
 
 void _runTests()
 {
-	// BestMoveTest();
 	printf("\nPress any key to continue.");
 	PlatformGetChar();
 	PlatformClearScreen();
@@ -1320,95 +1145,19 @@ void _runTests()
 
 void runAllTests()
 {
-	/*DoublePawnsTest();
-
-	if (_failedAsserts == 0)
-		PrintGreen("Success! Tests are good!\n");
-	printf("Press any key to continue.\n");
-	int c = _getch();
-	return;*/
-
 	_failedAsserts = 0;
-
-#ifdef DEBUG
-	EnpassantCollisionsTest();
-	PerftSaveHashTest();
-#endif // _DEBUG
-
-	HashKeyTest();
-	TimedTest(50000000, HashTablePerformance);
-	PerftHashDbTest();
-	HashTableRoundTrip();
-	HashTableDepthTest();
-	PerftTestStart();
-	PerfTestPosition2();
-	FenTest();
-	FenTestHalfMoves();
-	FenEnppasantTest();
-	ValidMovesPromotionCaptureAndCastling();
-	LongCastling();
-	EnPassantFromFenTest();
-	BlackCastlingRightsAfterKingMove();
-	WhiteCastlingRightsAfterKingMove();
-	MoveHashMatchesRebuiltFen();
-	PromotionHashMatchesRebuiltFen();
-	CastlingRightsClearedWhenRookIsCaptured();
-	EnPassantAfterMove();
-	MaterialBlackPawnCapture();
-	MaterialWhiteQueenCapture();
-	MaterialPromotion();
-	MaterialCaptureAndPromotion();
-	EnPassantMaterial();
-	MaterialDrawBlack();
-	MaterialDrawWhite();
-	// MobilityRookTest();
-	DoublePawnsTest();
-	OpenRookFileTest();
-	ProtectedByPawnTest();
-	PawnBitboardsTest();
-	KnightBitboardsTest();
-	BishopBitboardsTest();
-	RookBitboardsTest();
-	QueenBitboardsTest();
-	KingBitboardsTest();
-	AllPieceBitboardsTest();
-	BitboardHelpersTest();
-	SquareAttackedBitboardTest();
-	EvaluationMaskTablesTest();
-	CachedBitboardsAfterQuietMoveTest();
-	CachedBitboardsAfterCaptureTest();
-	CachedBitboardsAfterCastlingTest();
-	CachedBitboardsAfterEnPassantTest();
-	CachedBitboardsAfterPromotionTest();
-	CachedBitboardsAfterCapturePromotionTest();
-	PinnedMoveLegalityTest();
-	CheckEvasionLegalityTest();
-	KingExposureTest();
-	// PassedPawnTest();
-	/*PositionScorePawns();
-	PositionScoreKnights();
-	PositionScoreCastling();*/
-
+	int testCount = GetRegisteredTestsCount();
+	printf("Running %d tests...\n", testCount);
 	clock_t start = clock();
-
-	BestMoveTestBlackCaptureBishop();
-	TestWhiteMateIn2();
-	BlackMatesIn5Deeping();
-	BestMoveByWhite1();
-	BestMoveByWhite3();
-	BestMoveByBlack1();
-	BestMoveByBlack4();
-	BestMoveByBlack5();
-	BestMoveByBlack6();
-	RookSacrificeByWhite();
-	BlackMatesIn5a();
-	WhiteMatesIn5b();
-	WhiteMatesIn7();
-	EngineMated();
+	for (int i = 0; i < testCount; i++)
+	{
+		printf("\n[%d/%d] %s\n", i + 1, testCount, GetRegisteredTestName(i));
+		RunRegisteredTest(i);
+	}
 
 	clock_t end = clock();
 	float secs = (float)(end - start) / CLOCKS_PER_SEC;
-	printf("Time: %.2fs\n", secs);
+	printf("\nExecuted %d tests in %.2fs\n", testCount, secs);
 
 	if (_failedAsserts == 0)
 		PrintGreen("Success! Tests are good!\n");
