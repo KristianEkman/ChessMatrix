@@ -33,6 +33,8 @@ short OpenRookFile(int square, Game* game, PieceType rook);
 
 short DoublePawns(int square, Game* game, PieceType pawn);
 
+short GetMoveOrderingScore(Move move, Game *game);
+
 short GetEval(Game* game);
 
 bool IsDraw(Game* game);

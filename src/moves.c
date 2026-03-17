@@ -363,64 +363,6 @@ Undos DoMove(Move move, Game *game)
 // Moving small pieces first material equal
 const char PieceOrder[2][7] = {{0, 3, 4, 6, 1, 2, 5}, {0, -3, -4, -6, -1, -2, -5}};
 
-short GetLightScore(Move move, Game *game)
-{
-	short lightScore = game->Material[0] + game->Material[1];
-	int f = move.From;
-	int t = move.To;
-
-	PieceType captType = game->Squares[t];
-	int captColor = captType >> 4;
-	int side01 = game->Side01;
-
-	PieceType pieceType = game->Squares[f];
-	PieceType pt = pieceType & 7;
-
-	// removing piece from square removes its position score
-	lightScore -= PositionValueMatrix[captType & 7][captColor][t];
-	lightScore -= PositionValueMatrix[pt][side01][f];
-	lightScore += PositionValueMatrix[pt][side01][t];
-
-	if (captType && move.MoveInfo != EnPassantCapture)
-		lightScore -= MaterialMatrix[captColor][captType & 7];
-
-	switch (move.MoveInfo)
-	{
-	case PromotionQueen:
-		lightScore += MaterialMatrix[side01][QUEEN + 6];
-		break;
-	case PromotionRook:
-		lightScore += MaterialMatrix[side01][ROOK + 6];
-		break;
-	case PromotionBishop:
-		lightScore += MaterialMatrix[side01][BISHOP + 6];
-		break;
-	case PromotionKnight:
-		lightScore += MaterialMatrix[side01][KNIGHT + 6];
-		break;
-	case KingMove:
-		lightScore += KingPositionScore(move, game);
-		break;
-	case CastleShort:
-		lightScore += CastlingPoints[side01];
-		lightScore += KingPositionScore(move, game);
-		break;
-	case CastleLong:
-		lightScore += CastlingPoints[side01];
-		lightScore += KingPositionScore(move, game);
-		break;
-	case EnPassantCapture:
-		lightScore += MaterialMatrix[side01][PAWN]; // Adding own pawn material is same as removing opponent.
-		break;
-	default:
-		break;
-	}
-
-	// remove more points for larger capturing pieces.
-	// lightScore += PieceOrder[side01][pt] * (captType != 0);
-	return lightScore;
-}
-
 void UndoMove(Game *game, Move move, Undos undos)
 {
 
@@ -774,7 +716,7 @@ void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, cha
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 
-	move.Score = GetLightScore(move, game);
+	move.Score = GetMoveOrderingScore(move, game);
 
 	// move.Score = GetEval(game, move.Score);
 
@@ -793,7 +735,7 @@ void CreateCaptureMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *ga
 	move.MoveInfo = moveInfo;
 	move.PieceIdx = pieceIdx;
 
-	move.Score = GetLightScore(move, game);
+	move.Score = GetMoveOrderingScore(move, game);
 	// move.Score = GetEval(game, move.Score);
 
 	game->MovesBuffer[game->MovesBufferLength++] = move;

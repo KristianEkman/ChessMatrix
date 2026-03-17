@@ -213,6 +213,110 @@ static CM_THREAD_LOCAL PawnHashEntry g_pawnHashTable[PAWN_HASH_SIZE] = { 0 };
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
 
+static short GetKingPositionScore(Move move, Game *game)
+{
+	// aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
+	int endGame = abs(game->Material[!game->Side01]) < ENDGAME ? 1 : 0;
+	return KingPositionValueMatrix[endGame][game->Side01][move.To] -
+		   KingPositionValueMatrix[endGame][game->Side01][move.From];
+}
+
+static PieceType GetPromotionPieceType(MoveInfo moveInfo)
+{
+	switch (moveInfo)
+	{
+	case PromotionQueen:
+		return QUEEN;
+	case PromotionRook:
+		return ROOK;
+	case PromotionBishop:
+		return BISHOP;
+	case PromotionKnight:
+		return KNIGHT;
+	default:
+		return NOPIECE;
+	}
+}
+
+static bool GetCastleRookMove(Move move, int side01, int *rookFrom, int *rookTo)
+	{
+		if (move.MoveInfo == CastleShort)
+		{
+			*rookFrom = side01 == 0 ? h1 : h8;
+			*rookTo = side01 == 0 ? f1 : f8;
+			return true;
+		}
+
+		if (move.MoveInfo == CastleLong)
+		{
+			*rookFrom = side01 == 0 ? a1 : a8;
+			*rookTo = side01 == 0 ? d1 : d8;
+			return true;
+		}
+
+		return false;
+	}
+
+short GetMoveOrderingScore(Move move, Game *game)
+	{
+	short moveScore = game->Material[0] + game->Material[1];
+	int from = move.From;
+	int to = move.To;
+
+	PieceType capturedType = game->Squares[to];
+	int capturedColor = capturedType >> 4;
+	int side01 = game->Side01;
+
+	PieceType pieceType = game->Squares[from];
+	PieceType pt = pieceType & 7;
+	PieceType promotionPiece = GetPromotionPieceType((MoveInfo)move.MoveInfo);
+
+	// removing piece from square removes its position score
+	moveScore -= PositionValueMatrix[capturedType & 7][capturedColor][to];
+	moveScore -= PositionValueMatrix[pt][side01][from];
+	moveScore += PositionValueMatrix[pt][side01][to];
+
+	if (capturedType && move.MoveInfo != EnPassantCapture)
+		moveScore -= MaterialMatrix[capturedColor][capturedType & 7];
+
+	if (promotionPiece != NOPIECE)
+	{
+		moveScore -= PositionValueMatrix[PAWN][side01][to];
+		moveScore += PositionValueMatrix[promotionPiece][side01][to];
+		moveScore += MaterialMatrix[side01][promotionPiece + 6];
+	}
+
+	switch (move.MoveInfo)
+	{
+	case KingMove:
+		moveScore += GetKingPositionScore(move, game);
+		break;
+	case CastleShort:
+	case CastleLong:
+		{
+			int rookFrom = 0;
+			int rookTo = 0;
+
+			moveScore += CastlingPoints[side01];
+			moveScore += GetKingPositionScore(move, game);
+			if (GetCastleRookMove(move, side01, &rookFrom, &rookTo))
+				moveScore += PositionValueMatrix[ROOK][side01][rookTo] - PositionValueMatrix[ROOK][side01][rookFrom];
+			break;
+		}
+	case EnPassantCapture:
+		{
+			int capturedPawnSquare = to + Behind[side01];
+			moveScore += MaterialMatrix[side01][PAWN]; // Adding own pawn material is same as removing opponent.
+			moveScore -= PositionValueMatrix[PAWN][!side01][capturedPawnSquare];
+			break;
+		}
+	default:
+		break;
+	}
+
+	return moveScore;
+}
+
 static U64 EvalSquareBit(int square)
 {
 	if (square < 0 || square > 63)
