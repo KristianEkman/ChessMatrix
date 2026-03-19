@@ -9,7 +9,7 @@
 #include "evaluation.h"
 #include "search.h"
 #include "moves.h"
-#include "tests.h"
+#include "tests/tests.h"
 #include "interactive.h"
 
 void ComputerMove()

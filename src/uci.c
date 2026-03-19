@@ -133,7 +133,6 @@ void EnterUciMode()
 						MakePlayerMove(token);
 					token = strtok(NULL, " ");
 				}
-				Stdout_wl("string position parsed");
 				AssertGame(&g_mainGame);
 			}
 		}

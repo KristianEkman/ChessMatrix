@@ -9,7 +9,7 @@ else
 endif
 
 SRC_DIR := src
-SOURCES := $(wildcard $(SRC_DIR)/*.c)
+SOURCES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/tests/*.c)
 TARGET := chessmatrix
 
 all: $(TARGET)
@@ -18,7 +18,7 @@ strict: clean
 	$(MAKE) CFLAGS='$(STRICT_CFLAGS)'
 
 $(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) -pthread
+	$(CC) $(CFLAGS) -I$(SRC_DIR) $(SOURCES) -o $(TARGET) $(LDFLAGS) -pthread
 
 run: $(TARGET)
 	./$(TARGET)

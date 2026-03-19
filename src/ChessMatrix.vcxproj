@@ -154,22 +154,32 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="book.c" />
+    <ClCompile Include="tests\bitboard_tests.c" />
     <ClCompile Include="countermoves.c" />
     <ClCompile Include="errorHandling.c" />
+    <ClCompile Include="tests\evaluation_tests.c" />
     <ClCompile Include="evaluation.c" />
     <ClCompile Include="fen.c" />
+    <ClCompile Include="tests\fen_tests.c" />
     <ClCompile Include="hashTable.c" />
+    <ClCompile Include="tests\hash_tests.c" />
     <ClCompile Include="interactive.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="tests\material_tests.c" />
     <ClCompile Include="moves.c" />
+    <ClCompile Include="tests\movegen_tests.c" />
     <ClCompile Include="patterns.c" />
     <ClCompile Include="platform.c" />
     <ClCompile Include="position.c" />
+    <ClCompile Include="tests\perft_tests.c" />
     <ClCompile Include="search.c" />
+    <ClCompile Include="tests\search_tests.c" />
     <ClCompile Include="sort.c" />
-    <ClCompile Include="tests.c" />
+    <ClCompile Include="tests\helpers.c" />
+    <ClCompile Include="tests\tests.c" />
     <ClCompile Include="timeControl.c" />
     <ClCompile Include="uci.c" />
+    <ClCompile Include="tests\utils_tests.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
@@ -188,7 +198,8 @@
     <ClInclude Include="position.h" />
     <ClInclude Include="search.h" />
     <ClInclude Include="sort.h" />
-    <ClInclude Include="tests.h" />
+    <ClInclude Include="tests\helpers.h" />
+    <ClInclude Include="tests\tests.h" />
     <ClInclude Include="timeControl.h" />
     <ClInclude Include="uci.h" />
     <ClInclude Include="utils.h" />

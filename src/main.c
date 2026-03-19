@@ -13,7 +13,7 @@
 #include "patterns.h"
 #include "main.h"
 #include "utils.h"
-#include "tests.h"
+#include "tests/tests.h"
 #include "evaluation.h"
 #include "sort.h"
 #include "hashTable.h"
