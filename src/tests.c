@@ -551,7 +551,7 @@ void EnPassantFromFenTest()
 void EnPassantAfterMove()
 {
 	printf("%s\n", __func__);
-	char *fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - e3 0 1";
+		char *fen = "4k3/4p3/8/3P4/8/8/8/4K3 b - - 0 1";
 	ReadFen(fen);
 	AssertNot(MakePlayerMove("e7e5").Invalid, "Move was not valid");
 
@@ -1084,7 +1084,7 @@ void RookBitboardsTest()
 	AssertAreEqualLongs((1ULL << a8) | (1ULL << h8), bb.BlackRooks, "black rook bitboard mismatch in start position");
 	AssertAreEqualLongs((1ULL << a1) | (1ULL << h1) | (1ULL << a8) | (1ULL << h8), bb.AllRooks, "all rook bitboard mismatch in start position");
 
-	ReadFen("4k3/8/6r1/8/8/8/8/R3R1K1 w - - 0 1");
+	ReadFen("7k/8/6r1/8/8/8/8/R3R1K1 w - - 0 1");
 	bb = GetRookBitboards(&g_mainGame);
 	AssertAreEqualLongs((1ULL << a1) | (1ULL << e1), bb.WhiteRooks, "white rook bitboard mismatch in sparse position");
 	AssertAreEqualLongs(1ULL << g6, bb.BlackRooks, "black rook bitboard mismatch in sparse position");
@@ -1129,7 +1129,7 @@ void AllPieceBitboardsTest()
 	AssertAreEqualLongs(0xFFFF000000000000ULL, bb.BlackPieces, "black occupancy mismatch in start position");
 	AssertAreEqualLongs(0xFFFF00000000FFFFULL, bb.Occupied, "occupied mismatch in start position");
 
-	ReadFen("8/2p5/3n4/2b1q3/3k4/2N3B1/P2QR3/6K1 w - - 0 1");
+	ReadFen("8/2p5/3n4/2b1q3/2k5/2N3B1/P2QR3/6K1 w - - 0 1");
 	bb = GetAllPieceBitboards(&g_mainGame);
 
 	U64 expectedWhitePawns = (1ULL << a2);
@@ -1143,7 +1143,7 @@ void AllPieceBitboardsTest()
 	U64 expectedWhiteQueens = (1ULL << d2);
 	U64 expectedBlackQueens = (1ULL << e5);
 	U64 expectedWhiteKings = (1ULL << g1);
-	U64 expectedBlackKings = (1ULL << d4);
+	U64 expectedBlackKings = (1ULL << c4);
 
 	AssertAreEqualLongs(expectedWhitePawns, bb.Pawns.WhitePawns, "white pawns mismatch in aggregate bitboard");
 	AssertAreEqualLongs(expectedBlackPawns, bb.Pawns.BlackPawns, "black pawns mismatch in aggregate bitboard");
