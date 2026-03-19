@@ -81,6 +81,9 @@ Side parseSide(char c)
 void ReadFen(const char *fen)
 {
 	InitPieceList();
+	g_mainGame.PositionHistoryLength = 0;
+	g_mainGame.FiftyMoveRuleCount = 0;
+	g_mainGame.MovesBufferLength = 0;
 
 	// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 	for (int i = 0; i < 64; i++)

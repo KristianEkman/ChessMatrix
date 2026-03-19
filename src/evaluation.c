@@ -380,6 +380,44 @@ static short GetPassedPawnFreePathBonus(int square, int side01, const AllPieceBi
 	return (opponentNonPawns & fileAheadMask) == 0ULL ? PASSED_PAWN_FREE_PATH : 0;
 }
 
+static bool IsPureKingAndPawnEnding(const AllPieceBitboards *bb)
+{
+	return bb->Knights.AllKnights == 0ULL &&
+		   bb->Bishops.AllBishops == 0ULL &&
+		   bb->Rooks.AllRooks == 0ULL &&
+		   bb->Queens.AllQueens == 0ULL;
+}
+
+static int GetChebyshevDistance(int from, int to)
+{
+	int fileDistance = abs((from & 7) - (to & 7));
+	int rankDistance = abs((from >> 3) - (to >> 3));
+	return max(fileDistance, rankDistance);
+}
+
+static short GetPassedPawnRaceBonus(int square, int side01, Game *game)
+{
+	const AllPieceBitboards *bb = &game->Bitboards;
+	if (!IsPureKingAndPawnEnding(bb))
+		return 0;
+
+	U64 opponentPawns = GetSidePawns(bb, !side01);
+	if (GetPassedPawnBaseScore(square, side01, opponentPawns) == 0)
+		return 0;
+
+	int file = square & 7;
+	int rank = square >> 3;
+	int promotionSquare = side01 == 0 ? 56 + file : file;
+	int pawnSteps = side01 == 0 ? 7 - rank : rank;
+	int effectiveSteps = max(0, pawnSteps - (game->Side01 == side01 ? 1 : 0));
+	int enemyKingDistance = GetChebyshevDistance(game->KingSquares[!side01], promotionSquare);
+
+	if (enemyKingDistance <= effectiveSteps)
+		return 0;
+
+	return (short)(150 + (7 - pawnSteps) * 45);
+}
+
 static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawnCount[2])
 {
 	U64 key = GetPawnHashKey(bb);
@@ -771,6 +809,7 @@ short GetEval(Game* game) {
 			}
 					   break;
 			case PAWN: {
+				scr += GetPassedPawnRaceBonus(i, s, game);
 			}
 					 break;
 			case KING: {

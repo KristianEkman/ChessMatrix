@@ -293,6 +293,27 @@ bool IsReductionOk(Move move, Undos undos)
 		   move.MoveInfo != SoonPromoting;
 }
 
+static bool IsPureKingAndPawnEnding(const Game *game)
+{
+	const AllPieceBitboards *bb = &game->Bitboards;
+	return bb->Knights.AllKnights == 0ULL &&
+		   bb->Bishops.AllBishops == 0ULL &&
+		   bb->Rooks.AllRooks == 0ULL &&
+		   bb->Queens.AllQueens == 0ULL;
+}
+
+static bool IsAdvancedPawnPushInPawnEnding(const Game *game, Move move)
+{
+	if (!IsPureKingAndPawnEnding(game))
+		return false;
+
+	if ((game->Squares[move.From] & 7) != PAWN)
+		return false;
+
+	int toRank = move.To >> 3;
+	return game->Side01 == 0 ? toRank >= 5 : toRank <= 2;
+}
+
 short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doNull, Move prevMove, int deep_in, bool incheck)
 {
 	if (g_Stopped)
@@ -322,7 +343,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 
 	// NULL move check
 
-	if (doNull && !incheck && depth > 3)
+	if (doNull && !incheck && depth > 3 && !IsPureKingAndPawnEnding(game))
 	{
 		GameState prevState = game->State;
 		uchar r = depth > 6 ? MAX_R : MIN_R;
@@ -395,8 +416,9 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 
 		// extensions
 		uchar extension = 0;
+		bool pawnRacePush = IsAdvancedPawnPushInPawnEnding(game, childMove);
 		bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
-		if (checked || childMove.MoveInfo == SoonPromoting)
+		if (checked || childMove.MoveInfo == SoonPromoting || pawnRacePush)
 			extension = 1;
 
 		int lmrMoveIdx = i < 100 ? i : 99;

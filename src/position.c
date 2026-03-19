@@ -132,6 +132,21 @@ void PutFreePieceAt(int square, PieceType pieceType, int side01)
 			return;
 		}
 	}
+
+	if ((pieceType & 7) != KING)
+	{
+		for (int p = 1; p < 9; p++)
+		{
+			Piece *piece = &(g_mainGame.Pieces[side01][p]);
+			if (piece->Off)
+			{
+				piece->Type = pieceType;
+				piece->SquareIndex = square;
+				piece->Off = false;
+				return;
+			}
+		}
+	}
 }
 
 void InitPiece(int file, int rank, PieceType type, Side color)
