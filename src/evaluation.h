@@ -3,14 +3,13 @@
 
 #define CASTLED 38
 #define OPEN_ROOK_FILE 19
-#define SEMI_OPEN_FILE 15
-#define DOUBLE_PAWN 9
-#define KING_NEEDS_PROTECTION 1500
-#define KING_EXPOSED 16
+#define SEMI_OPEN_FILE 12
+#define DOUBLE_PAWN 12
+#define KING_EXPOSED 20
 #define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8
 #define ENDGAME 1500  //E.g 2 Rooks 2 pawns one pice
-#define SAME_TWICE 18
+#define SAME_TWICE 15
 #define QUEEN_EARLY 15
 #define BISHOP_PAIR 30
 

@@ -38,7 +38,7 @@ TEST(DoublePawnsTest)
 	char *fen = "r3kbnr/pp2pppp/2np4/8/2P5/2N1P3/PP2P1PP/R1BRKB2 w Qkq - 0 1";
 	ReadFen(fen);
 	short score = DoublePawns(20, &g_mainGame, PAWN | WHITE);
-	AssertAreEqualInts(9, score, "Double pawns score missmatch");
+	AssertAreEqualInts(DOUBLE_PAWN, score, "Double pawns score missmatch");
 	AssertAreEqualInts(0, DoublePawns(8, &g_mainGame, PAWN | WHITE), "Double pawns score missmatch");
 }
 
@@ -50,7 +50,7 @@ TEST(OpenRookFileTest)
 	AssertAreEqualInts(OPEN_ROOK_FILE, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Open rook file score mismatch");
 
 	ReadFen("4k3/p7/8/8/8/8/8/R3K3 w - - 0 1");
-	AssertAreEqualInts(OPEN_ROOK_FILE - SEMI_OPEN_FILE, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Semi-open rook file score mismatch");
+	AssertAreEqualInts(SEMI_OPEN_FILE, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Semi-open rook file score mismatch");
 
 	ReadFen("4k3/p7/8/8/8/8/P7/R3K3 w - - 0 1");
 	AssertAreEqualInts(0, OpenRookFile(a1, &g_mainGame, ROOK | WHITE), "Closed rook file score mismatch");
@@ -73,8 +73,8 @@ TEST(KingExposureTest)
 	ReadFen(unprotected);
 	whiteScore = KingExposed(6, &g_mainGame);
 	blackScore = KingExposed(62, &g_mainGame);
-	AssertAreEqualInts(48, whiteScore, "Not the expected exposure score for white");
-	AssertAreEqualInts(48, blackScore, "Not the expected exposure score for black");
+	AssertAreEqualInts(60, whiteScore, "Not the expected exposure score for white");
+	AssertAreEqualInts(60, blackScore, "Not the expected exposure score for black");
 }
 
 void PassedPawnTest()

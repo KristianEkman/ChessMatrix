@@ -238,6 +238,33 @@ static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 	}
 }
 
+static short GetPieceMaterialValue(PieceType pieceType)
+{
+	switch (pieceType & 7)
+	{
+	case BISHOP:
+		return MATERIAL_B;
+	case ROOK:
+		return MATERIAL_R;
+	case QUEEN:
+		return MATERIAL_Q;
+	case PAWN:
+		return MATERIAL_P;
+	case KNIGHT:
+		return MATERIAL_N;
+	default:
+		return 0;
+	}
+}
+
+static short GetCaptureOrderingBonus(PieceType attackerType, PieceType victimType)
+{
+	short victimValue = GetPieceMaterialValue(victimType);
+	short attackerValue = GetPieceMaterialValue(attackerType);
+
+	return (short)(96 + victimValue / 16 - attackerValue / 32);
+}
+
 static bool GetCastleRookMove(Move move, int side01, int *rookFrom, int *rookTo)
 	{
 		if (move.MoveInfo == CastleShort)
@@ -270,6 +297,7 @@ short GetMoveOrderingScore(Move move, Game *game)
 	PieceType pieceType = game->Squares[from];
 	PieceType pt = pieceType & 7;
 	PieceType promotionPiece = GetPromotionPieceType((MoveInfo)move.MoveInfo);
+	short sideSign = side01 == 0 ? -1 : 1;
 
 	// removing piece from square removes its position score
 	moveScore -= PositionValueMatrix[capturedType & 7][capturedColor][to];
@@ -277,7 +305,10 @@ short GetMoveOrderingScore(Move move, Game *game)
 	moveScore += PositionValueMatrix[pt][side01][to];
 
 	if (capturedType && move.MoveInfo != EnPassantCapture)
+	{
 		moveScore -= MaterialMatrix[capturedColor][capturedType & 7];
+		moveScore += (short)(sideSign * GetCaptureOrderingBonus(pieceType, capturedType));
+	}
 
 	if (promotionPiece != NOPIECE)
 	{
@@ -308,6 +339,7 @@ short GetMoveOrderingScore(Move move, Game *game)
 			int capturedPawnSquare = to + Behind[side01];
 			moveScore += MaterialMatrix[side01][PAWN]; // Adding own pawn material is same as removing opponent.
 			moveScore -= PositionValueMatrix[PAWN][!side01][capturedPawnSquare];
+			moveScore += (short)(sideSign * GetCaptureOrderingBonus(pieceType, PAWN));
 			break;
 		}
 	default:
@@ -618,7 +650,7 @@ short OpenRookFile(int square, Game* game, PieceType rook) {
 		return OPEN_ROOK_FILE;
 
 	if (!hasOwnPawn)
-		return OPEN_ROOK_FILE - SEMI_OPEN_FILE;
+		return SEMI_OPEN_FILE;
 
 	return 0;
 }
