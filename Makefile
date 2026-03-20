@@ -9,7 +9,9 @@ else
 endif
 
 SRC_DIR := src
-SOURCES := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/tests/*.c)
+CORE_SOURCES := $(filter-out $(SRC_DIR)/tests.c,$(wildcard $(SRC_DIR)/*.c))
+TEST_SOURCES := $(wildcard $(SRC_DIR)/tests/*.c)
+SOURCES := $(CORE_SOURCES) $(TEST_SOURCES)
 TARGET := chessmatrix
 
 all: $(TARGET)
