@@ -19,6 +19,8 @@ void PlayBookPosition(Game *game, int bookIndex);
 
 void LoadBook(char *fileName)
 {
+	if (hashBook != NULL)
+		return;
 	struct stat st;
 	unsigned long fileSize;
 	if (stat(fileName, &st) == 0)
@@ -111,6 +113,7 @@ void PlayBookPosition(Game *game, int bookIndex)
 void CloseBook()
 {
 	free(hashBook);
+	hashBook = NULL;
 }
 
 MoveCoordinates BestBookMove(Game *game)

@@ -9,6 +9,7 @@
 #include "evaluation.h"
 #include "search.h"
 #include "moves.h"
+#include "book.h"
 #include "tests/tests.h"
 #include "interactive.h"
 
@@ -37,6 +38,7 @@ void PrintOptions()
 {
 	printf("\nm: make move\n");
 	printf("c: computer move\n");
+	printf("b: toggle opening book\n");
 	printf("t: run tests\n");
 	printf("g: print game\n");
 	printf("e: eval\n");
@@ -54,6 +56,7 @@ int EnterInteractiveMode()
 	while (in != 'q')
 	{
 		// system("@cls||clear");
+		in = ' ';
 		printf("h for help> ");
 		if (fgets(buffer, 20, stdin) == NULL)
 			break;
@@ -69,6 +72,19 @@ int EnterInteractiveMode()
 		case 'c':
 			ComputerMove();
 			PrintGame(&g_mainGame);
+			break;
+		case 'b':
+			if (OwnBook)
+			{
+				OwnBook = false;
+				Stdout_wl("Opening book switched off");
+			}
+			else
+			{
+				OwnBook = true;
+				LoadBook("src/openings.abk");
+				Stdout_wl("Opening book switched on");
+			}
 			break;
 		case 'g':
 			PrintGame(&g_mainGame);

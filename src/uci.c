@@ -84,6 +84,7 @@ void EnterUciMode()
 					if (Streq("true\n", token))
 					{
 						OwnBook = true;
+						LoadBook("src/openings.abk");
 						Stdout_wl("Opening book switched on");
 					}
 					else if (Streq("false\n", token))
