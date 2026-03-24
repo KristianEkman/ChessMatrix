@@ -238,7 +238,7 @@ static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 	}
 }
 
-static short GetPieceMaterialValue(PieceType pieceType)
+short GetPieceMaterialValue(PieceType pieceType)
 {
 	switch (pieceType & 7)
 	{

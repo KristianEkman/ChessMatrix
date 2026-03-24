@@ -8,7 +8,7 @@
 #define KING_EXPOSED 20
 #define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8
-#define ENDGAME 1500  //E.g 2 Rooks 2 pawns one pice
+#define ENDGAME 1500 // E.g 2 Rooks 2 pawns one pice
 #define SAME_TWICE 15
 #define QUEEN_EARLY 15
 #define BISHOP_PAIR 30
@@ -28,25 +28,25 @@ extern U64 PassedPawnMask[2][64];
 extern U64 PawnProtectorsMask[2][64];
 extern U64 KingShieldMask[2][64];
 
-short OpenRookFile(int square, Game* game, PieceType rook);
+short OpenRookFile(int square, Game *game, PieceType rook);
 
-short DoublePawns(int square, Game* game, PieceType pawn);
+short DoublePawns(int square, Game *game, PieceType pawn);
 
 short GetMoveOrderingScore(Move move, Game *game);
 
-short GetEval(Game* game);
+short GetEval(Game *game);
 
-bool IsDraw(Game* game);
+bool IsDraw(Game *game);
 
-short KingExposed(int square, Game* game);
+short KingExposed(int square, Game *game);
 
-short PassedPawn(int square, Game* game);
+short PassedPawn(int square, Game *game);
 
-short ProtectedByPawn(int square, Game* game);
+short ProtectedByPawn(int square, Game *game);
 
-short TotalMaterial(Game* game);
+short TotalMaterial(Game *game);
 void CalculatePatterns();
 void AdjustPositionImportance();
 void SwitchSignOfWhitePositionValue();
-
-
+short GetPieceMaterialValue(PieceType pieceType);
+short StaticExchangeEvaluation(Move move, Game *game);

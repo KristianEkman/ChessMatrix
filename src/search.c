@@ -8,6 +8,7 @@
 #include "timeControl.h"
 #include "book.h"
 #include "countermoves.h"
+#include "see.h"
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
@@ -216,6 +217,12 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 #endif
 
 static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+static CM_THREAD_LOCAL Move g_threadBadCaptureBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+
+static bool IsCaptureMove(Move move, const Game *game)
+{
+	return move.MoveInfo == EnPassantCapture || game->Squares[move.To] != NOPIECE;
+}
 
 static short EvalForSide(Game *game)
 {
@@ -262,6 +269,10 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
 		if (legality == FastMoveIllegal)
 			continue;
+
+		if (StaticExchangeEvaluation(childMove, game) < 0)
+			continue;
+
 		Undos undos = DoMove(childMove, game);
 		if (legality == FastMoveNeedsFullCheck)
 		{
@@ -371,6 +382,9 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	Move fallbackMoves[MAX_MOVES];
 	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	Move fallbackBadCaptures[MAX_MOVES];
+	Move *badCaptures = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadBadCaptureBuffer[deep_in] : fallbackBadCaptures;
+	int badCaptureCount = 0;
 
 	// MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
 	// MoveKillersToTop(game, localMoves, moveCount, deep_in);
@@ -390,73 +404,96 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	uchar legalCount = 0;
 	short oldAlpha = alpha;
 	Move bestMove = localMoves[0];
-	for (int i = 0; i < moveCount; i++)
+	for (int pass = 0; pass < 2; pass++)
 	{
-		if (game->Side == BLACK)
-			PickBlacksNextMove(i, localMoves, moveCount);
-		else
-			PickWhitesNextMove(i, localMoves, moveCount);
-
-		Move childMove = localMoves[i];
-		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
-		if (legality == FastMoveIllegal)
-			continue;
-		Undos undos = DoMove(childMove, game);
-		if (legality == FastMoveNeedsFullCheck)
+		int currentCount = pass == 0 ? moveCount : badCaptureCount;
+		for (int i = 0; i < currentCount; i++)
 		{
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
+			Move childMove;
+			int orderedMoveIndex;
+			if (pass == 0)
 			{
-				UndoMove(game, childMove, undos);
+				if (game->Side == BLACK)
+					PickBlacksNextMove(i, localMoves, moveCount);
+				else
+					PickWhitesNextMove(i, localMoves, moveCount);
+
+				childMove = localMoves[i];
+				orderedMoveIndex = i;
+			}
+			else
+			{
+				childMove = badCaptures[i];
+				orderedMoveIndex = moveCount + i;
+			}
+
+			FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
+			if (legality == FastMoveIllegal)
+				continue;
+
+			if (pass == 0 && IsCaptureMove(childMove, game) && StaticExchangeEvaluation(childMove, game) < 0)
+			{
+				badCaptures[badCaptureCount++] = childMove;
 				continue;
 			}
-		}
-		legalCount++;
 
-		// extensions
-		uchar extension = 0;
-		bool pawnRacePush = IsAdvancedPawnPushInPawnEnding(game, childMove);
-		bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
-		if (checked || childMove.MoveInfo == SoonPromoting || pawnRacePush)
-			extension = 1;
-
-		int lmrMoveIdx = i < 100 ? i : 99;
-		uchar lmrRed = lmr_matrix[depth][lmrMoveIdx];
-		// Late Move Reduction, full depth for the first moves, and interesting moves.
-		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
-		else
-			score = (short)(alpha + 1); // Hack to ensure that full-depth is done.
-
-		if (score > alpha)
-		{
-			// surprisingly good, re-search at full depth.
-			score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
-		}
-
-		UndoMove(game, childMove, undos);
-
-		if (g_Stopped)
-			return alpha;
-
-		if (score > bestScore)
-		{
-			bestScore = score;
-			bestMove = childMove;
-		}
-
-		if (score > alpha)
-		{
-			alpha = score;
-			if (alpha >= beta)
+			Undos undos = DoMove(childMove, game);
+			if (legality == FastMoveNeedsFullCheck)
 			{
-				AddHashScore(game->Hash, beta, depth, BEST_WHITE, bestMove);
-				/*if (undos.CaptIndex == -1)
-					AddCounterMove(childMove, prevMove);*/
-				// if (undos.CaptIndex == -1)
-				//    AddKiller(game, childMove);
-				return beta;
+				int kingSquare = game->KingSquares[!game->Side01];
+				bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
+				if (!isLegal)
+				{
+					UndoMove(game, childMove, undos);
+					continue;
+				}
+			}
+			legalCount++;
+
+			// extensions
+			uchar extension = 0;
+			bool pawnRacePush = IsAdvancedPawnPushInPawnEnding(game, childMove);
+			bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+			if (checked || childMove.MoveInfo == SoonPromoting || pawnRacePush)
+				extension = 1;
+
+			int lmrMoveIdx = orderedMoveIndex < 100 ? orderedMoveIndex : 99;
+			uchar lmrRed = lmr_matrix[depth][lmrMoveIdx];
+			// Late Move Reduction, full depth for the first moves, and interesting moves.
+			if (orderedMoveIndex >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
+				score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
+			else
+				score = (short)(alpha + 1); // Hack to ensure that full-depth is done.
+
+			if (score > alpha)
+			{
+				// surprisingly good, re-search at full depth.
+				score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+			}
+
+			UndoMove(game, childMove, undos);
+
+			if (g_Stopped)
+				return alpha;
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestMove = childMove;
+			}
+
+			if (score > alpha)
+			{
+				alpha = score;
+				if (alpha >= beta)
+				{
+					AddHashScore(game->Hash, beta, depth, BEST_WHITE, bestMove);
+					/*if (undos.CaptIndex == -1)
+						AddCounterMove(childMove, prevMove);*/
+					// if (undos.CaptIndex == -1)
+					//    AddKiller(game, childMove);
+					return beta;
+				}
 			}
 		}
 	}
