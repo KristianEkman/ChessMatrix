@@ -270,9 +270,6 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 		if (legality == FastMoveIllegal)
 			continue;
 
-		if (StaticExchangeEvaluation(childMove, game) < 0)
-			continue;
-
 		Undos undos = DoMove(childMove, game);
 		if (legality == FastMoveNeedsFullCheck)
 		{

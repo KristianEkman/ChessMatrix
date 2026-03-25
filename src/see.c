@@ -27,7 +27,7 @@ static short GetMoveMaterialSwing(Move move, PieceType capturedPiece)
 
 static short StaticExchangeEvaluationRecursive(int targetSquare, Game *game)
 {
-    CreateMoves(game);
+    CreateCaptureMoves(game);
     RemoveInvalidMoves(game);
 
     short bestGain = 0;
