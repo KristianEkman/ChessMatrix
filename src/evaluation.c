@@ -662,17 +662,11 @@ short DoublePawns(int square, Game* game, PieceType pawn) {
 }
 
 bool IsDraw(Game* game) {
-	//This draw can happen early also, but cheating for performance reasons.
-	/*if (game->PositionHistoryLength < 20)
-		return false;*/
-	// However this optimization did not give measurable improvment
-
-	int start = game->PositionHistoryLength - 5;
-	//Only checking back some moves. Possible to miss repetions but must be quite rare.
-	int end = max(0, game->PositionHistoryLength - 30);
-	for (int i = start; i > end; i -= 2)
+	int start = game->PositionHistoryLength - 3;
+	int end = max(0, game->PositionHistoryLength - game->FiftyMoveRuleCount - 1);
+	for (int i = start; i >= end; i -= 2)
 	{
-		if (game->Hash == game->PositionHistory[i]) //Simplyfying to 1 fold. Should not by an disadvantage.
+		if (game->Hash == game->PositionHistory[i]) // Keeping the one-match shortcut, but scan the full reversible window.
 			return true;
 	}
 

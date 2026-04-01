@@ -6,6 +6,42 @@
 #include "patterns.h"
 #include "hashTable.h"
 
+static uchar GetHashEnPassantFileForStateInternal(const Game *game, uchar enPassantFile, int side01)
+{
+	if (enPassantFile == 0 || enPassantFile > 8)
+		return 0;
+
+	int targetFile = enPassantFile - 1;
+	int targetSquare = (side01 == 0 ? 40 : 16) + targetFile;
+
+	if (side01 == 0)
+	{
+		if (targetFile > 0 && game->Squares[targetSquare - 9] == (PAWN | WHITE))
+			return enPassantFile;
+		if (targetFile < 7 && game->Squares[targetSquare - 7] == (PAWN | WHITE))
+			return enPassantFile;
+	}
+	else
+	{
+		if (targetFile > 0 && game->Squares[targetSquare + 7] == (PAWN | BLACK))
+			return enPassantFile;
+		if (targetFile < 7 && game->Squares[targetSquare + 9] == (PAWN | BLACK))
+			return enPassantFile;
+	}
+
+	return 0;
+}
+
+uchar GetHashEnPassantFileForState(const Game *game, uchar enPassantFile, int side01)
+{
+	return GetHashEnPassantFileForStateInternal(game, enPassantFile, side01);
+}
+
+uchar GetHashEnPassantFile(const Game *game)
+{
+	return GetHashEnPassantFileForStateInternal(game, (uchar)(game->State & 15), game->Side01);
+}
+
 void FixPieceChain(Game *game)
 {
 	for (int s = 0; s < 2; s++)
@@ -198,5 +234,5 @@ void InitHash()
 	if (g_mainGame.State & BlackCanCastleShort)
 		g_mainGame.Hash ^= ZobritsCastlingRights[3];
 
-	g_mainGame.Hash ^= ZobritsEnpassantFile[g_mainGame.State & 15];
+	g_mainGame.Hash ^= ZobritsEnpassantFile[GetHashEnPassantFile(&g_mainGame)];
 }

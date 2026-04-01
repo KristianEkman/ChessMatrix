@@ -8,3 +8,5 @@ void InitPiece(int file, int rank, PieceType type, Side color);
 void InitScores();
 void InitHash();
 void FixPieceChain(Game* game);
+uchar GetHashEnPassantFile(const Game *game);
+uchar GetHashEnPassantFileForState(const Game *game, uchar enPassantFile, int side01);

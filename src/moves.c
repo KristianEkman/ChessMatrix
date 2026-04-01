@@ -4,6 +4,7 @@
 #include "patterns.h"
 #include "evaluation.h"
 #include "hashTable.h"
+#include "position.h"
 #include "sort.h"
 #include "countermoves.h"
 #include <string.h>
@@ -158,6 +159,8 @@ Undos DoMove(Move move, Game *game)
 	PieceType pieceType = game->Squares[f];
 	PieceType pt = pieceType & 7;
 	U64 hash = game->Hash;
+	uchar oldHashEnPassantFile = GetHashEnPassantFile(game);
+	uchar newHashEnPassantFile = 0;
 	AllPieceBitboards *bitboards = &game->Bitboards;
 	PieceType promotedPiece = NOPIECE;
 
@@ -181,7 +184,7 @@ Undos DoMove(Move move, Game *game)
 	hash ^= ZobritsPieceTypesSquares[pieceType][t];
 	hash ^= ZobritsPieceTypesSquares[captType][t];
 
-	hash ^= ZobritsEnpassantFile[game->State & 15];
+	hash ^= ZobritsEnpassantFile[oldHashEnPassantFile];
 	// resetting en passant every move
 	game->State &= ~15;
 
@@ -324,7 +327,7 @@ Undos DoMove(Move move, Game *game)
 	break;
 	case EnPassant:
 		game->State |= ((f & 7) + 1); // Sets the file. a to h. File is 1 to 8.
-		hash ^= ZobritsEnpassantFile[(f & 7) + 1];
+		newHashEnPassantFile = GetHashEnPassantFileForState(game, (uchar)((f & 7) + 1), !side01);
 		break;
 	case EnPassantCapture:
 	{
@@ -340,6 +343,7 @@ Undos DoMove(Move move, Game *game)
 		break;
 	}
 
+	hash ^= ZobritsEnpassantFile[newHashEnPassantFile];
 	hash ^= ZobritsSides[side01];
 	hash ^= ZobritsSides[!side01];
 	game->Hash = hash;
@@ -494,7 +498,7 @@ void UndoMove(Game *game, Move move, Undos undos)
 bool DoNullMove(Game *game)
 {
 	int side01 = game->Side01;
-	U64 hash = ZobritsEnpassantFile[game->State & 15];
+	U64 hash = ZobritsEnpassantFile[GetHashEnPassantFile(game)];
 	// resetting en passant
 	game->State &= ~15;
 
@@ -503,11 +507,6 @@ bool DoNullMove(Game *game)
 	game->Hash ^= hash;
 	game->Side ^= 24;
 	game->Side01 = game->Side >> 4;
-	if (game->PositionHistoryLength < MAX_POSITION_HISTORY)
-	{
-		game->PositionHistory[game->PositionHistoryLength++] = game->Hash;
-		return true;
-	}
 	return false;
 }
 
