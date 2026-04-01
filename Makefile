@@ -13,6 +13,15 @@ CORE_SOURCES := $(filter-out $(SRC_DIR)/tests.c,$(wildcard $(SRC_DIR)/*.c))
 TEST_SOURCES := $(wildcard $(SRC_DIR)/tests/*.c)
 SOURCES := $(CORE_SOURCES) $(TEST_SOURCES)
 TARGET := chessmatrix
+TEST_NAME_ARG := $(strip $(testName))
+
+ifeq ($(TEST_NAME_ARG),)
+TEST_NAME_ARG := $(firstword $(filter-out test,$(MAKECMDGOALS)))
+endif
+
+ifneq ($(filter test,$(MAKECMDGOALS)),)
+$(foreach goal,$(filter-out test,$(MAKECMDGOALS)),$(eval .PHONY: $(goal))$(eval $(goal): ; @:))
+endif
 
 all: $(TARGET)
 
@@ -26,16 +35,11 @@ run: $(TARGET)
 	./$(TARGET)
 
 test: $(TARGET)
-	@tmp=$$(mktemp); \
-	printf "i\nt\n\nq\nquit\n" | ./$(TARGET) | tee "$$tmp"; \
-	if grep -q "There are failed tests\." "$$tmp"; then \
-		rm -f "$$tmp"; \
-		exit 1; \
-	fi; \
-	grep -q "Success! Tests are good!" "$$tmp"; \
-	status=$$?; \
-	rm -f "$$tmp"; \
-	exit $$status
+	@if [ -n "$(TEST_NAME_ARG)" ]; then \
+		./$(TARGET) test "$(TEST_NAME_ARG)"; \
+	else \
+		./$(TARGET) test; \
+	fi
 
 clean:
 	rm -f $(TARGET)

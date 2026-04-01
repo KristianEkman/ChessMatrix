@@ -74,7 +74,7 @@ int EnterInteractiveMode()
 			PrintGame(&g_mainGame);
 			break;
 		case 't':
-			runAllTests();
+			runAllTests(NULL, true);
 			break;
 		case 'e':
 			printf("Eval: %d\n", GetEval(&g_mainGame));

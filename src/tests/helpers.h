@@ -18,7 +18,7 @@ typedef struct
 } RegisteredTest;
 
 void RegisterTest(const char *name, RegisteredTestFunc func, TestSuite suite);
-void RunRegisteredTests(TestSuite suite);
+int RunRegisteredTests(TestSuite suite, const char *nameFilter);
 
 #if defined(_MSC_VER)
 typedef void(__cdecl *TestRegistrationFunc)(void);

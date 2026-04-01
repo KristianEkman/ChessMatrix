@@ -1,3 +1,3 @@
 #pragma once
 
-extern void runAllTests();
+extern int runAllTests(const char *testName, bool waitForInput);

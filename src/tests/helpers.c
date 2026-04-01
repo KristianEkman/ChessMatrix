@@ -34,15 +34,28 @@ void RegisterTest(const char *name, RegisteredTestFunc func, TestSuite suite)
 	g_registeredTestCount++;
 }
 
-void RunRegisteredTests(TestSuite suite)
+int RunRegisteredTests(TestSuite suite, const char *nameFilter)
 {
+	int runCount = 0;
+	bool hasFilter = nameFilter != NULL && nameFilter[0] != '\0';
+
 	for (int i = 0; i < g_registeredTestCount; i++)
 	{
-		if (g_registeredTests[i].Suite == suite)
+		if (g_registeredTests[i].Suite != suite)
 		{
-			g_registeredTests[i].Func();
+			continue;
 		}
+
+		if (hasFilter && strcmp(g_registeredTests[i].Name, nameFilter) != 0)
+		{
+			continue;
+		}
+
+		g_registeredTests[i].Func();
+		runCount++;
 	}
+
+	return runCount;
 }
 
 int _failedAsserts = 0;

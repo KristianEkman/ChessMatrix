@@ -16,3 +16,8 @@ Features:
 * UCI Protocol
 
 Complie solution on Windows 10 using Visual Studio 2019.
+
+Run all tests with `make test`.
+Run one exact test by name with `make test PerftTestStart`.
+The variable form `make test testName=PerftTestStart` also works.
+You can also call the binary directly with `./chessmatrix test` or `./chessmatrix test PerftTestStart`.

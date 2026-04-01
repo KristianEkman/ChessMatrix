@@ -27,10 +27,19 @@
 
 Game g_mainGame = {0};
 
+static int HandleCommandLineMode(int argc, char *argv[])
+{
+	if (argc >= 2 && strcmp(argv[1], "test") == 0)
+	{
+		const char *testName = argc >= 3 ? argv[2] : NULL;
+		return runAllTests(testName, false);
+	}
+
+	return -1;
+}
+
 int main(int argc, char *argv[])
 {
-	(void)argc;
-	(void)argv;
 	const char *disableSignalHandlers = getenv("CM_DISABLE_SIGNAL_HANDLERS");
 	if (disableSignalHandlers == NULL || disableSignalHandlers[0] == '\0' || disableSignalHandlers[0] == '0')
 	{
@@ -54,6 +63,14 @@ int main(int argc, char *argv[])
 	printf("info Branch %s\n", GitBranch);
 	printf("info Commit %s\n", GitCommit);
 	printf("Initialized\n");
+
+	int commandLineStatus = HandleCommandLineMode(argc, argv);
+	if (commandLineStatus != -1)
+	{
+		MarkQuitRequested();
+		return commandLineStatus;
+	}
+
 	EnterUciMode();
 	return 0;
 }
