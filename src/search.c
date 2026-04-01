@@ -38,6 +38,37 @@ static bool IsMoveValid(Move move)
 	return move.From < 64 && move.To < 64 && move.MoveInfo != NotAMove;
 }
 
+#define HASH_MOVE_BONUS 10000
+#define PRIMARY_KILLER_BONUS 900
+#define SECONDARY_KILLER_BONUS 700
+#define COUNTERMOVE_BONUS 500
+#define KILLER_MOVE_SLOTS 2
+
+static bool SameMoveCoordinates(Move left, Move right)
+{
+	return left.From == right.From && left.To == right.To;
+}
+
+static void ApplyMoveOrderingBonus(Move *move, Side side, short bonus)
+{
+	move->Score = (short)(move->Score + (side == BLACK ? bonus : (short)-bonus));
+}
+
+static bool IsQuietMove(const Game *game, Move move)
+{
+	if (!IsMoveValid(move))
+		return false;
+
+	if ((move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight) ||
+		move.MoveInfo == SoonPromoting ||
+		move.MoveInfo == EnPassantCapture)
+	{
+		return false;
+	}
+
+	return game->Squares[move.To] == NOPIECE;
+}
+
 static void EmitBestMove(Move move)
 {
 	if (IsMoveValid(move))
@@ -130,9 +161,9 @@ void MoveToTop(Move move, Move *list, int length, Side side)
 {
 	for (int i = 0; i < length; i++)
 	{
-		if (move.From == list[i].From && move.To == list[i].To && i > 0)
+		if (SameMoveCoordinates(move, list[i]) && i > 0)
 		{
-			list[i].Score += (side == BLACK ? 10000 : -10000);
+			ApplyMoveOrderingBonus(&list[i], side, HASH_MOVE_BONUS);
 			return;
 		}
 	}
@@ -178,29 +209,19 @@ static void PickWhitesNextMove(int moveNum, Move *moves, int moveCount)
 	moves[moveNum] = moves[bestNum];
 	moves[bestNum] = temp;
 }
-
-//
-// void AddKiller(Game* game, Move move) {
-//	MoveCoordinates * list = game->KillerMoves[game->PositionHistoryLength];
-//	if ((list[0].From == move.From && list[0].To == move.To) ||
-//		(list[1].From == move.From && list[1].To == move.To))
-//		return; // dont add already existing killers
-//	list[1] = list[0];
-//	list[0].From = move.From;
-//	list[0].To = move.To;
-//}
-//
-//
-
-void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength, Side side)
+static void MoveCounterMoveToTop(Game *game, Move previousMove, Move *moveList, int moveListLength)
 {
-	// int moved = 0;
+	if (!IsMoveValid(previousMove))
+		return;
+
 	for (int i = 0; i < moveListLength; i++)
 	{
+		if (!IsQuietMove(game, moveList[i]))
+			continue;
+
 		if (IsCounterMove(moveList[i], previousMove))
 		{
-			moveList[i].Score += (side == BLACK ? 9000 : -9000);
-			// moved++;
+			ApplyMoveOrderingBonus(&moveList[i], game->Side, COUNTERMOVE_BONUS);
 			break;
 		}
 	}
@@ -216,6 +237,61 @@ void MoveCounterMoveToTop(Move previousMove, Move *moveList, int moveListLength,
 #endif
 
 static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
+static CM_THREAD_LOCAL Move g_threadKillerMoves[THREAD_MOVE_BUFFER_PLY][KILLER_MOVE_SLOTS];
+
+static void ResetThreadKillerMoves()
+{
+	Move invalid = InvalidMove();
+	for (int ply = 0; ply < THREAD_MOVE_BUFFER_PLY; ply++)
+	{
+		for (int slot = 0; slot < KILLER_MOVE_SLOTS; slot++)
+		{
+			g_threadKillerMoves[ply][slot] = invalid;
+		}
+	}
+}
+
+static void AddKillerMove(Move move, int ply)
+{
+	if (ply < 0 || ply >= THREAD_MOVE_BUFFER_PLY || !IsMoveValid(move))
+		return;
+
+	Move *killers = g_threadKillerMoves[ply];
+	if (SameMoveCoordinates(killers[0], move))
+		return;
+	if (SameMoveCoordinates(killers[1], move))
+	{
+		Move temp = killers[0];
+		killers[0] = killers[1];
+		killers[1] = temp;
+		return;
+	}
+
+	killers[1] = killers[0];
+	killers[0] = move;
+}
+
+static void MoveKillersToTop(Game *game, Move *moveList, int moveListLength, int ply)
+{
+	if (ply < 0 || ply >= THREAD_MOVE_BUFFER_PLY)
+		return;
+
+	Move *killers = g_threadKillerMoves[ply];
+	for (int i = 0; i < moveListLength; i++)
+	{
+		if (!IsQuietMove(game, moveList[i]))
+			continue;
+
+		if (SameMoveCoordinates(moveList[i], killers[0]))
+		{
+			ApplyMoveOrderingBonus(&moveList[i], game->Side, PRIMARY_KILLER_BONUS);
+		}
+		else if (SameMoveCoordinates(moveList[i], killers[1]))
+		{
+			ApplyMoveOrderingBonus(&moveList[i], game->Side, SECONDARY_KILLER_BONUS);
+		}
+	}
+}
 
 static short EvalForSide(Game *game)
 {
@@ -372,12 +448,14 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
 	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
 
-	// MoveCounterMoveToTop(prevMove, localMoves, moveCount, game->Side);
-	// MoveKillersToTop(game, localMoves, moveCount, deep_in);
-
 	if (pvMove.MoveInfo != NotAMove)
 	{
 		MoveToTop(pvMove, localMoves, moveCount, game->Side);
+	}
+	if (deep_in > 0)
+	{
+		MoveCounterMoveToTop(game, prevMove, localMoves, moveCount);
+		MoveKillersToTop(game, localMoves, moveCount, deep_in);
 	}
 
 	// Not reducing for the first number of moves of each depth.
@@ -452,10 +530,11 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			if (alpha >= beta)
 			{
 				AddHashScore(game->Hash, beta, depth, BEST_WHITE, bestMove);
-				/*if (undos.CaptIndex == -1)
-					AddCounterMove(childMove, prevMove);*/
-				// if (undos.CaptIndex == -1)
-				//    AddKiller(game, childMove);
+				if (deep_in > 0 && IsQuietMove(game, childMove))
+				{
+					AddCounterMove(childMove, prevMove);
+					AddKillerMove(childMove, deep_in);
+				}
 				return beta;
 			}
 		}
@@ -590,6 +669,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL TimeLimitWatch(void *args)
 PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 {
 	(void)v;
+	ResetThreadKillerMoves();
 	Game game = g_mainGame;
 	Game *pGame = &game;
 	CopyMainGame(pGame);
@@ -741,7 +821,7 @@ MoveCoordinates Search(bool async)
 		}
 	}
 
-	// ClearCounterMoves();
+	ClearCounterMoves();
 
 	g_Stopped = false;
 	g_SearchedNodes = 0;
