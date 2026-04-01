@@ -1160,6 +1160,7 @@ PlayerMove MakePlayerMoveOnThread(Game *game, char *sMove)
 {
 	Move move = ParseMove(sMove, 0);
 	PlayerMove playerMove;
+	bool requestedPromotion = move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight;
 	if (move.MoveInfo == NotAMove)
 	{
 		playerMove.Invalid = true;
@@ -1170,7 +1171,9 @@ PlayerMove MakePlayerMoveOnThread(Game *game, char *sMove)
 	int length = ValidMovesOnThread(game, validMoves);
 	for (int i = 0; i < length; i++)
 	{
-		if (validMoves[i].From == move.From && validMoves[i].To == move.To)
+		if (validMoves[i].From == move.From &&
+			validMoves[i].To == move.To &&
+			(!requestedPromotion || validMoves[i].MoveInfo == move.MoveInfo))
 		{
 
 			playerMove.Move = validMoves[i];

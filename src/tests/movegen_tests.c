@@ -112,6 +112,25 @@ TEST(CastlingRightsClearedWhenRookIsCaptured)
 	AssertNot(g_mainGame.State & WhiteCanCastleLong, "White long castling rights should be cleared after the rook on a1 is captured");
 }
 
+TEST(MakePlayerMoveUsesRequestedUnderpromotion)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1");
+
+	Move moves[MAX_MOVES];
+	int count = ValidMoves(moves);
+	Move expectedMove = ParseMove("b7b8n", PlainMove);
+	Assert(MovesContains(moves, count, expectedMove), "knight underpromotion should be generated as a legal move");
+
+	PlayerMove pm = MakePlayerMove("b7b8n");
+	AssertNot(pm.Invalid, "knight underpromotion should be accepted as a legal player move");
+	AssertAreEqualInts(PromotionKnight, pm.Move.MoveInfo, "player move should preserve the requested underpromotion piece");
+	AssertAreEqualInts(KNIGHT | WHITE, g_mainGame.Squares[b8], "board should contain a knight after knight underpromotion");
+
+	UnMakePlayerMove(pm);
+	AssertAreEqualInts(PAWN | WHITE, g_mainGame.Squares[b7], "undo should restore the pawn after underpromotion test");
+}
+
 TEST(PinnedMoveLegalityTest)
 {
 	printf("%s\n", __func__);
