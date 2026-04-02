@@ -263,3 +263,6 @@ __pycache__/
 bench/
 
 .vscode/
+.DS_Store
+chessmatrix
+chessmatrix_master

@@ -1,7 +1,3 @@
-Counter moves
-	2 previous, i så fall kanske packa coordinater.
-
-	
 Ger ENMR förbättring?
 
 LMR och Extensions
