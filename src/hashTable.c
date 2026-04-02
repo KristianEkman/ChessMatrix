@@ -14,23 +14,29 @@ U64 ZobritsCastlingRights[4] = { 0 };
 U64 ZobritsEnpassantFile[9] = { 0 };
 
 //		bits shift >>   mask
-//key2	28	 0	        0FFF FFFF
-//score	14	 28	        3FFF
-//depth	5	 42	        1F
+//key2	27	 0	        07FF FFFF
+//score	14	 27	        3FFF
+//depth	6	 41	        3F
 //type	2	 47	        3
 //from	6	 49	        3F
 //to	6	 55	        3F
 //promo	3	 61	        7
+
+#define HASH_KEY2_MASK 0x07FFFFFFU
+#define HASH_SCORE_SHIFT 27
+#define HASH_SCORE_MASK 0x3FFFU
+#define HASH_DEPTH_SHIFT 41
+#define HASH_DEPTH_MASK 0x3FU
 
 HashTable H_Table = { 0 };
 int HashTableEntries = 0;
 int HashTableOverWrites = 0;
 
 void AddHashScore(U64 hash, short score, char depth, HashEntryType type, Move move) {
-	uint key2 = hash & 0x0FFFFFFF; // Keep 28 bits for verification key to make room for promotion info.
-	U64 pack = key2 & 0x0FFFFFFF;
-	pack |= (((U64)score + MAX_SCORE) << 28); // Make sure it is positive by adding max score.
-	pack |= (U64)depth << 42;
+	uint key2 = hash & HASH_KEY2_MASK; // Keep 27 bits for verification key to make room for a 6-bit depth.
+	U64 pack = key2 & HASH_KEY2_MASK;
+	pack |= (((U64)score + MAX_SCORE) << HASH_SCORE_SHIFT); // Make sure it is positive by adding max score.
+	pack |= ((U64)depth & HASH_DEPTH_MASK) << HASH_DEPTH_SHIFT;
 	pack |= (U64)type << 47;
 	pack |= (U64)move.From << 49;
 	pack |= (U64)move.To << 55;
@@ -44,8 +50,8 @@ void AddHashScore(U64 hash, short score, char depth, HashEntryType type, Move mo
 	uint idx = (uint)(hash % H_Table.EntryCount);
 	EntrySlot* slot = &H_Table.Entries[idx];
 	U64 entry = slot->EntrySlots[0];
-	int dbDepth = (entry >> 42) & 0x1F;
-	uint dbKey2 = entry & 0x0FFFFFFF;
+	int dbDepth = (entry >> HASH_DEPTH_SHIFT) & HASH_DEPTH_MASK;
+	uint dbKey2 = entry & HASH_KEY2_MASK;
 
 	//Always overwrite unless same hash with lower depth is stored.
 	if (dbKey2 == key2) {
@@ -76,13 +82,13 @@ void AddHashScore(U64 hash, short score, char depth, HashEntryType type, Move mo
 
 bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short best_black, short best_white) {
 	uint idx = (uint)(hash % H_Table.EntryCount);
-	uint key2 = hash & 0x0FFFFFFF;
+	uint key2 = hash & HASH_KEY2_MASK;
 	EntrySlot* slot = &H_Table.Entries[idx];
 	for (int i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
-		uint dbKey = entry & 0x0FFFFFFF;
-		int dbDepth = (entry >> 42) & 0x1F;
+		uint dbKey = entry & HASH_KEY2_MASK;
+		int dbDepth = (entry >> HASH_DEPTH_SHIFT) & HASH_DEPTH_MASK;
 		if (dbKey == key2) {
 			pvMove->From = (entry >> 49) & 0x3F;
 			pvMove->To = (entry >> 55) & 0x3F;
@@ -93,7 +99,7 @@ bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short be
 				pvMove->MoveInfo = PlainMove;
 			if (dbDepth >= depth)
 			{
-				*score = ((entry >> 28) & 0x3FFF) - MAX_SCORE;
+				*score = ((entry >> HASH_SCORE_SHIFT) & HASH_SCORE_MASK) - MAX_SCORE;
 
 				HashEntryType type = (entry >> 47) & 0x3;
 				switch (type)
@@ -125,12 +131,12 @@ bool GetScoreFromHash(U64 hash, char depth, short* score, Move* pvMove, short be
 bool GetBestMoveFromHash(U64 hash, Move* move) {
 	//uint idx = (uint)((hash >> 32) % H_Table.EntryCount);
 	uint idx = (uint)(hash % H_Table.EntryCount);
-	uint key2 = hash & 0x0FFFFFFF;
+	uint key2 = hash & HASH_KEY2_MASK;
 	EntrySlot* slot = &H_Table.Entries[idx];
 	for (int i = 0; i < SLOTS; i++)
 	{
 		U64 entry = slot->EntrySlots[i];
-		uint dbKey = entry & 0x0FFFFFFF;
+		uint dbKey = entry & HASH_KEY2_MASK;
 		if (dbKey == key2) {
 			move->From = (entry >> 49) & 0x3F;
 			move->To = (entry >> 55) & 0x3F;

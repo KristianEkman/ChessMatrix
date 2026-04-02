@@ -134,7 +134,7 @@ void StopSearch()
 #define MAX_R 4
 #define MIN_R 3
 
-static uchar lmr_matrix[MAX_DEPTH][100] = {0};
+static uchar lmr_matrix[MAX_DEPTH + 1][100] = {0};
 
 static long long NowMs()
 {
@@ -145,18 +145,11 @@ static long long NowMs()
 
 void InitLmr()
 {
-	/*
-	i > 3 & depth > 3 -- > 2
-	i > 6 & depth > 6 -- > 3
-	i > 9 & depth > 9 -- > 4
-	*/
-	for (int depth = 0; depth < MAX_DEPTH; depth++)
+	for (int depth = 0; depth <= MAX_DEPTH; depth++)
 	{
 		for (int moveNo = 0; moveNo < 100; moveNo++)
 		{
-			if (depth > 12 && moveNo > 15)
-				lmr_matrix[depth][moveNo] = 3;
-			else if (depth > 7 && moveNo > 10)
+			if (depth > 7 && moveNo > 10)
 				lmr_matrix[depth][moveNo] = 3;
 			else if (depth > 3 && moveNo > 7)
 				lmr_matrix[depth][moveNo] = 2;
@@ -166,6 +159,21 @@ void InitLmr()
 			// printf("depth: %d   moveNo: %d   lmr: %d\n", depth, moveNo, lmr_matrix[depth][moveNo]);
 		}
 	}
+}
+
+uchar GetLmrReduction(int depth, int moveNo)
+{
+	if (depth < 0)
+		depth = 0;
+	else if (depth > MAX_DEPTH)
+		depth = MAX_DEPTH;
+
+	if (moveNo < 0)
+		moveNo = 0;
+	else if (moveNo > 99)
+		moveNo = 99;
+
+	return lmr_matrix[depth][moveNo];
 }
 
 void SetSearchDefaults()
@@ -504,8 +512,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		if (checked || childMove.MoveInfo == SoonPromoting || pawnRacePush)
 			extension = 1;
 
-		int lmrMoveIdx = i < 100 ? i : 99;
-		uchar lmrRed = lmr_matrix[depth][lmrMoveIdx];
+		uchar lmrRed = GetLmrReduction(depth, i);
 		// Late Move Reduction, full depth for the first moves, and interesting moves.
 		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);

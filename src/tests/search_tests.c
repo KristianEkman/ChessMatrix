@@ -20,6 +20,15 @@ SEARCH_TEST(BestMoveTestBlackCaptureBishop)
 	AssertBestMove(4, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
 }
 
+SEARCH_TEST(LmrTableInit)
+{
+	InitLmr();
+	AssertAreEqualInts(1, GetLmrReduction(3, 7), __func__);
+	AssertAreEqualInts(2, GetLmrReduction(4, 8), __func__);
+	AssertAreEqualInts(3, GetLmrReduction(8, 11), __func__);
+	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, 99), __func__);
+}
+
 SEARCH_TEST(TestWhiteMateIn2)
 {
 	char *fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";

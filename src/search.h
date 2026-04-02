@@ -10,3 +10,4 @@ void SetSearchDefaults();
 MoveCoordinates Search(bool async);
 void StopSearch();
 void InitLmr();
+uchar GetLmrReduction(int depth, int moveNo);
