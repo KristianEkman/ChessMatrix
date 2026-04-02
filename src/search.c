@@ -38,6 +38,31 @@ static bool IsMoveValid(Move move)
 	return move.From < 64 && move.To < 64 && move.MoveInfo != NotAMove;
 }
 
+static MoveCoordinates CoordinatesFromMove(Move move)
+{
+	MoveCoordinates coords;
+	if (IsMoveValid(move))
+	{
+		coords.From = move.From;
+		coords.To = move.To;
+	}
+	else
+	{
+		coords.From = 255;
+		coords.To = 255;
+	}
+	return coords;
+}
+
+static Move PlainMoveFromCoordinates(MoveCoordinates coords)
+{
+	Move move = InvalidMove();
+	move.From = coords.From;
+	move.To = coords.To;
+	move.MoveInfo = PlainMove;
+	return move;
+}
+
 #define HASH_MOVE_BONUS 10000
 #define PRIMARY_KILLER_BONUS 900
 #define SECONDARY_KILLER_BONUS 700
@@ -108,9 +133,8 @@ void StopSearch()
 
 #define MAX_R 4
 #define MIN_R 3
-#define DR 4 // depth reduction value for normal search
 
-uchar lmr_matrix[MAX_DEPTH][100] = {0};
+static uchar lmr_matrix[MAX_DEPTH][100] = {0};
 
 static long long NowMs()
 {
@@ -146,18 +170,12 @@ void InitLmr()
 
 void SetSearchDefaults()
 {
-	g_topSearchParams.BlackIncrement = 0;
-	g_topSearchParams.BlackTimeLeft = 0;
+	g_topSearchParams = (TopSearchParams){0};
 	g_topSearchParams.MaxDepth = MAX_DEPTH;
-	g_topSearchParams.MoveTime = 0;
-	g_topSearchParams.TimeControl = false;
-	g_topSearchParams.WhiteIncrement = 0;
-	g_topSearchParams.BlackIncrement = 0;
-	g_topSearchParams.MovesTogo = 0;
 	g_topSearchParams.BestMove = InvalidMove();
 }
 
-void MoveToTop(Move move, Move *list, int length, Side side)
+static void MoveToTop(Move move, Move *list, int length, Side side)
 {
 	for (int i = 0; i < length; i++)
 	{
@@ -169,46 +187,29 @@ void MoveToTop(Move move, Move *list, int length, Side side)
 	}
 }
 
-static void PickBlacksNextMove(int moveNum, Move *moves, int moveCount)
+static void PickNextMove(Side side, int moveNum, Move *moves, int moveCount)
 {
-
-	int bestScore = -9000;
 	int bestNum = moveNum;
+	short bestScore = moves[moveNum].Score;
 
-	for (int index = moveNum; index < moveCount; ++index)
+	for (int index = moveNum + 1; index < moveCount; ++index)
 	{
-
-		if (moves[index].Score > bestScore)
+		bool isBetterMove = side == BLACK ? moves[index].Score > bestScore : moves[index].Score < bestScore;
+		if (isBetterMove)
 		{
 			bestScore = moves[index].Score;
 			bestNum = index;
 		}
 	}
 
-	Move temp = moves[moveNum];
-	moves[moveNum] = moves[bestNum];
-	moves[bestNum] = temp;
-}
-
-static void PickWhitesNextMove(int moveNum, Move *moves, int moveCount)
-{
-
-	int bestScore = 9000;
-	int bestNum = moveNum;
-
-	for (int index = moveNum; index < moveCount; ++index)
+	if (bestNum != moveNum)
 	{
-		if (moves[index].Score < bestScore)
-		{
-			bestScore = moves[index].Score;
-			bestNum = index;
-		}
+		Move temp = moves[moveNum];
+		moves[moveNum] = moves[bestNum];
+		moves[bestNum] = temp;
 	}
-
-	Move temp = moves[moveNum];
-	moves[moveNum] = moves[bestNum];
-	moves[bestNum] = temp;
 }
+
 static void MoveCounterMoveToTop(Game *game, Move previousMove, Move *moveList, int moveListLength)
 {
 	if (!IsMoveValid(previousMove))
@@ -238,6 +239,20 @@ static void MoveCounterMoveToTop(Game *game, Move previousMove, Move *moveList, 
 
 static CM_THREAD_LOCAL Move g_threadMoveBuffer[THREAD_MOVE_BUFFER_PLY][MAX_MOVES];
 static CM_THREAD_LOCAL Move g_threadKillerMoves[THREAD_MOVE_BUFFER_PLY][KILLER_MOVE_SLOTS];
+
+static Move *GetLocalMoveList(int ply, Move *fallbackMoves)
+{
+	if (ply >= 0 && ply < THREAD_MOVE_BUFFER_PLY)
+		return g_threadMoveBuffer[ply];
+	return fallbackMoves;
+}
+
+static Move *CopyMovesToLocalBuffer(const Game *game, int ply, int moveCount, Move *fallbackMoves)
+{
+	Move *localMoves = GetLocalMoveList(ply, fallbackMoves);
+	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	return localMoves;
+}
 
 static void ResetThreadKillerMoves()
 {
@@ -299,7 +314,27 @@ static short EvalForSide(Game *game)
 	return game->Side == BLACK ? eval : (short)-eval;
 }
 
-short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
+static bool TryDoLegalMove(Game *game, const LegalMoveContext *legalCtx, Move move, Undos *undos)
+{
+	FastMoveLegality legality = ClassifyMoveLegality(move, game, legalCtx);
+	if (legality == FastMoveIllegal)
+		return false;
+
+	*undos = DoMove(move, game);
+	if (legality == FastMoveNeedsFullCheck)
+	{
+		int kingSquare = game->KingSquares[!game->Side01];
+		if (SquareAttacked(kingSquare, game->Side, game))
+		{
+			UndoMove(game, move, *undos);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 {
 
 	g_SearchedNodes++;
@@ -323,34 +358,19 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 	BuildLegalMoveContext(game, &legalCtx);
 
 	Move fallbackMoves[MAX_MOVES];
-	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
-	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	Move *localMoves = CopyMovesToLocalBuffer(game, deep_in, moveCount, fallbackMoves);
 	// MoveKillersToTop(game, localMoves, moveCount);
 
 	for (int i = 0; i < moveCount; i++)
 	{
-		if (game->Side == BLACK)
-			PickBlacksNextMove(i, localMoves, moveCount);
-		else
-			PickWhitesNextMove(i, localMoves, moveCount);
+		PickNextMove(game->Side, i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
-		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
-		if (legality == FastMoveIllegal)
+		Undos undos;
+		if (!TryDoLegalMove(game, &legalCtx, childMove, &undos))
 			continue;
-		Undos undos = DoMove(childMove, game);
-		if (legality == FastMoveNeedsFullCheck)
-		{
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool legal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!legal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-		}
 
-		score = (short)-QuiteSearch((short)-beta, (short)-alpha, game, deep_in + 1);
+		score = (short)-QuietSearch((short)-beta, (short)-alpha, game, deep_in + 1);
 		UndoMove(game, childMove, undos);
 
 		if (score >= beta)
@@ -362,7 +382,7 @@ short QuiteSearch(short alpha, short beta, Game *game, int deep_in)
 	return alpha;
 }
 
-bool IsReductionOk(Move move, Undos undos)
+static bool IsReductionOk(Move move, Undos undos)
 {
 	return undos.CaptIndex == -1 && // no capture
 		   move.MoveInfo != PromotionQueen &&
@@ -402,7 +422,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		if (incheck)
 			depth = 1;
 		else
-			return QuiteSearch(alpha, beta, game, deep_in);
+			return QuietSearch(alpha, beta, game, deep_in);
 	}
 
 	if (IsDraw(game))
@@ -445,8 +465,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	BuildLegalMoveContext(game, &legalCtx);
 
 	Move fallbackMoves[MAX_MOVES];
-	Move *localMoves = (deep_in >= 0 && deep_in < THREAD_MOVE_BUFFER_PLY) ? g_threadMoveBuffer[deep_in] : fallbackMoves;
-	memcpy(localMoves, game->MovesBuffer, moveCount * sizeof(Move));
+	Move *localMoves = CopyMovesToLocalBuffer(game, deep_in, moveCount, fallbackMoves);
 
 	if (pvMove.MoveInfo != NotAMove)
 	{
@@ -470,26 +489,12 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	Move bestMove = localMoves[0];
 	for (int i = 0; i < moveCount; i++)
 	{
-		if (game->Side == BLACK)
-			PickBlacksNextMove(i, localMoves, moveCount);
-		else
-			PickWhitesNextMove(i, localMoves, moveCount);
+		PickNextMove(game->Side, i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
-		FastMoveLegality legality = ClassifyMoveLegality(childMove, game, &legalCtx);
-		if (legality == FastMoveIllegal)
+		Undos undos;
+		if (!TryDoLegalMove(game, &legalCtx, childMove, &undos))
 			continue;
-		Undos undos = DoMove(childMove, game);
-		if (legality == FastMoveNeedsFullCheck)
-		{
-			int kingSquare = game->KingSquares[!game->Side01];
-			bool isLegal = !SquareAttacked(kingSquare, game->Side, game);
-			if (!isLegal)
-			{
-				UndoMove(game, childMove, undos);
-				continue;
-			}
-		}
 		legalCount++;
 
 		// extensions
@@ -559,7 +564,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	return alpha;
 }
 
-void CopyMainGame(Game *copy)
+static void CopyMainGame(Game *copy)
 {
 
 	copy->Side = g_mainGame.Side;
@@ -574,14 +579,23 @@ void CopyMainGame(Game *copy)
 	copy->Material[0] = g_mainGame.Material[0];
 	copy->Material[1] = g_mainGame.Material[1];
 
-	memcpy(copy->MovesBuffer, g_mainGame.MovesBuffer, g_mainGame.MovesBufferLength * sizeof(Move));
-	memcpy(copy->Squares, g_mainGame.Squares, 64 * sizeof(PieceType));
+	memcpy(copy->MovesBuffer, g_mainGame.MovesBuffer, g_mainGame.MovesBufferLength * sizeof(copy->MovesBuffer[0]));
+	memcpy(copy->Squares, g_mainGame.Squares, sizeof(copy->Squares));
 	copy->Bitboards = g_mainGame.Bitboards;
-	memcpy(copy->PositionHistory, g_mainGame.PositionHistory, g_mainGame.PositionHistoryLength * sizeof(U64));
-	memcpy(copy->Pieces, g_mainGame.Pieces, 32 * sizeof(Piece));
+	memcpy(copy->PositionHistory, g_mainGame.PositionHistory, g_mainGame.PositionHistoryLength * sizeof(copy->PositionHistory[0]));
+	memcpy(copy->Pieces, g_mainGame.Pieces, sizeof(copy->Pieces));
 	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
 
 	// memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
+}
+
+static Move GetFirstValidMove(Game *game, bool onThread)
+{
+	Move moves[MAX_MOVES];
+	int moveCount = onThread ? ValidMovesOnThread(game, moves) : ValidMoves(moves);
+	if (moveCount > 0)
+		return moves[0];
+	return InvalidMove();
 }
 
 void PrintBestLine(Move move, int depth, float ellapsed)
@@ -670,7 +684,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 {
 	(void)v;
 	ResetThreadKillerMoves();
-	Game game = g_mainGame;
+	Game game;
 	Game *pGame = &game;
 	CopyMainGame(pGame);
 	long long start = NowMs();
@@ -766,12 +780,7 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 	}
 
 	if (!IsMoveValid(bestMove))
-	{
-		Move fallbackMoves[MAX_MOVES];
-		int fallbackCount = ValidMovesOnThread(pGame, fallbackMoves);
-		if (fallbackCount > 0)
-			bestMove = fallbackMoves[0];
-	}
+		bestMove = GetFirstValidMove(pGame, true);
 
 	if (g_emitBestMove)
 		EmitBestMove(bestMove);
@@ -798,10 +807,7 @@ MoveCoordinates Search(bool async)
 		g_topSearchParams.BestMove = moves[0];
 		if (g_emitBestMove)
 			EmitBestMove(moves[0]);
-		MoveCoordinates singleMove;
-		singleMove.From = moves[0].From;
-		singleMove.To = moves[0].To;
-		return singleMove;
+		return CoordinatesFromMove(moves[0]);
 	}
 
 	// book moves are just to add variation on tournament games.
@@ -810,10 +816,7 @@ MoveCoordinates Search(bool async)
 		MoveCoordinates bookMove = RandomBookMove(&g_mainGame);
 		if (bookMove.From != 255)
 		{
-			Move bookAsMove = InvalidMove();
-			bookAsMove.From = bookMove.From;
-			bookAsMove.To = bookMove.To;
-			bookAsMove.MoveInfo = PlainMove;
+			Move bookAsMove = PlainMoveFromCoordinates(bookMove);
 			g_topSearchParams.BestMove = bookAsMove;
 			if (g_emitBestMove)
 				EmitBestMove(bookAsMove);
@@ -852,30 +855,11 @@ MoveCoordinates Search(bool async)
 			g_hasTimeLimitThread = false;
 		}
 		if (!IsMoveValid(g_topSearchParams.BestMove))
-		{
-			Move fallbackMoves[MAX_MOVES];
-			int fallbackCount = ValidMoves(fallbackMoves);
-			if (fallbackCount > 0)
-				g_topSearchParams.BestMove = fallbackMoves[0];
-		}
+			g_topSearchParams.BestMove = GetFirstValidMove(&g_mainGame, false);
 
-		MoveCoordinates coords;
-		if (IsMoveValid(g_topSearchParams.BestMove))
-		{
-			coords.From = g_topSearchParams.BestMove.From;
-			coords.To = g_topSearchParams.BestMove.To;
-		}
-		else
-		{
-			coords.From = 255;
-			coords.To = 255;
-		}
-		return coords;
+		return CoordinatesFromMove(g_topSearchParams.BestMove);
 	}
 
 	// this will not be used.
-	MoveCoordinates nomove;
-	nomove.From = 255;
-	nomove.To = 255;
-	return nomove;
+	return CoordinatesFromMove(InvalidMove());
 }
