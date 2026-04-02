@@ -322,6 +322,77 @@ static short EvalForSide(Game *game)
 	return game->Side == BLACK ? eval : (short)-eval;
 }
 
+#define QSEARCH_DELTA_MARGIN 100
+
+static short GetQsearchPieceValue(PieceType piece)
+{
+	switch (piece & 7)
+	{
+	case PAWN:
+		return MATERIAL_P;
+	case KNIGHT:
+		return MATERIAL_N;
+	case BISHOP:
+		return MATERIAL_B;
+	case ROOK:
+		return MATERIAL_R;
+	case QUEEN:
+		return MATERIAL_Q;
+	default:
+		return 0;
+	}
+}
+
+static short GetQsearchCapturedPieceValue(Move move, const Game *game)
+{
+	PieceType capturedPiece = move.MoveInfo == EnPassantCapture ? (PAWN | (game->Side ^ 24)) : game->Squares[move.To];
+	return GetQsearchPieceValue(capturedPiece);
+}
+
+static bool ShouldDeltaPruneQsearch(const Game *game, Move move, short standPat, short alpha)
+{
+	if (alpha >= 7000 || standPat <= -7000)
+		return false;
+
+	if (move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight)
+		return false;
+
+	short optimisticGain = GetQsearchCapturedPieceValue(move, game);
+	if (optimisticGain <= 0)
+		return false;
+
+	return standPat + optimisticGain + QSEARCH_DELTA_MARGIN <= alpha;
+}
+
+static bool GivesCheckAfterMove(const Game *game)
+{
+	return SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, (Game *)game);
+}
+
+static bool ShouldSkipBadQsearchCapture(const Game *game, Move move, PieceType movingPiece, short capturedValue)
+{
+	if (capturedValue <= 0)
+		return false;
+
+	if (move.MoveInfo >= PromotionQueen && move.MoveInfo <= PromotionKnight)
+		return false;
+
+	if (GivesCheckAfterMove(game))
+		return false;
+
+	short movingValue = GetQsearchPieceValue(movingPiece);
+	if (movingValue <= capturedValue)
+		return false;
+
+	if (!SquareAttacked(move.To, game->Side, (Game *)game))
+		return false;
+
+	if (SquareAttacked(move.To, game->Side ^ 24, (Game *)game))
+		return false;
+
+	return true;
+}
+
 static bool TryDoLegalMove(Game *game, const LegalMoveContext *legalCtx, Move move, Undos *undos)
 {
 	FastMoveLegality legality = ClassifyMoveLegality(move, game, legalCtx);
@@ -344,6 +415,8 @@ static bool TryDoLegalMove(Game *game, const LegalMoveContext *legalCtx, Move mo
 
 short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 {
+	if (g_Stopped)
+		return 0;
 
 	g_SearchedNodes++;
 	if (deep_in >= MAX_QSEARCH_DEPTH)
@@ -353,10 +426,12 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 		return 0;
 
 	bool incheck = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+	short standPat = 0;
 	short score = 0;
 	if (!incheck)
 	{
-		score = EvalForSide(game); // side-to-move perspective.
+		standPat = EvalForSide(game); // side-to-move perspective.
+		score = standPat;
 		if (score >= beta)
 			return beta;
 		if (score > alpha)
@@ -382,16 +457,33 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 
 	for (int i = 0; i < moveCount; i++)
 	{
+		if (g_Stopped)
+			return alpha;
+
 		PickNextMove(game->Side, i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
+		PieceType movingPiece = game->Squares[childMove.From];
+		short capturedValue = GetQsearchCapturedPieceValue(childMove, game);
+		if (!incheck && ShouldDeltaPruneQsearch(game, childMove, standPat, alpha))
+			continue;
+
 		Undos undos;
 		if (!TryDoLegalMove(game, &legalCtx, childMove, &undos))
 			continue;
+
+		if (!incheck && ShouldSkipBadQsearchCapture(game, childMove, movingPiece, capturedValue))
+		{
+			UndoMove(game, childMove, undos);
+			continue;
+		}
 		legalCount++;
 
 		score = (short)-QuietSearch((short)-beta, (short)-alpha, game, deep_in + 1);
 		UndoMove(game, childMove, undos);
+
+		if (g_Stopped)
+			return alpha;
 
 		if (score >= beta)
 			return beta;

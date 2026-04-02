@@ -63,6 +63,46 @@ SEARCH_TEST(QuietSearchInCheckSearchesQuietEvasion)
 	AssertAreEqualInts(expected, QuietSearch(MIN_SCORE, MAX_SCORE, &g_mainGame, 0), "qsearch should search quiet evasions when the side to move is in check");
 }
 
+SEARCH_TEST(QuietSearchReturnsImmediatelyWhenStopped)
+{
+	ReadFen("k7/8/8/3q4/4Q3/8/8/7K b - - 0 1");
+	g_Stopped = true;
+	g_SearchedNodes = 0;
+	AssertAreEqualInts(0, QuietSearch(MIN_SCORE, MAX_SCORE, &g_mainGame, 0), "qsearch should return immediately when stopped");
+	AssertAreEqualInts(0, g_SearchedNodes, "stopped qsearch should not count searched nodes");
+	g_Stopped = false;
+}
+
+SEARCH_TEST(QuietSearchDeltaPrunesHopelessPawnCapture)
+{
+	ReadFen("k7/8/8/3q4/4P3/8/8/7K b - - 0 1");
+	CreateCaptureMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	AssertAreEqualInts(1, g_mainGame.MovesBufferLength, "test position should have exactly one legal capture");
+
+	short standPat = EvalForSideForTest(&g_mainGame);
+	short alpha = (short)(standPat + 500);
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+	AssertAreEqualInts(alpha, QuietSearch(alpha, MAX_SCORE, &g_mainGame, 0), "qsearch should keep alpha when the only capture cannot raise it");
+	AssertAreEqualInts(1, g_SearchedNodes, "hopeless capture should be delta-pruned before qsearch recurses");
+}
+
+SEARCH_TEST(QuietSearchSkipsObviouslyLosingQueenCapture)
+{
+	ReadFen("k7/8/8/3q4/4P3/8/7K/4R3 b - - 0 1");
+	CreateCaptureMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	AssertAreEqualInts(1, g_mainGame.MovesBufferLength, "test position should have exactly one legal capture");
+
+	short standPat = EvalForSideForTest(&g_mainGame);
+	short alpha = (short)(standPat + 50);
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+	AssertAreEqualInts(alpha, QuietSearch(alpha, MAX_SCORE, &g_mainGame, 0), "qsearch should keep alpha when the only capture loses the queen to an undefended recapture");
+	AssertAreEqualInts(1, g_SearchedNodes, "obviously losing queen capture should be skipped before qsearch recurses");
+}
+
 SEARCH_TEST(TestWhiteMateIn2)
 {
 	char *fen = "5k2/8/2Q5/3R4/8/8/8/4K3 w - - 2 1";
