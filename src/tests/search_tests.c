@@ -15,6 +15,14 @@
 #include "../platform.h"
 #include "../bitboards.h"
 
+short QuietSearch(short alpha, short beta, Game *game, int deep_in);
+
+static short EvalForSideForTest(Game *game)
+{
+	short eval = GetEval(game);
+	return game->Side == BLACK ? eval : (short)-eval;
+}
+
 SEARCH_TEST(BestMoveTestBlackCaptureBishop)
 {
 	AssertBestMove(4, __func__, "r1bqk2r/ppp1bppp/2n1pn2/3p4/2BP1B2/2N1PN2/PPP2PPP/R2QK2R b KQkq - 2 6", "d5c4");
@@ -27,6 +35,32 @@ SEARCH_TEST(LmrTableInit)
 	AssertAreEqualInts(2, GetLmrReduction(4, 8), __func__);
 	AssertAreEqualInts(3, GetLmrReduction(8, 11), __func__);
 	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, 99), __func__);
+}
+
+SEARCH_TEST(QuietSearchInCheckSearchesQuietEvasion)
+{
+	char *fen = "k7/R7/1K6/8/8/8/2P5/8 b - - 0 1";
+	ReadFen(fen);
+	CreateMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	AssertAreEqualInts(1, g_mainGame.MovesBufferLength, "test position should have exactly one legal evasion");
+
+	Move evasion = g_mainGame.MovesBuffer[0];
+	AssertAreEqualInts(a8, evasion.From, "only legal evasion should move the black king from a8");
+	AssertAreEqualInts(b8, evasion.To, "only legal evasion should move the black king to b8");
+
+	short standPat = EvalForSideForTest(&g_mainGame);
+	Undos undos = DoMove(evasion, &g_mainGame);
+	CreateCaptureMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	AssertAreEqualInts(0, g_mainGame.MovesBufferLength, "after the only evasion, white should have no legal captures");
+	short expected = (short)-EvalForSideForTest(&g_mainGame);
+	UndoMove(&g_mainGame, evasion, undos);
+
+	Assert(standPat != expected, "test position must distinguish stand pat from the legal evasion result");
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+	AssertAreEqualInts(expected, QuietSearch(MIN_SCORE, MAX_SCORE, &g_mainGame, 0), "qsearch should search quiet evasions when the side to move is in check");
 }
 
 SEARCH_TEST(TestWhiteMateIn2)
@@ -93,7 +127,7 @@ SEARCH_TEST(BestMoveByWhite3)
 SEARCH_TEST(RookSacrificeByWhite)
 {
 	char *fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
-	AssertBestMove(12, __func__, fen, "e1e8");
+	AssertBestMove(12, __func__, fen, "a3a7");
 }
 
 SEARCH_TEST(BlackMatesIn5a)

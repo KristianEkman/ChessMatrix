@@ -352,22 +352,33 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 	if (IsDraw(game))
 		return 0;
 
-	short score = EvalForSide(game); // side-to-move perspective.
-	if (score >= beta)
-		return beta;
-	if (score > alpha)
-		alpha = score;
+	bool incheck = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
+	short score = 0;
+	if (!incheck)
+	{
+		score = EvalForSide(game); // side-to-move perspective.
+		if (score >= beta)
+			return beta;
+		if (score > alpha)
+			alpha = score;
 
-	CreateCaptureMoves(game);
+		CreateCaptureMoves(game);
+	}
+	else
+	{
+		CreateMoves(game);
+	}
+
 	int moveCount = game->MovesBufferLength;
 	if (moveCount == 0)
-		return alpha;
+		return incheck ? (short)(-8000 + deep_in) : alpha;
 	LegalMoveContext legalCtx;
 	BuildLegalMoveContext(game, &legalCtx);
 
 	Move fallbackMoves[MAX_MOVES];
 	Move *localMoves = CopyMovesToLocalBuffer(game, deep_in, moveCount, fallbackMoves);
 	// MoveKillersToTop(game, localMoves, moveCount);
+	int legalCount = 0;
 
 	for (int i = 0; i < moveCount; i++)
 	{
@@ -377,6 +388,7 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 		Undos undos;
 		if (!TryDoLegalMove(game, &legalCtx, childMove, &undos))
 			continue;
+		legalCount++;
 
 		score = (short)-QuietSearch((short)-beta, (short)-alpha, game, deep_in + 1);
 		UndoMove(game, childMove, undos);
@@ -386,6 +398,9 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 		if (score > alpha)
 			alpha = score;
 	}
+
+	if (legalCount == 0)
+		return incheck ? (short)(-8000 + deep_in) : alpha;
 
 	return alpha;
 }
