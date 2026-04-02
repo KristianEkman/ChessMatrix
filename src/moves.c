@@ -5,7 +5,6 @@
 #include "evaluation.h"
 #include "hashTable.h"
 #include "position.h"
-#include "sort.h"
 #include "countermoves.h"
 #include <string.h>
 
@@ -659,15 +658,6 @@ bool SquareAttacked(int square, Side attackedBy, Game *game)
 	return false;
 }
 
-void SortMoves(Move *moves, int moveCount, Side side)
-{
-
-	if (side == WHITE)
-		QuickSort(moves, 0, moveCount - 1);
-	else
-		QuickSortDescending(moves, 0, moveCount - 1);
-}
-
 static void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, char pieceIdx)
 {
 	if (game->MovesBufferLength >= MAX_MOVES)
@@ -898,7 +888,6 @@ static void CreateMovesForCurrentSide(Game *game, bool capturesOnly)
 		GeneratePieceMoves(game, piece, capturesOnly);
 		piece = piece->Next;
 	}
-	// SortMoves(game->MovesBuffer, game->MovesBufferLength, game->Side);
 }
 
 void CreateMoves(Game *game)

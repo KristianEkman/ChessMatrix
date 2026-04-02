@@ -60,9 +60,6 @@
     <ClCompile Include="evaluation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sort.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hashTable.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -114,9 +111,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="evaluation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hashTable.h">

@@ -15,7 +15,6 @@
 #include "utils.h"
 #include "tests/tests.h"
 #include "evaluation.h"
-#include "sort.h"
 #include "hashTable.h"
 #include "timeControl.h"
 #include "moves.h"

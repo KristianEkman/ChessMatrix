@@ -174,7 +174,6 @@
     <ClCompile Include="tests\perft_tests.c" />
     <ClCompile Include="search.c" />
     <ClCompile Include="tests\search_tests.c" />
-    <ClCompile Include="sort.c" />
     <ClCompile Include="tests\helpers.c" />
     <ClCompile Include="tests\tests.c" />
     <ClCompile Include="timeControl.c" />
@@ -197,7 +196,6 @@
     <ClInclude Include="platform.h" />
     <ClInclude Include="position.h" />
     <ClInclude Include="search.h" />
-    <ClInclude Include="sort.h" />
     <ClInclude Include="tests\helpers.h" />
     <ClInclude Include="tests\tests.h" />
     <ClInclude Include="timeControl.h" />
