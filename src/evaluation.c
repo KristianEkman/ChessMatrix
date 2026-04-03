@@ -213,14 +213,6 @@ static CM_THREAD_LOCAL PawnHashEntry g_pawnHashTable[PAWN_HASH_SIZE] = { 0 };
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
 
-static short GetKingPositionScore(Move move, Game *game)
-{
-	// aproximation that endgame starts att 1800 of total piece value, eg rook, knight, pawn per player
-	int endGame = abs(game->Material[!game->Side01]) < ENDGAME ? 1 : 0;
-	return KingPositionValueMatrix[endGame][game->Side01][move.To] -
-		   KingPositionValueMatrix[endGame][game->Side01][move.From];
-}
-
 static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 {
 	switch (moveInfo)
@@ -773,7 +765,7 @@ static bool IsOpeningPhase(int gamePhase)
 	return gamePhase >= OpeningPhaseThreshold;
 }
 
-static int GetGamePhase(Game* game) {
+int GetGamePhase(Game* game) {
 	const AllPieceBitboards *bb = &game->Bitboards;
 	int phase = 0;
 
@@ -783,6 +775,15 @@ static int GetGamePhase(Game* game) {
 	phase += popcount(bb->Queens.AllQueens) * PiecePhase[QUEEN];
 
 	return min(MaxGamePhase, phase);
+}
+
+short GetKingPositionScore(Move move, Game *game)
+{
+	int gamePhase = GetGamePhase(game);
+	int middleGameDelta = KingPositionValueMatrix[0][game->Side01][move.To] - KingPositionValueMatrix[0][game->Side01][move.From];
+	int endGameDelta = KingPositionValueMatrix[1][game->Side01][move.To] - KingPositionValueMatrix[1][game->Side01][move.From];
+
+	return (short)((middleGameDelta * gamePhase + endGameDelta * (MaxGamePhase - gamePhase)) / MaxGamePhase);
 }
 
 short GetEval(Game* game) {

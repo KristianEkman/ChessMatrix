@@ -8,7 +8,6 @@
 #define KING_EXPOSED 20
 #define PASSED_PAWN_FREE_PATH 15
 #define PAWN_PROTECT 8
-#define ENDGAME 1500  //E.g 2 Rooks 2 pawns one pice
 #define SAME_TWICE 15
 #define QUEEN_EARLY 15
 #define BISHOP_PAIR 30
@@ -45,6 +44,8 @@ short PassedPawn(int square, Game* game);
 short ProtectedByPawn(int square, Game* game);
 
 short TotalMaterial(Game* game);
+int GetGamePhase(Game* game);
+short GetKingPositionScore(Move move, Game *game);
 void CalculatePatterns();
 void AdjustPositionImportance();
 void SwitchSignOfWhitePositionValue();

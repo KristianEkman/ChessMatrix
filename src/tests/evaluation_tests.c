@@ -60,6 +60,23 @@ TEST(QueenEarlyDevelopmentPenaltyAppliesToColoredQueens)
 	AssertAreEqualInts(baseEval + QUEEN_EARLY, GetEval(&g_mainGame), "A white queen that has moved in the opening should receive the queen-early penalty");
 }
 
+TEST(KingMoveOrderingUsesInterpolatedGamePhase)
+{
+	printf("%s\n", __func__);
+	ReadFen("r1b1k1n1/8/8/8/8/8/8/4K3 w - - 0 1");
+
+	Move move = ParseMove("e1e2", KingMove);
+	int gamePhase = GetGamePhase(&g_mainGame);
+	int maxGamePhase = 24;
+	int middleGameDelta = KingPositionValueMatrix[0][0][e2] - KingPositionValueMatrix[0][0][e1];
+	int endGameDelta = KingPositionValueMatrix[1][0][e2] - KingPositionValueMatrix[1][0][e1];
+	int expectedKingDelta = (middleGameDelta * gamePhase + endGameDelta * (maxGamePhase - gamePhase)) / maxGamePhase;
+	int expectedScore = g_mainGame.Material[0] + g_mainGame.Material[1] + expectedKingDelta;
+
+	Assert(gamePhase > 0 && gamePhase < maxGamePhase, "Expected the test position to stay in a mixed game phase");
+	AssertAreEqualInts(expectedScore, GetMoveOrderingScore(move, &g_mainGame), "King move ordering should blend middle-game and endgame king tables by game phase");
+}
+
 void MobilityRookTest()
 {
 	printf("%s\n", __func__);
