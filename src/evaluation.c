@@ -666,7 +666,7 @@ bool IsDraw(Game* game) {
 	int end = max(0, game->PositionHistoryLength - game->FiftyMoveRuleCount - 1);
 	for (int i = start; i >= end; i -= 2)
 	{
-		if (game->Hash == game->PositionHistory[i]) // Keeping the one-match shortcut, but scan the full reversible window.
+		if (game->Hash == game->PositionHistory[i])
 			return true;
 	}
 
@@ -765,7 +765,13 @@ short ProtectedByPawn(int square, Game* game) {
 
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
 static const int MaxGamePhase = 24;
+static const int OpeningPhaseThreshold = 20;
 static const short TempoBonus = 8;
+
+static bool IsOpeningPhase(int gamePhase)
+{
+	return gamePhase >= OpeningPhaseThreshold;
+}
 
 static int GetGamePhase(Game* game) {
 	const AllPieceBitboards *bb = &game->Bitboards;
@@ -786,11 +792,8 @@ short GetEval(Game* game) {
 	short posScore = 0;
 	//int mobil = 0;
 	int neg = -1;
-	int opening = 0;
-	if (game->PositionHistoryLength < 12) {
-		opening = 1;
-	}
 	int gamePhase = GetGamePhase(game);
+	bool opening = IsOpeningPhase(gamePhase);
 	short pawnScore[2] = { 0, 0 };
 	uchar pwnCount[2] = { 0, 0 };
 	GetPawnEval(bb, pawnScore, pwnCount);
@@ -802,19 +805,20 @@ short GetEval(Game* game) {
 		Piece * piece = &game->Pieces[s][0];
 		while (piece != NULL)
 		{
+			PieceType pieceType = piece->Type;
+			PieceType color = pieceType & (BLACK | WHITE);
+			PieceType pt = pieceType & 7;
+
 			// penalty for moving a piece more than once in the opening.
 			if (opening)
 			{
 				if (piece->MoveCount > 1)
 					scr -= SAME_TWICE;
-				if (piece->Type == QUEEN)
+				if (pt == QUEEN && piece->MoveCount > 0)
 					scr -= QUEEN_EARLY;
 			}
 
 			int i = piece->SquareIndex;
-			PieceType pieceType = piece->Type;
-			PieceType color = pieceType & (BLACK | WHITE);
-			PieceType pt = pieceType & 7;
 			
 			if (pt >= 0 && pt < 7) {
                 posScore += PositionValueMatrix[pt][s][i];

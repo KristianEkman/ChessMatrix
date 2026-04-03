@@ -15,11 +15,49 @@
 #include "../platform.h"
 #include "../bitboards.h"
 
+static Piece *FindPieceAt(int side01, int square)
+{
+	for (int i = 0; i < 16; i++)
+	{
+		Piece *piece = &g_mainGame.Pieces[side01][i];
+		if (!piece->Off && piece->SquareIndex == square)
+			return piece;
+	}
+
+	return NULL;
+}
+
 TEST(UnstoppablePassedPawnEvalTest)
 {
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/1P6/8/8/8/4K3 w - - 0 1");
 	Assert(GetEval(&g_mainGame) < -300, "Advanced unstoppable passer should evaluate as clearly winning in a king-and-pawn ending");
+}
+
+TEST(EndgameMoveCountDoesNotTriggerOpeningPenalty)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/8/8/8/8/R3K3 w - - 0 1");
+	short baseEval = GetEval(&g_mainGame);
+	Piece *rook = FindPieceAt(0, a1);
+
+	Assert(rook != NULL, "Expected to find the white rook on a1");
+	rook->MoveCount = 2;
+
+	AssertAreEqualInts(baseEval, GetEval(&g_mainGame), "Sparse endgames loaded from FEN should not get opening move-count penalties");
+}
+
+TEST(QueenEarlyDevelopmentPenaltyAppliesToColoredQueens)
+{
+	printf("%s\n", __func__);
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	short baseEval = GetEval(&g_mainGame);
+	Piece *queen = FindPieceAt(0, d1);
+
+	Assert(queen != NULL, "Expected to find the white queen on d1");
+	queen->MoveCount = 1;
+
+	AssertAreEqualInts(baseEval + QUEEN_EARLY, GetEval(&g_mainGame), "A white queen that has moved in the opening should receive the queen-early penalty");
 }
 
 void MobilityRookTest()
