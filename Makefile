@@ -14,6 +14,7 @@ TEST_SOURCES := $(wildcard $(SRC_DIR)/tests/*.c)
 SOURCES := $(CORE_SOURCES) $(TEST_SOURCES)
 TARGET := chessmatrix
 TEST_NAME_ARG := $(strip $(testName))
+BENCH_DEPTH_ARG := $(if $(strip $(depth)),$(strip $(depth)),7)
 
 ifeq ($(TEST_NAME_ARG),)
 TEST_NAME_ARG := $(firstword $(filter-out test,$(MAKECMDGOALS)))
@@ -41,7 +42,10 @@ test: $(TARGET)
 		./$(TARGET) test; \
 	fi
 
+bench: $(TARGET)
+	./$(TARGET) bench $(BENCH_DEPTH_ARG)
+
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all strict run test clean
+.PHONY: all strict run test bench clean

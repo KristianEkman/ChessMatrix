@@ -1,19 +1,21 @@
 # ChessMatrix
+
 This is a chess engine written in C.
 Strength is estimated at between 2000-2100 ELO.
 It is currently under development.
 
 Features:
-* 64 square board representation
-* Piece list
-* Piece move templates
-* Zobrist Hash Transposition table at configurable size.
-* Alpha beta pruning
-* Opening book in abk format.
-* Null move pruning
-* Quiescence search
-* Late move reductions
-* UCI Protocol
+
+- 64 square board representation
+- Piece list
+- Piece move templates
+- Zobrist Hash Transposition table at configurable size.
+- Alpha beta pruning
+- Opening book in abk format.
+- Null move pruning
+- Quiescence search
+- Late move reductions
+- UCI Protocol
 
 Complie solution on Windows 10 using Visual Studio 2019.
 
@@ -21,3 +23,5 @@ Run all tests with `make test`.
 Run one exact test by name with `make test PerftTestStart`.
 The variable form `make test testName=PerftTestStart` also works.
 You can also call the binary directly with `./chessmatrix test` or `./chessmatrix test PerftTestStart`.
+Run the built-in benchmark suite with `make bench` or `./chessmatrix bench`.
+Override the benchmark depth with `make bench depth=9` or `./chessmatrix bench 9`.
