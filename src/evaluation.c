@@ -5,8 +5,6 @@
 #include <stdlib.h>
 
 
-//#define MOBILITY 3 // for every square a rook or bishop can go to
-
 #if defined(_MSC_VER)
 #define CM_THREAD_LOCAL __declspec(thread)
 #else
@@ -647,6 +645,38 @@ short OpenRookFile(int square, Game* game, PieceType rook) {
 	return 0;
 }
 
+short BishopMobility(int square, Game* game)
+{
+	const AllPieceBitboards *bb = &game->Bitboards;
+	PieceType bishop = game->Squares[square];
+	int color01 = (bishop & (BLACK | WHITE)) >> 4;
+	U64 ownPieces = color01 == 0 ? bb->WhitePieces : bb->BlackPieces;
+	short mobility = 0;
+	int raysCount = PieceTypeSquareRaysPatterns[0][square][0][0];
+
+	if ((bishop & 7) != BISHOP)
+		return 0;
+
+	for (int r = 1; r <= raysCount; r++)
+	{
+		int rayLength = PieceTypeSquareRaysPatterns[0][square][r][0];
+		for (int rr = 1; rr <= rayLength; rr++)
+		{
+			int targetSquare = PieceTypeSquareRaysPatterns[0][square][r][rr];
+			U64 targetBit = SquareToBit(targetSquare);
+
+			if (ownPieces & targetBit)
+				break;
+
+			mobility++;
+			if (bb->Occupied & targetBit)
+				break;
+		}
+	}
+
+	return (short)(mobility * BISHOP_MOBILITY);
+}
+
 short DoublePawns(int square, Game* game, PieceType pawn) {
 	const AllPieceBitboards *bb = &game->Bitboards;
 	int color01 = (pawn & 24) >> 4;
@@ -834,8 +864,14 @@ short GetEval(Game* game) {
 			}
 			break;
 			case BISHOP:
-			case KNIGHT: {
+			{
 				bishopCount += (pt == BISHOP);
+				scr += ProtectedByPawn(i, game);
+				scr += BishopMobility(i, game);
+			}
+					   break;
+			case KNIGHT:
+			{
 				scr += ProtectedByPawn(i, game);
 			}
 					   break;

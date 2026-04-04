@@ -77,6 +77,17 @@ TEST(KingMoveOrderingUsesInterpolatedGamePhase)
 	AssertAreEqualInts(expectedScore, GetMoveOrderingScore(move, &g_mainGame), "King move ordering should blend middle-game and endgame king tables by game phase");
 }
 
+TEST(BishopMobilityTest)
+{
+	printf("%s\n", __func__);
+
+	ReadFen("4k3/8/8/8/3B4/8/8/4K3 w - - 0 1");
+	AssertAreEqualInts(13 * BISHOP_MOBILITY, BishopMobility(d4, &g_mainGame), "Open bishop mobility score mismatch");
+
+	ReadFen("4k3/8/8/2P1P3/3B4/2P1P3/8/4K3 w - - 0 1");
+	AssertAreEqualInts(0, BishopMobility(d4, &g_mainGame), "Blocked bishop mobility score mismatch");
+}
+
 void MobilityRookTest()
 {
 	printf("%s\n", __func__);

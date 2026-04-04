@@ -10,6 +10,7 @@
 #define PAWN_PROTECT 8
 #define SAME_TWICE 15
 #define QUEEN_EARLY 15
+#define BISHOP_MOBILITY 3
 #define BISHOP_PAIR 30
 
 //[type][side][square]
@@ -42,6 +43,8 @@ short KingExposed(int square, Game* game);
 short PassedPawn(int square, Game* game);
 
 short ProtectedByPawn(int square, Game* game);
+
+short BishopMobility(int square, Game* game);
 
 short TotalMaterial(Game* game);
 int GetGamePhase(Game* game);
