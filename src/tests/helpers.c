@@ -360,7 +360,7 @@ void AssertBitboardsEqual(AllPieceBitboards expected, AllPieceBitboards actual, 
 
 void AssertCachedBitboardsMatchGame(const char *msg)
 {
-	AssertBitboardsEqual(GetAllPieceBitboards(&g_mainGame), g_mainGame.Bitboards, msg);
+	AssertBitboardsEqual(RebuildAllPieceBitboards(&g_mainGame), g_mainGame.Bitboards, msg);
 }
 
 void AssertBestMove(int depth, const char *testName, const char *fen, const char *expected)

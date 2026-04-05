@@ -1,5 +1,12 @@
 #pragma once
 
+#if defined(_DEBUG)
+#include <assert.h>
+#define CM_DEBUG_ASSERT(expr) assert(expr)
+#else
+#define CM_DEBUG_ASSERT(expr) ((void)0)
+#endif
+
 #define false 0
 #define true 1
 

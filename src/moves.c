@@ -626,8 +626,7 @@ FastMoveLegality ClassifyMoveLegality(Move move, Game *game, const LegalMoveCont
 
 bool SquareAttacked(int square, Side attackedBy, Game *game)
 {
-	if (square < 0 || square > 63)
-		return false;
+	CM_DEBUG_ASSERT((unsigned int)square < 64);
 
 	int side01 = attackedBy >> 4;
 	const AllPieceBitboards *bitboards = &game->Bitboards;
@@ -657,8 +656,7 @@ bool SquareAttacked(int square, Side attackedBy, Game *game)
 
 static void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *game, char pieceIdx)
 {
-	if (game->MovesBufferLength >= MAX_MOVES)
-		return;
+	CM_DEBUG_ASSERT(game->MovesBufferLength < MAX_MOVES);
 
 	Move move;
 	move.From = fromSquare;

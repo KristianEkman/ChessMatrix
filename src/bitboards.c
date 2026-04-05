@@ -165,7 +165,7 @@ static AllPieceBitboards BuildAllPieceBitboards(const Game *game)
 		if (pieceType < BISHOP || pieceType > KING)
 			continue;
 
-		U64 bit = SquareToBit(square);
+		U64 bit = SquareBitUnchecked(square);
 		if (color == 0)
 			bitboards.WhitePieces |= bit;
 		else
@@ -207,49 +207,47 @@ static AllPieceBitboards BuildAllPieceBitboards(const Game *game)
 	return bitboards;
 }
 
-U64 SquareToBit(int square)
-{
-	if (square < 0 || square > 63)
-		return 0ULL;
-	return SquareBitUnchecked(square);
-}
-
 void SyncGameBitboards(Game *game)
 {
 	game->Bitboards = BuildAllPieceBitboards(game);
 }
 
-AllPieceBitboards GetAllPieceBitboards(const Game *game)
+AllPieceBitboards RebuildAllPieceBitboards(const Game *game)
 {
 	return BuildAllPieceBitboards(game);
 }
 
+AllPieceBitboards GetAllPieceBitboards(const Game *game)
+{
+	return game->Bitboards;
+}
+
 PawnBitboards GetPawnBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Pawns;
+	return game->Bitboards.Pawns;
 }
 
 KnightBitboards GetKnightBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Knights;
+	return game->Bitboards.Knights;
 }
 
 BishopBitboards GetBishopBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Bishops;
+	return game->Bitboards.Bishops;
 }
 
 RookBitboards GetRookBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Rooks;
+	return game->Bitboards.Rooks;
 }
 
 QueenBitboards GetQueenBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Queens;
+	return game->Bitboards.Queens;
 }
 
 KingBitboards GetKingBitboards(const Game *game)
 {
-	return GetAllPieceBitboards(game).Kings;
+	return game->Bitboards.Kings;
 }

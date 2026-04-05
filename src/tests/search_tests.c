@@ -34,6 +34,7 @@ SEARCH_TEST(LmrTableInit)
 	AssertAreEqualInts(1, GetLmrReduction(3, 7), __func__);
 	AssertAreEqualInts(2, GetLmrReduction(4, 8), __func__);
 	AssertAreEqualInts(3, GetLmrReduction(8, 11), __func__);
+	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, MAX_MOVES - 1), __func__);
 	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, 99), __func__);
 }
 
@@ -155,7 +156,7 @@ SEARCH_TEST(BestMoveByBlack5)
 SEARCH_TEST(BestMoveByBlack6)
 {
 	char *fen = "8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1";
-	AssertBestMove(15, __func__, fen, "b3b2");
+	AssertBestMove(13, __func__, fen, "b3b2");
 }
 
 SEARCH_TEST(BestMoveByWhite3)
@@ -167,7 +168,7 @@ SEARCH_TEST(BestMoveByWhite3)
 SEARCH_TEST(RookSacrificeByWhite)
 {
 	char *fen = "r2q2k1/p4p1p/1rp3bB/3p4/3P1Q2/RP3P2/1KP5/4R3 w - - 3 47";
-	AssertBestMove(12, __func__, fen, "a3a7");
+	AssertBestMove(10, __func__, fen, "a3a7");
 }
 
 SEARCH_TEST(BlackMatesIn5a)

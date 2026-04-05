@@ -52,12 +52,12 @@ static inline U64 SquareBitUnchecked(int square)
 	return 1ULL << square;
 }
 
-U64 SquareToBit(int square);
 void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square);
 void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square);
 void MovePieceOnBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int from, int to);
 void ReplacePieceOnBitboards(AllPieceBitboards *bitboards, PieceType fromPiece, PieceType toPiece, int square);
 void SyncGameBitboards(Game *game);
+AllPieceBitboards RebuildAllPieceBitboards(const Game *game);
 PawnBitboards GetPawnBitboards(const Game *game);
 KnightBitboards GetKnightBitboards(const Game *game);
 BishopBitboards GetBishopBitboards(const Game *game);

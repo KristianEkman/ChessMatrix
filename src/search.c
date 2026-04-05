@@ -134,7 +134,7 @@ void StopSearch()
 #define MAX_R 4
 #define MIN_R 3
 
-static uchar lmr_matrix[MAX_DEPTH + 1][100] = {0};
+static uchar lmr_matrix[MAX_DEPTH + 1][MAX_MOVES] = {0};
 
 static long long NowMs()
 {
@@ -147,7 +147,7 @@ void InitLmr()
 {
 	for (int depth = 0; depth <= MAX_DEPTH; depth++)
 	{
-		for (int moveNo = 0; moveNo < 100; moveNo++)
+		for (int moveNo = 0; moveNo < MAX_MOVES; moveNo++)
 		{
 			if (depth > 7 && moveNo > 10)
 				lmr_matrix[depth][moveNo] = 3;
@@ -163,15 +163,8 @@ void InitLmr()
 
 uchar GetLmrReduction(int depth, int moveNo)
 {
-	if (depth < 0)
-		depth = 0;
-	else if (depth > MAX_DEPTH)
-		depth = MAX_DEPTH;
-
-	if (moveNo < 0)
-		moveNo = 0;
-	else if (moveNo > 99)
-		moveNo = 99;
+	CM_DEBUG_ASSERT((unsigned int)depth <= MAX_DEPTH);
+	CM_DEBUG_ASSERT((unsigned int)moveNo < MAX_MOVES);
 
 	return lmr_matrix[depth][moveNo];
 }
