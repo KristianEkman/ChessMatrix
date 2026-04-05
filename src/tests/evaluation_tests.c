@@ -34,6 +34,27 @@ TEST(UnstoppablePassedPawnEvalTest)
 	Assert(GetEval(&g_mainGame) < -300, "Advanced unstoppable passer should evaluate as clearly winning in a king-and-pawn ending");
 }
 
+TEST(PassedPawnRaceBonusNeedsClearPath)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/1P6/1P6/8/8/8/4K3 w - - 0 1");
+
+	AssertAreEqualInts(0, PassedPawnRaceBonus(b5, &g_mainGame), "Passed-pawn race bonus should be zero when a friendly pawn blocks the advance path");
+}
+
+TEST(PassedPawnRaceBonusRewardsExtraKingDistance)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/1P6/8/8/8/4K3 w - - 0 1");
+	short nearBonus = PassedPawnRaceBonus(b5, &g_mainGame);
+
+	ReadFen("7k/8/8/1P6/8/8/8/4K3 w - - 0 1");
+	short farBonus = PassedPawnRaceBonus(b5, &g_mainGame);
+
+	Assert(nearBonus > 0, "Expected the closer black king to still be outside the pawn square");
+	Assert(farBonus > nearBonus, "Passed-pawn race bonus should increase when the enemy king is farther away");
+}
+
 TEST(EndgameMoveCountDoesNotTriggerOpeningPenalty)
 {
 	printf("%s\n", __func__);

@@ -402,6 +402,23 @@ static short GetPassedPawnFreePathBonus(int square, int side01, const AllPieceBi
 	return (opponentNonPawns & fileAheadMask) == 0ULL ? PASSED_PAWN_FREE_PATH : 0;
 }
 
+static U64 GetForwardFileMask(int square, int side01)
+{
+	int file = square & 7;
+	int rank = square >> 3;
+
+	if (side01 == 0)
+	{
+		int shift = (rank + 1) * 8;
+		return shift < 64 ? FileMask[file] & (~0ULL << shift) : 0ULL;
+	}
+
+	{
+		int shift = rank * 8;
+		return shift > 0 ? FileMask[file] & ((1ULL << shift) - 1ULL) : 0ULL;
+	}
+}
+
 static bool IsPureKingAndPawnEnding(const AllPieceBitboards *bb)
 {
 	return bb->Knights.AllKnights == 0ULL &&
@@ -433,11 +450,29 @@ static short GetPassedPawnRaceBonus(int square, int side01, Game *game)
 	int pawnSteps = side01 == 0 ? 7 - rank : rank;
 	int effectiveSteps = max(0, pawnSteps - (game->Side01 == side01 ? 1 : 0));
 	int enemyKingDistance = GetChebyshevDistance(game->KingSquares[!side01], promotionSquare);
+	int raceMargin = enemyKingDistance - effectiveSteps;
+	int progress = 7 - pawnSteps;
+	int cappedMargin = 0;
+	U64 forwardFileMask = GetForwardFileMask(square, side01);
 
-	if (enemyKingDistance <= effectiveSteps)
+	if ((bb->Occupied & forwardFileMask) != 0ULL)
 		return 0;
 
-	return (short)(150 + (7 - pawnSteps) * 45);
+	if (raceMargin <= 0)
+		return 0;
+
+	cappedMargin = min(3, raceMargin);
+	return (short)(120 + progress * 30 + cappedMargin * 20);
+}
+
+short PassedPawnRaceBonus(int square, Game *game)
+{
+	PieceType pieceType = game->Squares[square];
+
+	if ((pieceType & 7) != PAWN)
+		return 0;
+
+	return GetPassedPawnRaceBonus(square, pieceType >> 4, game);
 }
 
 static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawnCount[2])

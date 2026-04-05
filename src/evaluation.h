@@ -41,6 +41,7 @@ bool IsDraw(Game* game);
 short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
+short PassedPawnRaceBonus(int square, Game *game);
 
 short ProtectedByPawn(int square, Game* game);
 
