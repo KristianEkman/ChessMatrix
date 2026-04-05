@@ -16,6 +16,7 @@
 #include "../bitboards.h"
 
 short QuietSearch(short alpha, short beta, Game *game, int deep_in);
+short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doNull, Move prevMove, int deep_in, bool incheck);
 
 static short EvalForSideForTest(Game *game)
 {
@@ -102,6 +103,29 @@ SEARCH_TEST(QuietSearchSkipsObviouslyLosingQueenCapture)
 	g_SearchedNodes = 0;
 	AssertAreEqualInts(alpha, QuietSearch(alpha, MAX_SCORE, &g_mainGame, 0), "qsearch should keep alpha when the only capture loses the queen to an undefended recapture");
 	AssertAreEqualInts(1, g_SearchedNodes, "obviously losing queen capture should be skipped before qsearch recurses");
+}
+
+SEARCH_TEST(RecursiveSearchFutilityPrunesHopelessQuietMove)
+{
+	ReadFen("k7/8/8/8/8/1Q6/8/7K b - - 0 1");
+	ClearHashTable();
+	CreateMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	AssertAreEqualInts(1, g_mainGame.MovesBufferLength, "test position should have exactly one legal move");
+	AssertAreEqualInts(a8, g_mainGame.MovesBuffer[0].From, "the only legal move should move the black king from a8");
+	AssertAreEqualInts(a7, g_mainGame.MovesBuffer[0].To, "the only legal move should move the black king to a7");
+	AssertAreEqualInts(NOPIECE, g_mainGame.Squares[g_mainGame.MovesBuffer[0].To], "the only legal move should be quiet");
+
+	short standPat = EvalForSideForTest(&g_mainGame);
+	short alpha = (short)(standPat + 500);
+	Move noMove = {255, 255, NotAMove, 255, 0};
+	bool incheck = SquareAttacked(g_mainGame.KingSquares[g_mainGame.Side01], g_mainGame.Side ^ 24, &g_mainGame);
+
+	g_Stopped = false;
+	g_SearchedNodes = 0;
+	AssertNot(incheck, "test position should not start in check");
+	AssertAreEqualInts(alpha, RecursiveSearch(alpha, (short)(alpha + 1), 1, &g_mainGame, true, noMove, 1, incheck), "depth-1 zero-window search should fail low when the only quiet move is futile");
+	AssertAreEqualInts(1, g_SearchedNodes, "futility-pruned quiet move should not recurse into a child search");
 }
 
 SEARCH_TEST(TestWhiteMateIn2)

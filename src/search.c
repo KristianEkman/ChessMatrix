@@ -316,6 +316,9 @@ static short EvalForSide(Game *game)
 }
 
 #define QSEARCH_DELTA_MARGIN 100
+#ifndef FUTILITY_MARGIN_DEPTH1
+#define FUTILITY_MARGIN_DEPTH1 90
+#endif
 
 static short GetQsearchPieceValue(PieceType piece)
 {
@@ -497,6 +500,13 @@ static bool IsReductionOk(Move move, Undos undos)
 		   move.MoveInfo != SoonPromoting;
 }
 
+static bool IsFutilityCandidateMove(const Game *game, Move move)
+{
+	return IsQuietMove(game, move) &&
+		   move.MoveInfo != CastleLong &&
+		   move.MoveInfo != CastleShort;
+}
+
 static bool IsPureKingAndPawnEnding(const Game *game)
 {
 	const AllPieceBitboards *bb = &game->Bitboards;
@@ -589,6 +599,13 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	const uchar fullDepthMoves = 10;
 	// Not reducing when depth is or lower
 	const uchar reductionLimit = 3;
+	short staticEval = 0;
+	bool canFutilityPrune = false;
+	if (depth == 1 && deep_in > 0 && !incheck && beta - alpha == 1 && alpha < 7000)
+	{
+		staticEval = EvalForSide(game);
+		canFutilityPrune = staticEval + FUTILITY_MARGIN_DEPTH1 <= alpha;
+	}
 
 	// alpha beta pruning
 	short bestScore = MIN_SCORE;
@@ -600,6 +617,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		PickNextMove(game->Side, i, localMoves, moveCount);
 
 		Move childMove = localMoves[i];
+		bool futilityCandidate = canFutilityPrune && IsFutilityCandidateMove(game, childMove);
 		Undos undos;
 		if (!TryDoLegalMove(game, &legalCtx, childMove, &undos))
 			continue;
@@ -611,6 +629,12 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 		bool checked = SquareAttacked(game->KingSquares[game->Side01], game->Side ^ 24, game);
 		if (checked || childMove.MoveInfo == SoonPromoting || pawnRacePush)
 			extension = 1;
+
+		if (futilityCandidate && extension == 0)
+		{
+			UndoMove(game, childMove, undos);
+			continue;
+		}
 
 		uchar lmrRed = GetLmrReduction(depth, i);
 		// Late Move Reduction, full depth for the first moves, and interesting moves.
