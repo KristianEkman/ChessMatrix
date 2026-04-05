@@ -465,7 +465,7 @@ static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawn
 			while (pawns)
 			{
 				int square = pop_lsb(&pawns);
-				if (ownPawns & SquareToBit(square + Behind[side01]))
+				if (ownPawns & SquareBitUnchecked(square + Behind[side01]))
 					score -= DOUBLE_PAWN;
 				score += (short)(popcount(ownPawns & PawnProtectorsMask[side01][square]) * PAWN_PROTECT);
 				score += GetPassedPawnBaseScore(square, side01, opponentPawns);
@@ -645,31 +645,30 @@ short OpenRookFile(int square, Game* game, PieceType rook) {
 	return 0;
 }
 
-short BishopMobility(int square, Game* game)
+static short GetProtectedByPawnScore(U64 ownPawns, int side01, int square)
 {
-	const AllPieceBitboards *bb = &game->Bitboards;
-	PieceType bishop = game->Squares[square];
-	int color01 = (bishop & (BLACK | WHITE)) >> 4;
-	U64 ownPieces = color01 == 0 ? bb->WhitePieces : bb->BlackPieces;
-	short mobility = 0;
-	int raysCount = PieceTypeSquareRaysPatterns[0][square][0][0];
+	return (short)(popcount(ownPawns & PawnProtectorsMask[side01][square]) * PAWN_PROTECT);
+}
 
-	if ((bishop & 7) != BISHOP)
-		return 0;
+static short GetBishopMobilityScore(int square, U64 ownPieces, U64 occupied)
+{
+	short mobility = 0;
+	const char (*rays)[8] = PieceTypeSquareRaysPatterns[0][square];
+	int raysCount = rays[0][0];
 
 	for (int r = 1; r <= raysCount; r++)
 	{
-		int rayLength = PieceTypeSquareRaysPatterns[0][square][r][0];
+		int rayLength = rays[r][0];
 		for (int rr = 1; rr <= rayLength; rr++)
 		{
-			int targetSquare = PieceTypeSquareRaysPatterns[0][square][r][rr];
-			U64 targetBit = SquareToBit(targetSquare);
+			int targetSquare = rays[r][rr];
+			U64 targetBit = SquareBitUnchecked(targetSquare);
 
 			if (ownPieces & targetBit)
 				break;
 
 			mobility++;
-			if (bb->Occupied & targetBit)
+			if (occupied & targetBit)
 				break;
 		}
 	}
@@ -677,10 +676,22 @@ short BishopMobility(int square, Game* game)
 	return (short)(mobility * BISHOP_MOBILITY);
 }
 
+short BishopMobility(int square, Game* game)
+{
+	const AllPieceBitboards *bb = &game->Bitboards;
+	PieceType bishop = game->Squares[square];
+	int color01 = (bishop & (BLACK | WHITE)) >> 4;
+
+	if ((bishop & 7) != BISHOP)
+		return 0;
+
+	return GetBishopMobilityScore(square, color01 == 0 ? bb->WhitePieces : bb->BlackPieces, bb->Occupied);
+}
+
 short DoublePawns(int square, Game* game, PieceType pawn) {
 	const AllPieceBitboards *bb = &game->Bitboards;
 	int color01 = (pawn & 24) >> 4;
-	return (GetSidePawns(bb, color01) & SquareToBit(square + Behind[color01])) != 0ULL ? DOUBLE_PAWN : 0;
+	return (GetSidePawns(bb, color01) & SquareBitUnchecked(square + Behind[color01])) != 0ULL ? DOUBLE_PAWN : 0;
 }
 
 bool IsDraw(Game* game) {
@@ -782,7 +793,7 @@ void CalculatePatterns() {
 short ProtectedByPawn(int square, Game* game) {
 	const AllPieceBitboards *bb = &game->Bitboards;
 	int color01 = (game->Squares[square] & 24) >> 4;
-	return (short)(popcount(GetSidePawns(bb, color01) & PawnProtectorsMask[color01][square]) * PAWN_PROTECT);
+	return GetProtectedByPawnScore(GetSidePawns(bb, color01), color01, square);
 }
 
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
@@ -833,6 +844,8 @@ short GetEval(Game* game) {
 	{
 		short scr = pawnScore[s];
 		uchar bishopCount = 0;
+		U64 ownPawns = GetSidePawns(bb, s);
+		U64 ownPieces = s == 0 ? bb->WhitePieces : bb->BlackPieces;
 		Piece * piece = &game->Pieces[s][0];
 		while (piece != NULL)
 		{
@@ -865,14 +878,14 @@ short GetEval(Game* game) {
 			break;
 			case BISHOP:
 			{
-				bishopCount += (pt == BISHOP);
-				scr += ProtectedByPawn(i, game);
-				scr += BishopMobility(i, game);
+				bishopCount++;
+				scr += GetProtectedByPawnScore(ownPawns, s, i);
+				scr += GetBishopMobilityScore(i, ownPieces, bb->Occupied);
 			}
 					   break;
 			case KNIGHT:
 			{
-				scr += ProtectedByPawn(i, game);
+				scr += GetProtectedByPawnScore(ownPawns, s, i);
 			}
 					   break;
 			case PAWN: {

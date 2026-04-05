@@ -1,10 +1,5 @@
 #include "bitboards.h"
 
-static U64 SquareBit(int square)
-{
-	return 1ULL << square;
-}
-
 void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square)
 {
 	if (pieceType == NOPIECE)
@@ -12,7 +7,7 @@ void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int 
 
 	int side01 = pieceType >> 4;
 	int pt = pieceType & 7;
-	U64 bit = SquareBit(square);
+	U64 bit = SquareBitUnchecked(square);
 
 	if (side01 == 0)
 		bitboards->WhitePieces |= bit;
@@ -77,7 +72,7 @@ void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType,
 
 	int side01 = pieceType >> 4;
 	int pt = pieceType & 7;
-	U64 bit = SquareBit(square);
+	U64 bit = SquareBitUnchecked(square);
 	U64 clearMask = ~bit;
 
 	if (side01 == 0)
@@ -216,7 +211,7 @@ U64 SquareToBit(int square)
 {
 	if (square < 0 || square > 63)
 		return 0ULL;
-	return 1ULL << square;
+	return SquareBitUnchecked(square);
 }
 
 void SyncGameBitboards(Game *game)

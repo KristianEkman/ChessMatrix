@@ -486,7 +486,7 @@ static bool PatternAttackerFound(U64 attackers, int patternIndex, int square)
 	for (int p = 1; p <= length; p++)
 	{
 		int fromSquare = PieceTypeSquarePatterns[patternIndex][square][p];
-		if (attackers & SquareToBit(fromSquare))
+		if (attackers & SquareBitUnchecked(fromSquare))
 			return true;
 	}
 	return false;
@@ -501,7 +501,7 @@ static bool RayAttackerFound(const AllPieceBitboards *bitboards, U64 attackers, 
 		for (int rr = 1; rr <= rayLength; rr++)
 		{
 			int fromSquare = PieceTypeSquareRaysPatterns[patternIndex][square][r][rr];
-			U64 squareBit = SquareToBit(fromSquare);
+			U64 squareBit = SquareBitUnchecked(fromSquare);
 			if ((bitboards->Occupied & squareBit) == 0)
 				continue;
 
@@ -520,7 +520,7 @@ static U64 PatternAttackerSquares(U64 attackers, int patternIndex, int square)
 	for (int p = 1; p <= length; p++)
 	{
 		int fromSquare = PieceTypeSquarePatterns[patternIndex][square][p];
-		U64 fromBit = SquareToBit(fromSquare);
+		U64 fromBit = SquareBitUnchecked(fromSquare);
 		if (attackers & fromBit)
 			found |= fromBit;
 	}
@@ -558,7 +558,7 @@ void BuildLegalMoveContext(Game *game, LegalMoveContext *ctx)
 			for (int rr = 1; rr <= rayLength; rr++)
 			{
 				int square = PieceTypeSquareRaysPatterns[patternIndex][kingSquare][r][rr];
-				U64 squareBit = SquareToBit(square);
+				U64 squareBit = SquareBitUnchecked(square);
 				rayMask |= squareBit;
 				if ((occupied & squareBit) == 0ULL)
 					continue;
@@ -589,7 +589,7 @@ void BuildLegalMoveContext(Game *game, LegalMoveContext *ctx)
 				}
 				else
 				{
-					U64 pinnedBit = SquareToBit(firstFriendlySquare);
+					U64 pinnedBit = SquareBitUnchecked(firstFriendlySquare);
 					ctx->Pinned |= pinnedBit;
 					ctx->PinLineMasks[firstFriendlySquare] = rayMask;
 				}
@@ -606,8 +606,8 @@ FastMoveLegality ClassifyMoveLegality(Move move, Game *game, const LegalMoveCont
 {
 	PieceType pieceType = game->Squares[move.From];
 	PieceType pt = pieceType & 7;
-	U64 fromBit = SquareToBit(move.From);
-	U64 toBit = SquareToBit(move.To);
+	U64 fromBit = SquareBitUnchecked(move.From);
+	U64 toBit = SquareBitUnchecked(move.To);
 
 	if (pt == KING || move.MoveInfo == EnPassantCapture || move.MoveInfo == CastleShort || move.MoveInfo == CastleLong)
 		return FastMoveNeedsFullCheck;

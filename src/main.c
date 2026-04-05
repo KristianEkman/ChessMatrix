@@ -14,6 +14,7 @@
 #include "main.h"
 #include "utils.h"
 #include "tests/tests.h"
+#include "benchmark.h"
 #include "evaluation.h"
 #include "hashTable.h"
 #include "timeControl.h"
@@ -32,6 +33,13 @@ static int HandleCommandLineMode(int argc, char *argv[])
 	{
 		const char *testName = argc >= 3 ? argv[2] : NULL;
 		return runAllTests(testName, false);
+	}
+
+	if (argc >= 2 && strcmp(argv[1], "bench") == 0)
+	{
+		int depth = argc >= 3 ? atoi(argv[2]) : BENCH_DEFAULT_DEPTH;
+		PrintBenchmarkSuite(depth);
+		return 0;
 	}
 
 	return -1;

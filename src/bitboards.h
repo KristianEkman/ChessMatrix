@@ -47,6 +47,11 @@ static inline int pop_lsb(U64 *bitboard)
 	return square;
 }
 
+static inline U64 SquareBitUnchecked(int square)
+{
+	return 1ULL << square;
+}
+
 U64 SquareToBit(int square);
 void AddPieceToBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square);
 void RemovePieceFromBitboards(AllPieceBitboards *bitboards, PieceType pieceType, int square);
