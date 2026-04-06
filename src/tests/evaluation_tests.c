@@ -15,6 +15,11 @@
 #include "../platform.h"
 #include "../bitboards.h"
 
+short PawnPhalanx(int square, Game *game);
+short EndgameKingPawnTropism(int square, Game *game);
+short RookBehindPassedPawn(int square, Game *game);
+short SimplificationBonus(Game *game);
+
 static Piece *FindPieceAt(int side01, int square)
 {
 	for (int i = 0; i < 16; i++)
@@ -53,6 +58,65 @@ TEST(PassedPawnRaceBonusRewardsExtraKingDistance)
 
 	Assert(nearBonus > 0, "Expected the closer black king to still be outside the pawn square");
 	Assert(farBonus > nearBonus, "Passed-pawn race bonus should increase when the enemy king is farther away");
+}
+
+TEST(PawnPhalanxRewardsAdjacentAdvancedPawns)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/8/6PP/8/8/4K3 w - - 0 1");
+	AssertAreEqualInts(8, PawnPhalanx(g4, &g_mainGame), "Advanced adjacent pawns should receive a phalanx bonus");
+	AssertAreEqualInts(8, PawnPhalanx(h4, &g_mainGame), "Edge pawn in a phalanx should receive the same bonus");
+
+	ReadFen("4k3/8/8/8/6P1/7P/8/4K3 w - - 0 1");
+	AssertAreEqualInts(0, PawnPhalanx(g4, &g_mainGame), "Separated pawns should not receive a phalanx bonus");
+	AssertAreEqualInts(0, PawnPhalanx(h3, &g_mainGame), "Diagonal support alone should not count as a phalanx");
+}
+
+TEST(EndgameKingTropismRewardsApproachingEnemyPawns)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/7p/8/4K3/8/8/8 w - - 0 1");
+	short activeKing = EndgameKingPawnTropism(e4, &g_mainGame);
+
+	ReadFen("4k3/8/7p/8/8/8/8/K7 w - - 0 1");
+	short passiveKing = EndgameKingPawnTropism(a1, &g_mainGame);
+
+	Assert(activeKing > passiveKing, "Endgame king activity should reward moving closer to enemy pawns");
+
+	ReadFen("4k3/8/7p/8/4K3/8/8/4Q3 w - - 0 1");
+	AssertAreEqualInts(0, EndgameKingPawnTropism(e4, &g_mainGame), "King tropism bonus should stay disabled while major pieces remain on the board");
+}
+
+TEST(RookBehindOwnPassedPawnGetsBonus)
+{
+	printf("%s\n", __func__);
+	ReadFen("4k3/8/8/P7/8/8/8/R3K3 w - - 0 1");
+	short behind = RookBehindPassedPawn(a1, &g_mainGame);
+	Assert(behind > 0, "Rook behind own passed pawn should earn a bonus");
+
+	ReadFen("4k3/8/R7/P7/8/8/8/4K3 w - - 0 1");
+	short inFront = RookBehindPassedPawn(a6, &g_mainGame);
+	AssertAreEqualInts(0, inFront, "Rook in front of own passed pawn should not earn a bonus");
+
+	ReadFen("4k3/8/8/8/8/8/8/R3K3 w - - 0 1");
+	short noPasser = RookBehindPassedPawn(a1, &g_mainGame);
+	AssertAreEqualInts(0, noPasser, "Rook with no passed pawn on its file should not earn a bonus");
+}
+
+TEST(SimplificationBonusRewardsTradesWhenAhead)
+{
+	printf("%s\n", __func__);
+	ReadFen("rnbqkbnr/ppp1pppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	short fullBoard = SimplificationBonus(&g_mainGame);
+	AssertAreEqualInts(0, fullBoard, "No simplification bonus when all pieces are on the board");
+
+	ReadFen("4k3/ppp1pppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
+	short pawnEndgame = SimplificationBonus(&g_mainGame);
+	Assert(pawnEndgame < 0, "When white is ahead, simplification bonus should favor white (negative)");
+
+	ReadFen("4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
+	short equalMaterial = SimplificationBonus(&g_mainGame);
+	AssertAreEqualInts(0, equalMaterial, "No simplification bonus when material is equal");
 }
 
 TEST(EndgameMoveCountDoesNotTriggerOpeningPenalty)

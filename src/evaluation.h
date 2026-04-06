@@ -42,8 +42,12 @@ short KingExposed(int square, Game* game);
 
 short PassedPawn(int square, Game* game);
 short PassedPawnRaceBonus(int square, Game *game);
+short PawnPhalanx(int square, Game *game);
+short RookBehindPassedPawn(int square, Game *game);
 
 short ProtectedByPawn(int square, Game* game);
+short EndgameKingPawnTropism(int square, Game *game);
+short SimplificationBonus(Game *game);
 
 short BishopMobility(int square, Game* game);
 

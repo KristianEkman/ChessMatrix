@@ -21,6 +21,7 @@ typedef struct
 } PawnHashEntry;
 
 static const int PawnPassedPoints[2][8];
+static const short PawnPhalanxPoints[8] = { 0, 0, 4, 8, 12, 16, 0, 0 };
 
 //white, black, (flipped, starts at A1)
 //[type][side][square]
@@ -372,6 +373,20 @@ static U64 GetOpponentPieces(const AllPieceBitboards *bb, int side01)
 	return side01 == 0 ? bb->BlackPieces : bb->WhitePieces;
 }
 
+static short GetPawnPhalanxScore(int square, int side01, U64 ownPawns)
+{
+	int file = square & 7;
+	int rank = square >> 3;
+	int relativeRank = side01 == 0 ? rank : 7 - rank;
+	bool hasLeftMate = file > 0 && (ownPawns & SquareBitUnchecked(square - 1)) != 0ULL;
+	bool hasRightMate = file < 7 && (ownPawns & SquareBitUnchecked(square + 1)) != 0ULL;
+
+	if (!hasLeftMate && !hasRightMate)
+		return 0;
+
+	return PawnPhalanxPoints[relativeRank];
+}
+
 static short GetPassedPawnBaseScore(int square, int side01, U64 opponentPawns)
 {
 	if (opponentPawns & PassedPawnMask[side01][square])
@@ -475,6 +490,17 @@ short PassedPawnRaceBonus(int square, Game *game)
 	return GetPassedPawnRaceBonus(square, pieceType >> 4, game);
 }
 
+short PawnPhalanx(int square, Game *game)
+{
+	PieceType pieceType = game->Squares[square];
+	int side01 = pieceType >> 4;
+
+	if ((pieceType & 7) != PAWN)
+		return 0;
+
+	return GetPawnPhalanxScore(square, side01, GetSidePawns(&game->Bitboards, side01));
+}
+
 static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawnCount[2])
 {
 	U64 key = GetPawnHashKey(bb);
@@ -503,6 +529,7 @@ static void GetPawnEval(const AllPieceBitboards *bb, short scores[2], uchar pawn
 				if (ownPawns & SquareBitUnchecked(square + Behind[side01]))
 					score -= DOUBLE_PAWN;
 				score += (short)(popcount(ownPawns & PawnProtectorsMask[side01][square]) * PAWN_PROTECT);
+				score += GetPawnPhalanxScore(square, side01, ownPawns);
 				score += GetPassedPawnBaseScore(square, side01, opponentPawns);
 			}
 
@@ -680,6 +707,40 @@ short OpenRookFile(int square, Game* game, PieceType rook) {
 	return 0;
 }
 
+static short GetRookBehindPassedPawnScore(int rookSquare, int side01, const AllPieceBitboards *bb)
+{
+	int file = rookSquare & 7;
+	int rookRank = rookSquare >> 3;
+	U64 ownPawns = GetSidePawns(bb, side01);
+	U64 opponentPawns = GetSidePawns(bb, !side01);
+	U64 filePawns = ownPawns & FileMask[file];
+
+	while (filePawns)
+	{
+		int pawnSquare = pop_lsb(&filePawns);
+		if ((opponentPawns & PassedPawnMask[side01][pawnSquare]) == 0ULL)
+		{
+			int pawnRank = pawnSquare >> 3;
+			bool rookBehind = side01 == 0 ? rookRank < pawnRank : rookRank > pawnRank;
+			if (rookBehind)
+				return 15;
+		}
+	}
+
+	return 0;
+}
+
+short RookBehindPassedPawn(int square, Game *game)
+{
+	PieceType pieceType = game->Squares[square];
+	int side01 = pieceType >> 4;
+
+	if ((pieceType & 7) != ROOK)
+		return 0;
+
+	return GetRookBehindPassedPawnScore(square, side01, &game->Bitboards);
+}
+
 static short GetProtectedByPawnScore(U64 ownPawns, int side01, int square)
 {
 	return (short)(popcount(ownPawns & PawnProtectorsMask[side01][square]) * PAWN_PROTECT);
@@ -831,6 +892,38 @@ short ProtectedByPawn(int square, Game* game) {
 	return GetProtectedByPawnScore(GetSidePawns(bb, color01), color01, square);
 }
 
+static short GetEndgameKingPawnTropismScore(int square, int side01, Game *game)
+{
+	const AllPieceBitboards *bb = &game->Bitboards;
+	U64 enemyPawns = GetSidePawns(bb, !side01);
+	short score = 0;
+	const int maxGamePhase = 24;
+	int gamePhase = GetGamePhase(game);
+
+	if (bb->Queens.AllQueens != 0ULL || bb->Rooks.AllRooks != 0ULL)
+		return 0;
+
+	while (enemyPawns)
+	{
+		int pawnSquare = pop_lsb(&enemyPawns);
+		int distance = GetChebyshevDistance(square, pawnSquare);
+		if (distance < 5)
+			score += (short)((5 - distance) * 2);
+	}
+
+	return (short)((score * (maxGamePhase - gamePhase)) / maxGamePhase);
+}
+
+short EndgameKingPawnTropism(int square, Game *game)
+{
+	PieceType pieceType = game->Squares[square];
+
+	if ((pieceType & 7) != KING)
+		return 0;
+
+	return GetEndgameKingPawnTropismScore(square, pieceType >> 4, game);
+}
+
 static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
 static const int MaxGamePhase = 24;
 static const int OpeningPhaseThreshold = 20;
@@ -860,6 +953,28 @@ short GetKingPositionScore(Move move, Game *game)
 	int endGameDelta = KingPositionValueMatrix[1][game->Side01][move.To] - KingPositionValueMatrix[1][game->Side01][move.From];
 
 	return (short)((middleGameDelta * gamePhase + endGameDelta * (MaxGamePhase - gamePhase)) / MaxGamePhase);
+}
+
+static short GetSimplificationBonusScore(int materialBalance, const AllPieceBitboards *bb)
+{
+	if (materialBalance > -MATERIAL_P && materialBalance < MATERIAL_P)
+		return 0;
+
+	int nonPawnPieces = popcount(bb->Knights.AllKnights) + popcount(bb->Bishops.AllBishops) +
+	                    popcount(bb->Rooks.AllRooks) + popcount(bb->Queens.AllQueens);
+	int tradedPieces = 14 - nonPawnPieces;
+
+	if (tradedPieces <= 0)
+		return 0;
+
+	short bonus = (short)(tradedPieces * 4);
+	return materialBalance > 0 ? bonus : (short)-bonus;
+}
+
+short SimplificationBonus(Game *game)
+{
+	int materialBalance = game->Material[0] + game->Material[1];
+	return GetSimplificationBonusScore(materialBalance, &game->Bitboards);
 }
 
 short GetEval(Game* game) {
@@ -908,6 +1023,7 @@ short GetEval(Game* game) {
 			case ROOK:
 			{
 				scr += OpenRookFile(i, game, pieceType);
+				scr += GetRookBehindPassedPawnScore(i, s, bb);
 				//mobil += piece.Mobility;
 			}
 			break;
@@ -932,6 +1048,7 @@ short GetEval(Game* game) {
 				int kingSafety = KingPositionValueMatrix[0][color01][i];
 				int kingActivity = KingPositionValueMatrix[1][color01][i];
 				posScore += (short)((kingSafety * gamePhase + kingActivity * (MaxGamePhase - gamePhase)) / MaxGamePhase);
+				scr += GetEndgameKingPawnTropismScore(i, color01, game);
 				scr -= (short)((KingExposed(i, game) * gamePhase) / MaxGamePhase);
 			}
 					 break;
@@ -957,6 +1074,7 @@ short GetEval(Game* game) {
 
 		//insuficient material check
 	int eval = score + posScore;
+	eval += GetSimplificationBonusScore(game->Material[0] + game->Material[1], bb);
 	bool whiteNoPawns = pwnCount[0] == 0;
 	bool blackNoPawns = pwnCount[1] == 0;
 	bool whiteInsufficient = game->Material[0] >= -MATERIAL_N_N;
