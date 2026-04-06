@@ -1,11 +1,4 @@
-Add g_Stopped checks at qsearch entry and inside the move loop.
-Add a simple delta prune or SEE-based bad-capture filter before recursing.
-Only after that, consider extras like qsearch TT usage or limited checking moves.
 
-Mer pruning
-	Futilty pruning
-	Aspiration window
-	Razoring
 
 Drag som kraftigt förbättrat score?
 

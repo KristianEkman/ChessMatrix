@@ -219,6 +219,21 @@ SEARCH_TEST(EngineMated)
 	AssertBestMove(8, __func__, fen, "g8h7");
 }
 
+SEARCH_TEST(PvsReducesNodeCount)
+{
+	// A middlegame position where PVS should significantly reduce work.
+	// Without PVS at depth 7 this searched ~248k nodes. With PVS it should be well under 200k.
+	char *fen = "r1bqkb1r/ppp1pppp/2npn3/4P3/2P5/2N2NP1/PP1P1P1P/R1BQKB1R w KQkq - 1 1";
+	ReadFen(fen);
+	ClearHashTable();
+	g_SearchedNodes = 0;
+	SetSearchDefaults();
+	g_topSearchParams.MaxDepth = 7;
+	Search(false);
+	printf("PVS node count: %u\n", g_SearchedNodes);
+	Assert(g_SearchedNodes < 240000, "PVS should search fewer than 240k nodes at depth 7 in this position");
+}
+
 void DeepTest()
 {
 	printf("%s\n", __func__);

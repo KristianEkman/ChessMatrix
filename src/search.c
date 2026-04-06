@@ -636,18 +636,28 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 			continue;
 		}
 
+		bool isPvNode = beta - alpha > 1;
+		bool doFullDepthZW;
 		uchar lmrRed = GetLmrReduction(depth, i);
-		// Late Move Reduction, full depth for the first moves, and interesting moves.
-		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
-			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
-		else
-			score = (short)(alpha + 1); // Hack to ensure that full-depth is done.
 
-		if (score > alpha)
+		// Step 1: LMR – reduced null-window search for late quiet moves.
+		if (i >= fullDepthMoves && depth >= reductionLimit && extension == 0 && IsReductionOk(childMove, undos))
 		{
-			// surprisingly good, re-search at full depth.
-			score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - lmrRed, game, true, childMove, deep_in + 1, checked);
+			doFullDepthZW = score > alpha; // LMR fail high → need full depth verification.
 		}
+		else
+		{
+			doFullDepthZW = !isPvNode || legalCount > 1; // ZW node: always. PV node: skip first move.
+		}
+
+		// Step 2: Full-depth null-window search (PVS probe, or LMR verification).
+		if (doFullDepthZW)
+			score = (short)-RecursiveSearch((short)(-alpha - 1), (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
+
+		// Step 3: PV full-window re-search when needed (first PV move, or PVS/LMR fail high).
+		if (isPvNode && (legalCount == 1 || score > alpha))
+			score = (short)-RecursiveSearch((short)-beta, (short)-alpha, depth - 1 + extension, game, true, childMove, deep_in + 1, checked);
 
 		UndoMove(game, childMove, undos);
 
