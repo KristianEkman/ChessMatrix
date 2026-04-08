@@ -32,11 +32,15 @@ SEARCH_TEST(BestMoveTestBlackCaptureBishop)
 SEARCH_TEST(LmrTableInit)
 {
 	InitLmr();
-	AssertAreEqualInts(1, GetLmrReduction(3, 7), __func__);
-	AssertAreEqualInts(2, GetLmrReduction(4, 8), __func__);
-	AssertAreEqualInts(3, GetLmrReduction(8, 11), __func__);
-	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, MAX_MOVES - 1), __func__);
-	AssertAreEqualInts(3, GetLmrReduction(MAX_DEPTH, 99), __func__);
+	// Low depth/move: minimum reduction of 2 (1 is a no-op since full search is depth-1).
+	AssertAreEqualInts(2, GetLmrReduction(3, 4), __func__);
+	// Higher depth/move: larger reductions.
+	AssertAreEqualInts(2, GetLmrReduction(4, 5), __func__);
+	AssertAreEqualInts(2, GetLmrReduction(8, 11), __func__);
+	// Deep positions with many moves get heavy reduction.
+	Assert(GetLmrReduction(MAX_DEPTH, MAX_MOVES - 1) >= 4, __func__);
+	// Reduction should never be less than 2.
+	Assert(GetLmrReduction(1, 0) >= 2, __func__);
 }
 
 SEARCH_TEST(QuietSearchInCheckSearchesQuietEvasion)
@@ -231,7 +235,7 @@ SEARCH_TEST(PvsReducesNodeCount)
 	g_topSearchParams.MaxDepth = 7;
 	Search(false);
 	printf("PVS node count: %u\n", g_SearchedNodes);
-	Assert(g_SearchedNodes < 240000, "PVS should search fewer than 240k nodes at depth 7 in this position");
+	Assert(g_SearchedNodes < 160000, "PVS+LMR should search fewer than 160k nodes at depth 7 in this position");
 }
 
 void DeepTest()

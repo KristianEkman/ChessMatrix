@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include "search.h"
 #include "bitboards.h"
 #include "position.h"
@@ -149,14 +150,14 @@ void InitLmr()
 	{
 		for (int moveNo = 0; moveNo < MAX_MOVES; moveNo++)
 		{
-			if (depth > 7 && moveNo > 10)
-				lmr_matrix[depth][moveNo] = 3;
-			else if (depth > 3 && moveNo > 7)
+			if (depth == 0 || moveNo == 0)
 				lmr_matrix[depth][moveNo] = 2;
 			else
-				lmr_matrix[depth][moveNo] = 1;
-
-			// printf("depth: %d   moveNo: %d   lmr: %d\n", depth, moveNo, lmr_matrix[depth][moveNo]);
+			{
+				int r = (int)(0.75 + log(depth) * log(moveNo) * 0.45);
+				if (r < 2) r = 2;
+				lmr_matrix[depth][moveNo] = (uchar)r;
+			}
 		}
 	}
 }
@@ -596,7 +597,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 	}
 
 	// Not reducing for the first number of moves of each depth.
-	const uchar fullDepthMoves = 10;
+	const uchar fullDepthMoves = 7;
 	// Not reducing when depth is or lower
 	const uchar reductionLimit = 3;
 	short staticEval = 0;
