@@ -34,6 +34,21 @@ short DoublePawns(int square, Game* game, PieceType pawn);
 
 short GetMoveOrderingScore(Move move, Game *game);
 
+void ResetAnnEvalState(void);
+bool HasAnnEvalWeights(void);
+bool IsAnnEvalEnabled(void);
+void SetAnnEvalEnabled(bool enabled);
+void SetAnnEvalBlendPercent(int blendPercent);
+int GetAnnEvalBlendPercent(void);
+void SetAnnEvalMaxCorrectionCp(int maxCorrectionCp);
+int GetAnnEvalMaxCorrectionCp(void);
+void SetAnnEvalMinPhase(int minPhase);
+int GetAnnEvalMinPhase(void);
+void SetAnnEvalMaxBaseEvalCp(int maxBaseEvalCp);
+int GetAnnEvalMaxBaseEvalCp(void);
+int LoadAnnEvalWeights(const char *filePath);
+short GetClassicalEval(Game* game);
+int GetAnnEvalCorrection(Game *game, short *correctionOut);
 short GetEval(Game* game);
 
 bool IsDraw(Game* game);

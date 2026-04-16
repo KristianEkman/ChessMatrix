@@ -175,6 +175,9 @@ void SetSearchDefaults()
 	g_topSearchParams = (TopSearchParams){0};
 	g_topSearchParams.MaxDepth = MAX_DEPTH;
 	g_topSearchParams.BestMove = InvalidMove();
+	g_topSearchParams.EmitInfoLines = true;
+	g_topSearchParams.HasSearchScore = false;
+	g_topSearchParams.SearchScore = 0;
 }
 
 static void MoveToTop(Move move, Move *list, int length, Side side)
@@ -892,12 +895,14 @@ PlatformThreadReturn PLATFORM_THREAD_CALL IterativeSearch(void *v)
 			break;
 		lastScore = score;
 		hasLastScore = true;
+		g_topSearchParams.HasSearchScore = true;
+		g_topSearchParams.SearchScore = score;
 
 		float ellapsed = (float)(NowMs() - start) / 1000.0f;
 		if (GetBestMoveFromHash(pGame->Hash, &bestMove))
 		{
 			bestMove.Score = score;
-			if (depth > 7)
+			if (g_topSearchParams.EmitInfoLines && depth > 7)
 				PrintBestLine(bestMove, depth, ellapsed);
 		}
 		g_topSearchParams.BestMove = bestMove;
@@ -940,6 +945,8 @@ MoveCoordinates Search(bool async)
 	SyncGameBitboards(&g_mainGame);
 	g_emitBestMove = async;
 	g_topSearchParams.BestMove = InvalidMove();
+	g_topSearchParams.HasSearchScore = false;
+	g_topSearchParams.SearchScore = 0;
 
 	// Sometimes there is only one valid move. Why spend time searching?
 	Move moves[MAX_MOVES];

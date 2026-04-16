@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "tests/tests.h"
 #include "benchmark.h"
+#include "ann_training.h"
 #include "evaluation.h"
 #include "hashTable.h"
 #include "timeControl.h"
@@ -27,6 +28,86 @@
 
 Game g_mainGame = {0};
 
+static int ParseCliInt(const char *text, int *parsed)
+{
+	char *end = NULL;
+	long value;
+
+	if (text == NULL || parsed == NULL)
+		return -1;
+
+	value = strtol(text, &end, 10);
+	if (end == text || *end != '\0')
+		return -1;
+
+	*parsed = (int)value;
+	return 0;
+}
+
+static int ConfigureBenchAnnEval(int argc, char *argv[], int argStartIndex)
+{
+	for (int index = argStartIndex; index < argc; index++)
+	{
+		char *arg = argv[index];
+		if (strcmp(arg, "--ann-enable") == 0)
+		{
+			SetAnnEvalEnabled(true);
+			continue;
+		}
+
+		if (index + 1 >= argc)
+		{
+			fprintf(stderr, "Missing value after %s.\n", arg);
+			return 1;
+		}
+
+		if (strcmp(arg, "--ann-eval") == 0)
+		{
+			if (LoadAnnEvalWeights(argv[++index]) != 0)
+			{
+				fprintf(stderr, "Failed to load ANN eval weights from %s.\n", argv[index]);
+				return 1;
+			}
+			SetAnnEvalEnabled(true);
+		}
+		else if (strcmp(arg, "--ann-blend") == 0)
+		{
+			int blendPercent = 0;
+			if (ParseCliInt(argv[++index], &blendPercent) != 0)
+				return 1;
+			SetAnnEvalBlendPercent(blendPercent);
+		}
+		else if (strcmp(arg, "--ann-max-correction") == 0)
+		{
+			int maxCorrection = 0;
+			if (ParseCliInt(argv[++index], &maxCorrection) != 0)
+				return 1;
+			SetAnnEvalMaxCorrectionCp(maxCorrection);
+		}
+		else if (strcmp(arg, "--ann-min-phase") == 0)
+		{
+			int minPhase = 0;
+			if (ParseCliInt(argv[++index], &minPhase) != 0)
+				return 1;
+			SetAnnEvalMinPhase(minPhase);
+		}
+		else if (strcmp(arg, "--ann-max-base-eval") == 0)
+		{
+			int maxBaseEval = 0;
+			if (ParseCliInt(argv[++index], &maxBaseEval) != 0)
+				return 1;
+			SetAnnEvalMaxBaseEvalCp(maxBaseEval);
+		}
+		else
+		{
+			fprintf(stderr, "Unknown bench option: %s\n", arg);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static int HandleCommandLineMode(int argc, char *argv[])
 {
 	if (argc >= 2 && strcmp(argv[1], "test") == 0)
@@ -37,9 +118,23 @@ static int HandleCommandLineMode(int argc, char *argv[])
 
 	if (argc >= 2 && strcmp(argv[1], "bench") == 0)
 	{
-		int depth = argc >= 3 ? atoi(argv[2]) : BENCH_DEFAULT_DEPTH;
+		int depth = BENCH_DEFAULT_DEPTH;
+		int argStartIndex = 2;
+		ResetAnnEvalState();
+		if (argc >= 3 && argv[2][0] != '-')
+		{
+			depth = atoi(argv[2]);
+			argStartIndex = 3;
+		}
+		if (ConfigureBenchAnnEval(argc, argv, argStartIndex) != 0)
+			return 1;
 		PrintBenchmarkSuite(depth);
 		return 0;
+	}
+
+	if (argc >= 2 && strcmp(argv[1], "train-ann") == 0)
+	{
+		return RunAnnTrainingFromArgs(argc, argv, 2);
 	}
 
 	return -1;
@@ -53,6 +148,7 @@ int main(int argc, char *argv[])
 		InstallUnhandledErrorHandlers();
 	}
 	SwitchSignOfWhitePositionValue();
+	ResetAnnEvalState();
 	SetSearchDefaults();
 	ResetDepthTimes();
 	GenerateZobritsKeys();

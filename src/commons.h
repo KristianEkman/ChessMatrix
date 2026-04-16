@@ -237,6 +237,9 @@ typedef struct {
 	int MovesTogo;
 	bool TimeControl;
 	Move BestMove;
+	bool EmitInfoLines;
+	bool HasSearchScore;
+	short SearchScore;
 } TopSearchParams;
 
 extern Game g_mainGame;

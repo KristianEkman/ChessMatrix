@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 
 #include "helpers.h"
 
+#include "../ann_training.h"
 #include "../main.h"
 #include "../fen.h"
 #include "../commons.h"
@@ -19,6 +21,53 @@ short PawnPhalanx(int square, Game *game);
 short EndgameKingPawnTropism(int square, Game *game);
 short RookBehindPassedPawn(int square, Game *game);
 short SimplificationBonus(Game *game);
+
+static void SetAnnConstantOutput(ANN *ann, double normalizedOutput)
+{
+	for (size_t index = 0; index < (ann->InputCount + 1) * ann->HiddenCount; index++)
+		ann->WeightsInputHidden[index] = 0.0;
+	for (size_t index = 0; index < (ann->HiddenCount + 1) * ann->OutputCount; index++)
+		ann->WeightsHiddenOutput[index] = 0.0;
+
+	ann->WeightsHiddenOutput[ann->HiddenCount * ann->OutputCount] = normalizedOutput * (double)(ann->HiddenCount + 1);
+}
+
+static void WritePhaseAnnWeightsFile(const char *path, size_t hiddenCount, const double *normalizedOutputs)
+{
+	AnnPhaseCollection collection;
+
+	InitAnnPhaseCollection(&collection);
+	AssertAreEqualInts(0, AllocateAnnPhaseCollection(&collection, hiddenCount), "Expected ANN phase collection allocation to succeed");
+	for (int phase = 0; phase < ANN_PHASE_COUNT; phase++)
+	{
+		ANN *ann = GetAnnPhaseNetwork(&collection, phase);
+		Assert(ann != NULL, "Expected phase ANN to exist");
+		if (ann == NULL)
+		{
+			FreeAnnPhaseCollection(&collection);
+			return;
+		}
+		SetAnnConstantOutput(ann, normalizedOutputs[phase]);
+	}
+	AssertAreEqualInts(0, SaveAnnPhaseWeights(&collection, path), "Expected ANN phase weights file to save");
+	FreeAnnPhaseCollection(&collection);
+}
+
+static void WriteConstantAnnWeightsFile(const char *path, size_t hiddenCount, double normalizedOutput)
+{
+	double normalizedOutputs[ANN_PHASE_COUNT] = {0};
+
+	for (int phase = 0; phase < ANN_PHASE_COUNT; phase++)
+		normalizedOutputs[phase] = normalizedOutput;
+
+	WritePhaseAnnWeightsFile(path, hiddenCount, normalizedOutputs);
+}
+
+static void SetPermissiveAnnEvalGates(void)
+{
+	SetAnnEvalMinPhase(0);
+	SetAnnEvalMaxBaseEvalCp(2000);
+}
 
 static Piece *FindPieceAt(int side01, int square)
 {
@@ -37,6 +86,178 @@ TEST(UnstoppablePassedPawnEvalTest)
 	printf("%s\n", __func__);
 	ReadFen("4k3/8/8/1P6/8/8/8/4K3 w - - 0 1");
 	Assert(GetEval(&g_mainGame) < -300, "Advanced unstoppable passer should evaluate as clearly winning in a king-and-pawn ending");
+}
+
+TEST(AnnEvalDisabledKeepsClassicalEval)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_disabled_weights.txt";
+	short baseEval;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.2);
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 w - - 0 1");
+	baseEval = GetEval(&g_mainGame);
+
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetAnnEvalEnabled(false);
+
+	AssertAreEqualInts(baseEval, GetEval(&g_mainGame), "disabled ANN eval should not change the classical evaluation");
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalCorrectionTracksSideToMove)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_side_weights.txt";
+	short whiteCorrection = 0;
+	short blackCorrection = 0;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.2);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetPermissiveAnnEvalGates();
+	SetAnnEvalEnabled(true);
+
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 w - - 0 1");
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &whiteCorrection), "white-to-move correction should compute");
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1");
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &blackCorrection), "black-to-move correction should compute");
+
+	Assert(whiteCorrection < 0, "positive ANN output should become a negative black-centric correction when white is to move");
+	Assert(blackCorrection > 0, "positive ANN output should become a positive black-centric correction when black is to move");
+	AssertAreEqualInts(-whiteCorrection, blackCorrection, "board-symmetric side-to-move positions should get mirrored ANN corrections");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalBlendAndClampLimitCorrection)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_blend_weights.txt";
+	short correction = 0;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.5);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalBlendPercent(50);
+	SetAnnEvalMaxCorrectionCp(40);
+	SetPermissiveAnnEvalGates();
+	SetAnnEvalEnabled(true);
+
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1");
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &correction), "ANN correction should compute with blend and clamp enabled");
+	AssertAreEqualInts(40, correction, "ANN correction should respect the configured final clamp after blending");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalUsesExactPhaseNetwork)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_phase_specific_weights.txt";
+	double normalizedOutputs[ANN_PHASE_COUNT] = {0};
+	short endgameCorrection = 0;
+	short openingCorrection = 0;
+	short expectedEndgame = 0;
+	short expectedOpening = 0;
+
+	normalizedOutputs[0] = 0.10;
+	normalizedOutputs[24] = 0.35;
+	ResetAnnEvalState();
+	WritePhaseAnnWeightsFile(weightsPath, 4, normalizedOutputs);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetPermissiveAnnEvalGates();
+	SetAnnEvalEnabled(true);
+
+	ReadFen("4k3/8/8/8/8/8/8/4K3 b - - 0 1");
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &endgameCorrection), "phase-0 correction should compute");
+
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &openingCorrection), "phase-24 correction should compute");
+
+	expectedEndgame = (short)lround(ScaleAnnPredictionToCentipawns(normalizedOutputs[0]));
+	expectedOpening = (short)lround(ScaleAnnPredictionToCentipawns(normalizedOutputs[24]));
+	AssertAreEqualInts(expectedEndgame, endgameCorrection, "endgame position should use the phase-0 ANN");
+	AssertAreEqualInts(expectedOpening, openingCorrection, "opening position should use the phase-24 ANN");
+	Assert(openingCorrection > endgameCorrection, "higher-output opening phase ANN should produce a larger correction");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalEnabledBlendsIntoGetEval)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_geteval_weights.txt";
+	short classicalEval;
+	short correction = 0;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.2);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetPermissiveAnnEvalGates();
+	SetAnnEvalEnabled(true);
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1");
+	classicalEval = GetClassicalEval(&g_mainGame);
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &correction), "ANN correction should compute before blending into GetEval");
+
+	AssertAreEqualInts(classicalEval + correction, GetEval(&g_mainGame), "enabled ANN eval should add the correction on top of the classical evaluation");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalMinPhaseGateSkipsEndgames)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_phase_gate_weights.txt";
+	short correction = 123;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.2);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalEnabled(true);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetAnnEvalMinPhase(24);
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1");
+
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &correction), "ANN correction call should succeed even when phase gate rejects it");
+	AssertAreEqualInts(0, correction, "ANN correction should be skipped when the current game phase is below the configured minimum");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
+}
+
+TEST(AnnEvalBaseEvalGateSkipsClearlyWonPositions)
+{
+	const char *weightsPath = "/tmp/chessmatrix_ann_eval_baseeval_gate_weights.txt";
+	short correction = 123;
+	short classicalEval;
+
+	ResetAnnEvalState();
+	WriteConstantAnnWeightsFile(weightsPath, 4, 0.2);
+	AssertAreEqualInts(0, LoadAnnEvalWeights(weightsPath), __func__);
+	SetAnnEvalEnabled(true);
+	SetAnnEvalBlendPercent(100);
+	SetAnnEvalMaxCorrectionCp(1000);
+	SetAnnEvalMinPhase(0);
+	SetAnnEvalMaxBaseEvalCp(50);
+	ReadFen("4k3/8/8/8/8/8/4Q3/4K3 b - - 0 1");
+	classicalEval = GetClassicalEval(&g_mainGame);
+	Assert(abs(classicalEval) > 50, "test position should exceed the configured classical-eval gate");
+
+	AssertAreEqualInts(0, GetAnnEvalCorrection(&g_mainGame, &correction), "ANN correction call should succeed even when eval gate rejects it");
+	AssertAreEqualInts(0, correction, "ANN correction should be skipped when the classical eval is already outside the configured window");
+
+	remove(weightsPath);
+	ResetAnnEvalState();
 }
 
 TEST(PassedPawnRaceBonusNeedsClearPath)

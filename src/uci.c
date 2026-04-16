@@ -14,7 +14,20 @@
 #include "book.h"
 #include "interactive.h"
 #include "errorHandling.h"
+#include "evaluation.h"
 #include "uci.h"
+
+static void TrimTrailingWhitespace(char *text)
+{
+	int length;
+
+	if (text == NULL)
+		return;
+
+	length = (int)strlen(text);
+	while (length > 0 && (text[length - 1] == '\n' || text[length - 1] == '\r' || text[length - 1] == ' ' || text[length - 1] == '\t'))
+		text[--length] = '\0';
+}
 
 extern char Version[];
 
@@ -42,6 +55,12 @@ void EnterUciMode()
 			Stdout_wl("id author Kristian Ekman");
 			Stdout_wl("option name Hash type spin default 1024 min 1 max 2048");
 			Stdout_wl("option name OwnBook type check default false");
+			printf("option name AnnEval type check default %s\n", IsAnnEvalEnabled() ? "true" : "false");
+			printf("option name AnnEvalBlend type spin default %d min 0 max 100\n", GetAnnEvalBlendPercent());
+			printf("option name AnnEvalMaxCorrection type spin default %d min 0 max 2000\n", GetAnnEvalMaxCorrectionCp());
+			printf("option name AnnEvalMinPhase type spin default %d min 0 max 24\n", GetAnnEvalMinPhase());
+			printf("option name AnnEvalMaxBaseEval type spin default %d min 0 max 2000\n", GetAnnEvalMaxBaseEvalCp());
+			Stdout_wl("option name AnnEvalFile type string default none");
 			Stdout_wl("uciok");
 		}
 		else if (Streq(buf, "isready\n"))
@@ -94,6 +113,78 @@ void EnterUciMode()
 					break;
 				}
 				token = strtok(NULL, " ");
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEval value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				TrimTrailingWhitespace(value);
+				if (Streq(value, "true"))
+				{
+					SetAnnEvalEnabled(true);
+					Stdout_wl("ANN evaluation switched on");
+				}
+				else if (Streq(value, "false"))
+				{
+					SetAnnEvalEnabled(false);
+					Stdout_wl("ANN evaluation switched off");
+				}
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEvalBlend value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				SetAnnEvalBlendPercent(atoi(value));
+				Stdout_wl("ANN evaluation blend updated");
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEvalMaxCorrection value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				SetAnnEvalMaxCorrectionCp(atoi(value));
+				Stdout_wl("ANN evaluation correction cap updated");
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEvalMinPhase value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				SetAnnEvalMinPhase(atoi(value));
+				Stdout_wl("ANN evaluation minimum phase updated");
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEvalMaxBaseEval value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				SetAnnEvalMaxBaseEvalCp(atoi(value));
+				Stdout_wl("ANN evaluation classical-eval window updated");
+			}
+		}
+		else if (StartsWith(buf, "setoption name AnnEvalFile value"))
+		{
+			char *value = strstr(buf, " value ");
+			if (value != NULL)
+			{
+				value += 7;
+				TrimTrailingWhitespace(value);
+				if (LoadAnnEvalWeights(value) == 0)
+					Stdout_wl("ANN evaluation weights loaded");
+				else
+					Stdout_wl("failed to load ANN evaluation weights");
 			}
 		}
 		else if (StartsWith(buf, "position "))

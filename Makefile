@@ -9,6 +9,10 @@ else
 endif
 
 SRC_DIR := src
+ANN_DIR := ../ANN
+ANN_BUILD_DIR := $(ANN_DIR)/build
+ANN_LIB := $(ANN_BUILD_DIR)/libANN_lib.a
+ANN_INCLUDE_DIR := $(ANN_DIR)/ANN
 CORE_SOURCES := $(filter-out $(SRC_DIR)/tests.c,$(wildcard $(SRC_DIR)/*.c))
 TEST_SOURCES := $(wildcard $(SRC_DIR)/tests/*.c)
 SOURCES := $(CORE_SOURCES) $(TEST_SOURCES)
@@ -29,8 +33,12 @@ all: $(TARGET)
 strict: clean
 	$(MAKE) CFLAGS='$(STRICT_CFLAGS)'
 
-$(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) -I$(SRC_DIR) $(SOURCES) -o $(TARGET) $(LDFLAGS) -pthread
+ann-lib:
+	@if [ ! -f "$(ANN_BUILD_DIR)/CMakeCache.txt" ]; then $(MAKE) -C $(ANN_DIR) configure; fi
+	@$(MAKE) -C $(ANN_DIR) build
+
+$(TARGET): $(SOURCES) ann-lib
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -I$(ANN_INCLUDE_DIR) $(SOURCES) $(ANN_LIB) -o $(TARGET) $(LDFLAGS) -pthread -lm
 
 run: $(TARGET)
 	./$(TARGET)
@@ -48,4 +56,4 @@ bench: $(TARGET)
 clean:
 	rm -f $(TARGET)
 
-.PHONY: all strict run test bench clean
+.PHONY: all strict run test bench clean ann-lib

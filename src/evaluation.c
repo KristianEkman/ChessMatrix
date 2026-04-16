@@ -1,8 +1,12 @@
 #include "commons.h"
 #include "evaluation.h"
+#include "ann_training.h"
 #include "bitboards.h"
 #include "patterns.h"
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 #if defined(_MSC_VER)
@@ -12,6 +16,30 @@
 #endif
 
 #define PAWN_HASH_SIZE 16384
+#define ANN_EVAL_CACHE_SIZE 16384
+#define ANN_EVAL_DEFAULT_BLEND_PERCENT 25
+#define ANN_EVAL_DEFAULT_MAX_CORRECTION_CP 80
+#define ANN_EVAL_DEFAULT_MIN_PHASE 12
+#define ANN_EVAL_DEFAULT_MAX_BASE_EVAL_CP 150
+
+typedef struct
+{
+	U64 Key;
+	unsigned int Generation;
+	short Correction;
+	bool Valid;
+} AnnEvalCacheEntry;
+
+typedef struct
+{
+	AnnPhaseCollection Networks;
+	bool Enabled;
+	int BlendPercent;
+	int MaxCorrectionCp;
+	int MinPhase;
+	int MaxBaseEvalCp;
+	unsigned int Generation;
+} AnnEvalState;
 
 typedef struct
 {
@@ -208,6 +236,8 @@ U64 PawnProtectorsMask[2][64] = { 0 };
 U64 KingShieldMask[2][64] = { 0 };
 
 static CM_THREAD_LOCAL PawnHashEntry g_pawnHashTable[PAWN_HASH_SIZE] = { 0 };
+static CM_THREAD_LOCAL AnnEvalCacheEntry g_annEvalCache[ANN_EVAL_CACHE_SIZE] = { 0 };
+static AnnEvalState g_annEvalState = { { 0 }, false, ANN_EVAL_DEFAULT_BLEND_PERCENT, ANN_EVAL_DEFAULT_MAX_CORRECTION_CP, ANN_EVAL_DEFAULT_MIN_PHASE, ANN_EVAL_DEFAULT_MAX_BASE_EVAL_CP, 1 };
 
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
@@ -227,6 +257,190 @@ static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 	default:
 		return NOPIECE;
 	}
+}
+
+static void AdvanceAnnEvalGeneration(void)
+{
+	g_annEvalState.Generation++;
+	if (g_annEvalState.Generation == 0)
+		g_annEvalState.Generation = 1;
+}
+
+static int ClampInt(int value, int minimumValue, int maximumValue)
+{
+	if (value < minimumValue)
+		return minimumValue;
+	if (value > maximumValue)
+		return maximumValue;
+	return value;
+}
+
+static bool ShouldApplyAnnEval(Game *game, short classicalEval, int gamePhase)
+{
+	return game != NULL &&
+		g_annEvalState.Enabled &&
+		GetAnnPhaseNetwork(&g_annEvalState.Networks, gamePhase) != NULL &&
+		gamePhase >= g_annEvalState.MinPhase &&
+		abs((int)classicalEval) <= g_annEvalState.MaxBaseEvalCp;
+}
+
+static int GetAnnEvalCorrectionForClassical(Game *game, short classicalEval, int gamePhase, short *correctionOut)
+{
+	AnnEvalCacheEntry *entry;
+	ANN *network;
+	double prediction = 0.0;
+	double predictionCp = 0.0;
+	int weightedCorrection = 0;
+
+	if (game == NULL || correctionOut == NULL)
+		return -1;
+
+	*correctionOut = 0;
+	if (!ShouldApplyAnnEval(game, classicalEval, gamePhase))
+		return 0;
+
+	network = GetAnnPhaseNetwork(&g_annEvalState.Networks, gamePhase);
+	if (network == NULL)
+		return 0;
+
+	entry = &g_annEvalCache[game->Hash & (ANN_EVAL_CACHE_SIZE - 1)];
+	if (entry->Valid && entry->Generation == g_annEvalState.Generation && entry->Key == game->Hash)
+	{
+		*correctionOut = entry->Correction;
+		return 0;
+	}
+
+	if (PredictAnnOnPosition(network, game, &prediction) != 0)
+		return -1;
+
+	predictionCp = ScaleAnnPredictionToCentipawns(prediction);
+	weightedCorrection = (int)lround(predictionCp * (double)g_annEvalState.BlendPercent / 100.0);
+	if (game->Side == WHITE)
+		weightedCorrection = -weightedCorrection;
+	weightedCorrection = ClampInt(weightedCorrection, -g_annEvalState.MaxCorrectionCp, g_annEvalState.MaxCorrectionCp);
+
+	entry->Key = game->Hash;
+	entry->Generation = g_annEvalState.Generation;
+	entry->Correction = (short)weightedCorrection;
+	entry->Valid = true;
+	*correctionOut = entry->Correction;
+	return 0;
+}
+
+void ResetAnnEvalState(void)
+{
+	FreeAnnPhaseCollection(&g_annEvalState.Networks);
+
+	g_annEvalState.Enabled = false;
+	g_annEvalState.BlendPercent = ANN_EVAL_DEFAULT_BLEND_PERCENT;
+	g_annEvalState.MaxCorrectionCp = ANN_EVAL_DEFAULT_MAX_CORRECTION_CP;
+	g_annEvalState.MinPhase = ANN_EVAL_DEFAULT_MIN_PHASE;
+	g_annEvalState.MaxBaseEvalCp = ANN_EVAL_DEFAULT_MAX_BASE_EVAL_CP;
+	AdvanceAnnEvalGeneration();
+}
+
+bool HasAnnEvalWeights(void)
+{
+	return GetAnnPhaseNetwork(&g_annEvalState.Networks, 0) != NULL;
+}
+
+bool IsAnnEvalEnabled(void)
+{
+	return g_annEvalState.Enabled;
+}
+
+void SetAnnEvalEnabled(bool enabled)
+{
+	g_annEvalState.Enabled = enabled;
+}
+
+void SetAnnEvalBlendPercent(int blendPercent)
+{
+	int clamped = ClampInt(blendPercent, 0, 100);
+	if (clamped == g_annEvalState.BlendPercent)
+		return;
+
+	g_annEvalState.BlendPercent = clamped;
+	AdvanceAnnEvalGeneration();
+}
+
+int GetAnnEvalBlendPercent(void)
+{
+	return g_annEvalState.BlendPercent;
+}
+
+void SetAnnEvalMaxCorrectionCp(int maxCorrectionCp)
+{
+	int clamped = ClampInt(maxCorrectionCp, 0, 2000);
+	if (clamped == g_annEvalState.MaxCorrectionCp)
+		return;
+
+	g_annEvalState.MaxCorrectionCp = clamped;
+	AdvanceAnnEvalGeneration();
+}
+
+int GetAnnEvalMaxCorrectionCp(void)
+{
+	return g_annEvalState.MaxCorrectionCp;
+}
+
+void SetAnnEvalMinPhase(int minPhase)
+{
+	int clamped = ClampInt(minPhase, 0, 24);
+	if (clamped == g_annEvalState.MinPhase)
+		return;
+
+	g_annEvalState.MinPhase = clamped;
+	AdvanceAnnEvalGeneration();
+}
+
+int GetAnnEvalMinPhase(void)
+{
+	return g_annEvalState.MinPhase;
+}
+
+void SetAnnEvalMaxBaseEvalCp(int maxBaseEvalCp)
+{
+	int clamped = ClampInt(maxBaseEvalCp, 0, 2000);
+	if (clamped == g_annEvalState.MaxBaseEvalCp)
+		return;
+
+	g_annEvalState.MaxBaseEvalCp = clamped;
+	AdvanceAnnEvalGeneration();
+}
+
+int GetAnnEvalMaxBaseEvalCp(void)
+{
+	return g_annEvalState.MaxBaseEvalCp;
+}
+
+int LoadAnnEvalWeights(const char *filePath)
+{
+	AnnPhaseCollection loadedNetworks;
+
+	InitAnnPhaseCollection(&loadedNetworks);
+	if (LoadAnnPhaseWeights(&loadedNetworks, filePath) != 0)
+		return -1;
+
+	FreeAnnPhaseCollection(&g_annEvalState.Networks);
+	g_annEvalState.Networks = loadedNetworks;
+	AdvanceAnnEvalGeneration();
+	return 0;
+}
+
+int GetAnnEvalCorrection(Game *game, short *correctionOut)
+{
+	short classicalEval = 0;
+	int gamePhase = 0;
+
+	if (game == NULL || correctionOut == NULL)
+		return -1;
+
+	classicalEval = GetClassicalEval(game);
+	gamePhase = GetAnnPhaseIndex(game);
+	if (gamePhase < 0)
+		return -1;
+	return GetAnnEvalCorrectionForClassical(game, classicalEval, gamePhase, correctionOut);
 }
 
 static short GetPieceMaterialValue(PieceType pieceType)
@@ -977,7 +1191,7 @@ short SimplificationBonus(Game *game)
 	return GetSimplificationBonusScore(materialBalance, &game->Bitboards);
 }
 
-short GetEval(Game* game) {
+short GetClassicalEval(Game* game) {
 	const AllPieceBitboards *bb = &game->Bitboards;
 
 	int score = game->Material[0] + game->Material[1];
@@ -1095,6 +1309,17 @@ short GetEval(Game* game) {
 		eval -= TempoBonus;
 
 	return eval;
+}
+
+short GetEval(Game* game) {
+	short eval = GetClassicalEval(game);
+	short annCorrection = 0;
+	int gamePhase = GetGamePhase(game);
+
+	if (GetAnnEvalCorrectionForClassical(game, eval, gamePhase, &annCorrection) != 0)
+		return eval;
+
+	return (short)(eval + annCorrection);
 }
 
 short TotalMaterial(Game* game) {
