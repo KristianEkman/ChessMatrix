@@ -32,6 +32,23 @@ static Piece *FindPieceAt(int side01, int square)
 	return NULL;
 }
 
+static Move FindGeneratedMove(const char *sMove, MoveInfo info)
+{
+	Move expected = ParseMove((char *)sMove, info);
+	Move missing = {255, 255, NotAMove, 255, 0};
+
+	CreateMoves(&g_mainGame);
+	RemoveInvalidMoves(&g_mainGame);
+	for (int i = 0; i < g_mainGame.MovesBufferLength; i++)
+	{
+		Move move = g_mainGame.MovesBuffer[i];
+		if (move.From == expected.From && move.To == expected.To && move.MoveInfo == expected.MoveInfo)
+			return move;
+	}
+
+	return missing;
+}
+
 TEST(UnstoppablePassedPawnEvalTest)
 {
 	printf("%s\n", __func__);
@@ -160,6 +177,30 @@ TEST(KingMoveOrderingUsesInterpolatedGamePhase)
 
 	Assert(gamePhase > 0 && gamePhase < maxGamePhase, "Expected the test position to stay in a mixed game phase");
 	AssertAreEqualInts(expectedScore, GetMoveOrderingScore(move, &g_mainGame), "King move ordering should blend middle-game and endgame king tables by game phase");
+}
+
+TEST(CastlingMoveOrderingIncludesKingExposureDelta)
+{
+	printf("%s\n", __func__);
+	ReadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPP4/RNBQK2R w KQkq - 0 1");
+
+	Move move = FindGeneratedMove("e1g1", CastleShort);
+	int side01 = 0;
+	int gamePhase = GetGamePhase(&g_mainGame);
+	int maxGamePhase = 24;
+	int middleGameDelta = KingPositionValueMatrix[0][side01][g1] - KingPositionValueMatrix[0][side01][e1];
+	int endGameDelta = KingPositionValueMatrix[1][side01][g1] - KingPositionValueMatrix[1][side01][e1];
+	int expectedKingDelta = (middleGameDelta * gamePhase + endGameDelta * (maxGamePhase - gamePhase)) / maxGamePhase;
+	int rookDelta = PositionValueMatrix[ROOK][side01][f1] - PositionValueMatrix[ROOK][side01][h1];
+	int fromExposure = popcount(KingShieldMask[side01][e1] & ~g_mainGame.Bitboards.Pawns.WhitePawns) * KING_EXPOSED;
+	int toExposure = popcount(KingShieldMask[side01][g1] & ~g_mainGame.Bitboards.Pawns.WhitePawns) * KING_EXPOSED;
+	int expectedExposureDelta = ((fromExposure - toExposure) * gamePhase) / maxGamePhase;
+	int expectedScore = g_mainGame.Material[0] + g_mainGame.Material[1] + CastlingPoints[side01] + expectedKingDelta + rookDelta - expectedExposureDelta;
+
+	Assert(move.MoveInfo == CastleShort, "Expected to find a legal white short castle move");
+	Assert(gamePhase > 0 && gamePhase <= maxGamePhase, "Expected a valid game phase for castling exposure scoring");
+	Assert(toExposure > fromExposure, "Test position should castle into a more exposed kingside shelter");
+	AssertAreEqualInts(expectedScore, GetMoveOrderingScore(move, &g_mainGame), "Castling move ordering should include the king exposure delta alongside king and rook placement terms");
 }
 
 TEST(BishopMobilityTest)

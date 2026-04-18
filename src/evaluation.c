@@ -209,6 +209,11 @@ U64 KingShieldMask[2][64] = { 0 };
 
 static CM_THREAD_LOCAL PawnHashEntry g_pawnHashTable[PAWN_HASH_SIZE] = { 0 };
 
+static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
+static const int MaxGamePhase = 24;
+static const int OpeningPhaseThreshold = 20;
+static const short TempoBonus = 8;
+
 // Array of coordinates for squares that could have a protecting pawn
 char PawnProtectionSquares[2][64][3] = { 0 };
 
@@ -228,6 +233,8 @@ static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 		return NOPIECE;
 	}
 }
+
+static U64 GetSidePawns(const AllPieceBitboards *bb, int side01);
 
 static short GetPieceMaterialValue(PieceType pieceType)
 {
@@ -254,6 +261,28 @@ static short GetCaptureOrderingBonus(PieceType attackerType, PieceType victimTyp
 	short attackerValue = GetPieceMaterialValue(attackerType);
 
 	return (short)(96 + victimValue / 16 - attackerValue / 32);
+}
+
+static bool IsOpeningPhase(int gamePhase)
+{
+	return gamePhase >= OpeningPhaseThreshold;
+}
+
+static short GetKingExposedScoreAt(int square, int side01, const AllPieceBitboards *bb)
+{
+	U64 shieldMask = KingShieldMask[side01][square];
+	U64 ownPawns = GetSidePawns(bb, side01);
+	return (short)(popcount(shieldMask & ~ownPawns) * KING_EXPOSED);
+}
+
+static short GetKingExposureOrderingDelta(Move move, Game *game)
+{
+	int gamePhase = GetGamePhase(game);
+	const AllPieceBitboards *bb = &game->Bitboards;
+	short fromExposure = GetKingExposedScoreAt(move.From, game->Side01, bb);
+	short toExposure = GetKingExposedScoreAt(move.To, game->Side01, bb);
+
+	return (short)(((fromExposure - toExposure) * gamePhase) / MaxGamePhase);
 }
 
 static bool GetCastleRookMove(Move move, int side01, int *rookFrom, int *rookTo)
@@ -312,6 +341,7 @@ short GetMoveOrderingScore(Move move, Game *game)
 	{
 	case KingMove:
 		moveScore += GetKingPositionScore(move, game);
+		moveScore += (short)(sideSign * GetKingExposureOrderingDelta(move, game));
 		break;
 	case CastleShort:
 	case CastleLong:
@@ -321,6 +351,7 @@ short GetMoveOrderingScore(Move move, Game *game)
 
 			moveScore += CastlingPoints[side01];
 			moveScore += GetKingPositionScore(move, game);
+			moveScore += (short)(sideSign * GetKingExposureOrderingDelta(move, game));
 			if (GetCastleRookMove(move, side01, &rookFrom, &rookTo))
 				moveScore += PositionValueMatrix[ROOK][side01][rookTo] - PositionValueMatrix[ROOK][side01][rookFrom];
 			break;
@@ -806,11 +837,8 @@ bool IsDraw(Game* game) {
 
 //When king is castled at back rank, penalty for missing pawns.
 short KingExposed(int square, Game* game) {
-	const AllPieceBitboards *bb = &game->Bitboards;
 	int color01 = (game->Squares[square] & 24) >> 4;
-	U64 shieldMask = KingShieldMask[color01][square];
-	U64 ownPawns = GetSidePawns(bb, color01);
-	return (short)(popcount(shieldMask & ~ownPawns) * KING_EXPOSED);
+	return GetKingExposedScoreAt(square, color01, &game->Bitboards);
 }
 
 static const int PawnPassedPoints[2][8] = {
@@ -922,16 +950,6 @@ short EndgameKingPawnTropism(int square, Game *game)
 		return 0;
 
 	return GetEndgameKingPawnTropismScore(square, pieceType >> 4, game);
-}
-
-static const int PiecePhase[7] = { 0, 1, 2, 4, 0, 1, 0 };
-static const int MaxGamePhase = 24;
-static const int OpeningPhaseThreshold = 20;
-static const short TempoBonus = 8;
-
-static bool IsOpeningPhase(int gamePhase)
-{
-	return gamePhase >= OpeningPhaseThreshold;
 }
 
 int GetGamePhase(Game* game) {
