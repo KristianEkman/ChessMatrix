@@ -214,8 +214,7 @@ static const int MaxGamePhase = 24;
 static const int OpeningPhaseThreshold = 20;
 static const short TempoBonus = 8;
 
-// Array of coordinates for squares that could have a protecting pawn
-char PawnProtectionSquares[2][64][3] = { 0 };
+
 
 static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 {
@@ -236,7 +235,7 @@ static PieceType GetPromotionPieceType(MoveInfo moveInfo)
 
 static U64 GetSidePawns(const AllPieceBitboards *bb, int side01);
 
-static short GetPieceMaterialValue(PieceType pieceType)
+short GetPieceMaterialValue(PieceType pieceType)
 {
 	switch (pieceType & 7)
 	{
@@ -425,29 +424,6 @@ static short GetPassedPawnBaseScore(int square, int side01, U64 opponentPawns)
 	return PawnPassedPoints[side01][square >> 3];
 }
 
-static short GetPassedPawnFreePathBonus(int square, int side01, const AllPieceBitboards *bb, U64 opponentPawns)
-{
-	int file = square & 7;
-	int rank = square >> 3;
-	U64 fileAheadMask = 0ULL;
-	U64 opponentNonPawns = GetOpponentPieces(bb, side01) & ~opponentPawns;
-
-	if (side01 == 0)
-	{
-		int shift = (rank + 1) * 8;
-		if (shift < 64)
-			fileAheadMask = FileMask[file] & (~0ULL << shift);
-	}
-	else
-	{
-		int shift = rank * 8;
-		if (shift > 0)
-			fileAheadMask = FileMask[file] & ((1ULL << shift) - 1ULL);
-	}
-
-	return (opponentNonPawns & fileAheadMask) == 0ULL ? PASSED_PAWN_FREE_PATH : 0;
-}
-
 static U64 GetForwardFileMask(int square, int side01)
 {
 	int file = square & 7;
@@ -465,7 +441,15 @@ static U64 GetForwardFileMask(int square, int side01)
 	}
 }
 
-static bool IsPureKingAndPawnEnding(const AllPieceBitboards *bb)
+static short GetPassedPawnFreePathBonus(int square, int side01, const AllPieceBitboards *bb, U64 opponentPawns)
+{
+	U64 opponentNonPawns = GetOpponentPieces(bb, side01) & ~opponentPawns;
+	U64 fileAheadMask = GetForwardFileMask(square, side01);
+
+	return (opponentNonPawns & fileAheadMask) == 0ULL ? PASSED_PAWN_FREE_PATH : 0;
+}
+
+bool IsPureKingAndPawnEnding(const AllPieceBitboards *bb)
 {
 	return bb->Knights.AllKnights == 0ULL &&
 		   bb->Bishops.AllBishops == 0ULL &&
@@ -856,62 +840,11 @@ short PassedPawn(int square, Game* game) {
 	return score + GetPassedPawnFreePathBonus(square, color01, bb, opponentPawns);
 }
 
-void CalculatePawnProtection() {
-	for (int side = 0; side < 2; side++)
-	{
-		for (int square = 0; square < 64; square++)
-		{
-			int file = square % 8;
-			//special case for file a and h (a and h)
-			if (side == 0) { //white
-				if (square < 8)
-					PawnProtectionSquares[side][square][0] = 0; // has no protecting pawns
-				else if (file == 0)
-				{
-					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file a
-					PawnProtectionSquares[side][square][1] = square - 7;
-				}
-				else if (file == 7)
-				{
-					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file h
-					PawnProtectionSquares[side][square][1] = square - 9;
-				}
-				else {
-					PawnProtectionSquares[side][square][0] = 2; //two protecting pawns on the rest
-					PawnProtectionSquares[side][square][1] = square - 7;
-					PawnProtectionSquares[side][square][2] = square - 9;
-				}
-
-			}
-			else { // BLACK
-				if (square >= 56)
-					PawnProtectionSquares[side][square][0] = 0; // has no protecting pawns
-				else if (file == 0)
-				{
-					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file a
-					PawnProtectionSquares[side][square][1] = square + 9;
-				}
-				else if (file == 7)
-				{
-					PawnProtectionSquares[side][square][0] = 1; //one protecting pawn on file h
-					PawnProtectionSquares[side][square][1] = square + 7;
-				}
-				else {
-					PawnProtectionSquares[side][square][0] = 2; //two protecting pawns on the rest
-					PawnProtectionSquares[side][square][1] = square + 9;
-					PawnProtectionSquares[side][square][2] = square + 7;
-				}
-			}
-		}
-	}
-}
-
 void CalculatePatterns() {
 	CalculateFileMasks();
 	CalculatePassedPawnMasks();
 	CalculatePawnProtectorsMasks();
 	CalculateKingShieldMasks();
-	CalculatePawnProtection();
 }
 
 short ProtectedByPawn(int square, Game* game) {
@@ -1000,7 +933,6 @@ short GetEval(Game* game) {
 
 	int score = game->Material[0] + game->Material[1];
 	short posScore = 0;
-	//int mobil = 0;
 	int neg = -1;
 	int gamePhase = GetGamePhase(game);
 	bool opening = IsOpeningPhase(gamePhase);
@@ -1041,8 +973,7 @@ short GetEval(Game* game) {
 			case ROOK:
 			{
 				scr += OpenRookFile(i, game, pieceType);
-				scr += GetRookBehindPassedPawnScore(i, s, bb);
-				//mobil += piece.Mobility;
+					scr += GetRookBehindPassedPawnScore(i, s, bb);
 			}
 			break;
 			case BISHOP:
@@ -1082,15 +1013,6 @@ short GetEval(Game* game) {
 		neg += 2; // -1 --> 1 // White then black
 	}
 
-	// the lead is more worth when there is less material on the board
-	// lead of 200 with material 2000 (two queen) -> 25p
-	// supposed to make leader prefer chaning down.
-
-	/*short materialLead = game->Material[1] - game->Material[0];
-	if (materialLead)
-		return score + posScore + (float)(score * 50) / (float)materialLead;*/
-
-		//insuficient material check
 	int eval = score + posScore;
 	eval += GetSimplificationBonusScore(game->Material[0] + game->Material[1], bb);
 	bool whiteNoPawns = pwnCount[0] == 0;
@@ -1117,27 +1039,6 @@ short GetEval(Game* game) {
 
 short TotalMaterial(Game* game) {
 	return game->Material[0] + game->Material[1];
-}
-
-void AdjustPositionImportance()
-{
-	for (int i = 1; i < 7; i++)
-	{
-		for (int s = 0; s < 64; s++)
-		{
-			PositionValueMatrix[i][0][s] = PositionValueMatrix[i][0][s] / 3;
-			PositionValueMatrix[i][1][s] = PositionValueMatrix[i][1][s] / 3;
-		}
-	}
-
-	for (int i = 0; i < 64; i++)
-	{
-		KingPositionValueMatrix[0][0][i] = KingPositionValueMatrix[0][0][i] / 3;
-		KingPositionValueMatrix[1][0][i] = KingPositionValueMatrix[1][0][i] / 3;
-
-		KingPositionValueMatrix[0][1][i] = KingPositionValueMatrix[0][1][i] / 3;
-		KingPositionValueMatrix[1][1][i] = KingPositionValueMatrix[1][1][i] / 3;
-	}
 }
 
 void SwitchSignOfWhitePositionValue()

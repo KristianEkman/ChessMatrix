@@ -151,18 +151,6 @@ SEARCH_TEST(BestMoveByWhite1)
 	AssertBestMove(7, __func__, fen, "d2d4");
 }
 
-void BestMoveByBlack2()
-{
-	char *fen = "r1r5/1p6/2kpQ3/3p4/n2P4/4P3/3q1PPP/R4RK1 b - - 0 21";
-	AssertBestMove(7, __func__, fen, "a4c3");
-}
-
-void BestMoveByBlack3()
-{
-	char *fen = "8/kp6/8/3p4/3PnQ2/4P1P1/r2q1P1P/5RK1 b - - 2 27";
-	AssertBestMove(7, __func__, fen, "d2e2");
-}
-
 SEARCH_TEST(BestMoveByBlack1)
 {
 	char *fen = "r1bq2k1/p1p2pp1/2p2n1p/3pr3/7B/P1PBPQ2/5PPP/R4RK1 b - - 0 1";
@@ -236,11 +224,4 @@ SEARCH_TEST(PvsReducesNodeCount)
 	Search(false);
 	printf("PVS node count: %u\n", g_SearchedNodes);
 	Assert(g_SearchedNodes < 160000, "PVS+LMR should search fewer than 160k nodes at depth 7 in this position");
-}
-
-void DeepTest()
-{
-	printf("%s\n", __func__);
-	char *fen = "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1";
-	AssertBestMove(7, __func__, fen, "b1d2");
 }

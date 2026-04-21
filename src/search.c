@@ -321,29 +321,10 @@ static short EvalForSide(Game *game)
 #define FUTILITY_MARGIN_DEPTH1 90
 #endif
 
-static short GetQsearchPieceValue(PieceType piece)
-{
-	switch (piece & 7)
-	{
-	case PAWN:
-		return MATERIAL_P;
-	case KNIGHT:
-		return MATERIAL_N;
-	case BISHOP:
-		return MATERIAL_B;
-	case ROOK:
-		return MATERIAL_R;
-	case QUEEN:
-		return MATERIAL_Q;
-	default:
-		return 0;
-	}
-}
-
 static short GetQsearchCapturedPieceValue(Move move, const Game *game)
 {
 	PieceType capturedPiece = move.MoveInfo == EnPassantCapture ? (PAWN | (game->Side ^ 24)) : game->Squares[move.To];
-	return GetQsearchPieceValue(capturedPiece);
+	return GetPieceMaterialValue(capturedPiece);
 }
 
 static bool ShouldDeltaPruneQsearch(const Game *game, Move move, short standPat, short alpha)
@@ -377,7 +358,7 @@ static bool ShouldSkipBadQsearchCapture(const Game *game, Move move, PieceType m
 	if (GivesCheckAfterMove(game))
 		return false;
 
-	short movingValue = GetQsearchPieceValue(movingPiece);
+	short movingValue = GetPieceMaterialValue(movingPiece);
 	if (movingValue <= capturedValue)
 		return false;
 
@@ -449,7 +430,6 @@ short QuietSearch(short alpha, short beta, Game *game, int deep_in)
 
 	Move fallbackMoves[MAX_MOVES];
 	Move *localMoves = CopyMovesToLocalBuffer(game, deep_in, moveCount, fallbackMoves);
-	// MoveKillersToTop(game, localMoves, moveCount);
 	int legalCount = 0;
 
 	for (int i = 0; i < moveCount; i++)
@@ -508,18 +488,9 @@ static bool IsFutilityCandidateMove(const Game *game, Move move)
 		   move.MoveInfo != CastleShort;
 }
 
-static bool IsPureKingAndPawnEnding(const Game *game)
-{
-	const AllPieceBitboards *bb = &game->Bitboards;
-	return bb->Knights.AllKnights == 0ULL &&
-		   bb->Bishops.AllBishops == 0ULL &&
-		   bb->Rooks.AllRooks == 0ULL &&
-		   bb->Queens.AllQueens == 0ULL;
-}
-
 static bool IsAdvancedPawnPushInPawnEnding(const Game *game, Move move)
 {
-	if (!IsPureKingAndPawnEnding(game))
+	if (!IsPureKingAndPawnEnding(&game->Bitboards))
 		return false;
 
 	if ((game->Squares[move.From] & 7) != PAWN)
@@ -558,7 +529,7 @@ short RecursiveSearch(short alpha, short beta, uchar depth, Game *game, bool doN
 
 	// NULL move check
 
-	if (doNull && !incheck && depth > 3 && !IsPureKingAndPawnEnding(game))
+	if (doNull && !incheck && depth > 3 && !IsPureKingAndPawnEnding(&game->Bitboards))
 	{
 		GameState prevState = game->State;
 		uchar r = depth > 6 ? MAX_R : MIN_R;
@@ -727,8 +698,6 @@ static void CopyMainGame(Game *copy)
 	memcpy(copy->PositionHistory, g_mainGame.PositionHistory, g_mainGame.PositionHistoryLength * sizeof(copy->PositionHistory[0]));
 	memcpy(copy->Pieces, g_mainGame.Pieces, sizeof(copy->Pieces));
 	FixPieceChain(copy); // Pieces could not point to their game copy pieces.
-
-	// memset(copy->KillerMoves, 0, 2 * 31 * sizeof(Move));
 }
 
 static Move GetFirstValidMove(Game *game, bool onThread)
@@ -740,7 +709,7 @@ static Move GetFirstValidMove(Game *game, bool onThread)
 	return InvalidMove();
 }
 
-void PrintBestLine(Move move, int depth, float ellapsed)
+static void PrintBestLine(Move move, int depth, float ellapsed)
 {
 	char buffer[1800];
 	char *pv = buffer;

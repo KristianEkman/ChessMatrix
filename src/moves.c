@@ -666,8 +666,6 @@ static void CreateMove(int fromSquare, int toSquare, MoveInfo moveInfo, Game *ga
 
 	move.Score = GetMoveOrderingScore(move, game);
 
-	// move.Score = GetEval(game, move.Score);
-
 	game->MovesBuffer[game->MovesBufferLength++] = move;
 	AssertGame(game);
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "commons.h"
 
-#define CASTLED 38
+#define CASTLED 22
 #define OPEN_ROOK_FILE 19
 #define SEMI_OPEN_FILE 12
 #define DOUBLE_PAWN 12
@@ -52,10 +52,11 @@ short SimplificationBonus(Game *game);
 short BishopMobility(int square, Game* game);
 
 short TotalMaterial(Game* game);
+short GetPieceMaterialValue(PieceType pieceType);
+bool IsPureKingAndPawnEnding(const AllPieceBitboards *bb);
 int GetGamePhase(Game* game);
 short GetKingPositionScore(Move move, Game *game);
 void CalculatePatterns();
-void AdjustPositionImportance();
 void SwitchSignOfWhitePositionValue();
 
 
